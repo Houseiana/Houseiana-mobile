@@ -1,4 +1,4 @@
-package com.example.houseiana_mobile_app
+package com.houseiana.app
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -3,10 +3,19 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
+  // Houseiana Brand Colors
+  static const Color bioYellow = Color(0xFFFCC519);
+  static const Color charcoal = Color(0xFF1D242B);
+  static const Color ghostWhite = Color(0xFFF9F9FA);
+  static const Color neutral100 = Color(0xFFF5F5F5);
+  static const Color neutral200 = Color(0xFFE5E7EB);
+  static const Color neutral400 = Color(0xFF9CA3AF);
+  static const Color neutral600 = Color(0xFF4B5563);
+
   // Primary Colors
-  static const Color primaryColor = Color(0xFF1A73E8);
-  static const Color primaryLight = Color(0xFF4DA3FF);
-  static const Color primaryDark = Color(0xFF0D47A1);
+  static const Color primaryColor = bioYellow; // Use Houseiana brand yellow
+  static const Color primaryLight = Color(0xFFFDD835);
+  static const Color primaryDark = Color(0xFFF9A825);
 
   // Secondary Colors
   static const Color secondaryColor = Color(0xFF26A69A);

@@ -6,6 +6,9 @@ import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/dio_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/app_interceptors.dart';
 import 'package:houseiana_mobile_app/core/network/connection_checker.dart';
+import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/core/services/property_service.dart';
+import 'package:houseiana_mobile_app/core/services/user_service.dart';
 
 Future<void> initCore() async {
   // Dio
@@ -22,4 +25,9 @@ Future<void> initCore() async {
   // SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
+
+  // Session & API services
+  sl.registerLazySingleton(() => UserSession(sl()));
+  sl.registerLazySingleton(() => PropertyService(sl()));
+  sl.registerLazySingleton(() => UserService(sl()));
 }

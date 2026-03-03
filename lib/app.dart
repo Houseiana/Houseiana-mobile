@@ -22,7 +22,7 @@ class HouseianaApp extends StatelessWidget {
         theme: lightTheme(),
         darkTheme: darkTheme(),
         themeMode: ThemeMode.light,
-        initialRoute: Routes.splash,
+        initialRoute: Routes.bottomNav,
         onGenerateRoute: AppRoutes.onGenerateRoute,
       ),
     );

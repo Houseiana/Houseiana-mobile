@@ -6,18 +6,55 @@ class AppStrings {
 
   // Auth
   static const String login = 'Login';
+  static const String signIn = 'Sign In';
   static const String signUp = 'Sign Up';
+  static const String createAccount = 'Create Account';
+  static const String welcomeBack = 'Welcome Back';
+  static const String signInToAccount = 'Sign in to your Houseiana account';
+  static const String joinHouseiana = 'Join Houseiana today';
   static const String email = 'Email';
   static const String password = 'Password';
+  static const String emailPlaceholder = 'your@email.com';
+  static const String emailPlaceholderSignUp = 'example@email.com';
+  static const String passwordPlaceholder = 'Enter password';
+  static const String passwordPlaceholderSignUp = 'Min. 8 characters';
   static const String confirmPassword = 'Confirm Password';
   static const String fullName = 'Full Name';
+  static const String fullNamePlaceholder = 'Enter your full name';
   static const String phoneNumber = 'Phone Number';
-  static const String forgotPassword = 'Forgot Password?';
+  static const String phoneCountryCode = '+974';
+  static const String phonePlaceholder = 'XXXX XXXX';
+  static const String forgotPassword = 'Forgot password?';
+  static const String orContinueWith = 'or continue with';
+  static const String continueWithGoogle = 'Google';
+  static const String continueWithApple = 'Apple';
   static const String dontHaveAccount = "Don't have an account? ";
+  static const String signUpLink = "Sign up";
   static const String alreadyHaveAccount = 'Already have an account? ';
+  static const String signInLink = 'Sign in';
+
+  // OTP Verification
+  static const String verifyYourNumber = 'Verify Your Number';
+  static const String sentVerificationCode = 'We sent a verification code to';
+  static const String verify = 'Verify';
+  static const String didntReceiveCode = "Didn't receive the code?";
+  static const String resendIn = 'Resend in';
 
   // Home
   static const String home = 'Home';
+  static const String where = 'Where';
+  static const String checkIn = 'Check-in';
+  static const String checkOut = 'Check-out';
+  static const String who = 'Who';
+  static const String all = 'All';
+  static const String apartment = 'Apartment';
+  static const String house = 'House';
+  static const String villa = 'Villa';
+  static const String recentlyViewed = 'Recently Viewed';
+  static const String viewAll = 'View All';
+  static const String guestFavorite = 'Guest Favorite';
+  static const String reviews = 'reviews';
+  static const String night = '/night';
   static const String featuredProperties = 'Featured Properties';
   static const String nearbyProperties = 'Nearby Properties';
   static const String seeAll = 'See All';
