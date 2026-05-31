@@ -1,0 +1,1687 @@
+خطة الترحيل الشاملة — Houseiana Mobile ↔ Web Parity
+1. الملخص التنفيذي
+الوضع الحالي
+تطبيق Flutter يمثّل ~60% من منتج الويب في الميزات، مع فجوات كبيرة في التدفقات المالية، وإعدادات الحساب، وتجربة المضيف، والنمذجة البيانية. البنية الأساسية للتطبيق سليمة (DI، BLoC، Dio، Clerk) لكنها تفتقر إلى طبقة Repository واضحة ونماذج بيانات مكتوبة بشكل صارم.
+
+الهدف
+تحويل تطبيق Flutter إلى منتج موبايل يعكس منتج الويب بشكل كامل في الميزات والتدفقات والـ API والروح البصرية، مع الحفاظ على التجربة الطبيعية للموبايل.
+
+الأولويات العليا (MVP Parity)
+إصلاح تدفق الدفع الكامل (Stripe/PayPal/SADAD)
+إكمال شاشات إعدادات الحساب (8 شاشات stub)
+نمذجة البيانات (Property, User, Booking, Review)
+إكمال معالج إنشاء القائمة للمضيف (13 خطوة)
+تفعيل OAuth Google
+دعم الـ i18n (عربي/إنجليزي)
+إتمام تقديم التقييمات والمراجعات
+تكامل الإشعارات الكاملة
+المخاطر الرئيسية
+غياب نماذج بيانات مكتوبة يجعل كل تغيير خطيراً
+تدفق الدفع معطّل بالكامل على مستوى الـ UI (الخدمات جاهزة)
+بوابة SADAD لا توجد في Flutter وهي ضرورية للسوق السعودي
+2. خريطة منتج الويب
+قطاعات المنتج الرئيسية (مستخرجة من الكود)
+القطاع	الصفحات	الحالة
+الاستكشاف والبحث	/, /explore, /discover, /properties, /recommendations	مكتمل في الويب
+تفاصيل العقار	/property/[id]	مكتمل
+تدفق الحجز	/booking/confirm, /booking/success, /payment/*	مكتمل
+لوحة الضيف	/client-dashboard, /my-trips, /wishlists	مكتمل
+لوحة المضيف	/host-dashboard/* (9 قسم)	مكتمل
+إدارة الحساب	/account/* (10 أقسام)	مكتمل
+المراسلة	/messages/[id], /chat	مكتمل
+الدعم والقانونية	/help-center, /contact, /privacy, /terms, /faq	مكتمل
+الإدارة	/admin/properties/review, /admin/support-chat	مكتمل
+خريطة المسارات الكاملة للويب (66+ مسار)
+المصادقة:
+
+/sign-in/[[...sign-in]] — صفحة تسجيل الدخول عبر Clerk
+/sign-up/[[...sign-up]] — صفحة التسجيل
+/login, /register — مسارات قديمة محوّلة
+/unauthorized — صفحة الوصول المرفوض
+الاستكشاف:
+
+/ — الصفحة الرئيسية (بحث + عقارات + وجهات + شهادات)
+/explore — استكشاف العقارات
+/discover — اكتشاف
+/recommendations — توصيات مخصصة
+/properties — قائمة العقارات
+العقارات والحجز:
+
+/property/[id] — تفاصيل العقار
+/booking/confirm — تأكيد الحجز + اختيار الدفع
+/booking/success — نجاح الحجز
+/payment/success|pending|cancel|failed|return — حالات الدفع
+لوحة الضيف:
+
+/client-dashboard — نظرة عامة
+/my-trips — رحلاتي
+/trips — الرحلات
+/wishlists — قوائم الرغبات
+/profile/[id] — صفحة الملف الشخصي العام
+المضيف:
+
+/host-dashboard — نظرة عامة على المضيف
+/host-dashboard/listings — قوائمي
+/host-dashboard/listings/new — قائمة جديدة
+/host-dashboard/add-listing — معالج الإضافة (13 خطوة)
+/host-dashboard/bookings — الحجوزات
+/host-dashboard/reservations — الحجوزات الواردة
+/host-dashboard/calendar — تقويم التوفر
+/host-dashboard/messages — الرسائل
+/host-dashboard/analytics — التحليلات
+/host-dashboard/earnings — الأرباح
+/host-dashboard/reviews — المراجعات
+/host-dashboard/insights — الرؤى
+إدارة الحساب:
+
+/account — نظرة عامة
+/account/personal-info — معلومات شخصية
+/account/payments — سجل المدفوعات
+/account/payment-methods — وسائل الدفع
+/account/payout-methods — وسائل الاستلام (المضيف)
+/account/security — الأمان
+/account/privacy — الخصوصية
+/account/notifications — إعدادات الإشعارات
+/account/kyc — التحقق من الهوية
+/account/preferences — التفضيلات
+الرسائل:
+
+/messages — قائمة المحادثات
+/messages/[id] — محادثة فردية
+/chat — مركز الدردشة
+الدعم والقانون:
+
+/help-center, /help, /faq, /support, /contact, /contact-support
+/about, /privacy, /privacy-policy, /terms, /terms-of-service, /cookie-policy
+/settings
+الإدارة:
+
+/admin/properties/review — مراجعة العقارات
+/admin/support-chat — دعم الإدارة
+3. البنية المعلوماتية والوظيفية لمشروع الويب
+بنية الملفات (مُستخرجة من الكود)
+
+src/
+├── app/                    # Next.js App Router
+│   ├── api/               # 45+ API endpoints
+│   ├── [feature]/         # صفحات المميزات
+│   └── layout.tsx         # جذر التطبيق (Clerk + Providers)
+├── features/              # منطق المميزات
+│   ├── auth/              # مكونات المصادقة
+│   ├── booking/           # تدفق الحجز (hooks + components)
+│   ├── chat/              # الدردشة الفورية
+│   ├── client-dashboard/  # لوحة الضيف
+│   ├── home/              # الصفحة الرئيسية
+│   ├── host/              # لوحة المضيف + معالج القوائم
+│   ├── messaging/         # نظام الرسائل
+│   └── search/            # البحث والفلاتر
+├── components/            # مكونات مشتركة
+│   ├── common/            # بطاقات، ترقيم، فلاتر
+│   ├── map/               # Google Maps + Leaflet
+│   ├── seo/               # مكونات JSON-LD
+│   └── integrations/      # Intercom, Zendesk
+├── hooks/                 # Hooks مخصصة (20+)
+├── store/                 # Zustand stores
+├── lib/                   # مساعدات ومكتبات
+│   ├── api/               # عميل HTTP + backend API
+│   └── auth/              # منطق المصادقة
+├── types/                 # تعريفات TypeScript
+├── providers/             # موفرو السياق
+├── constants/             # ثوابت (38 نوع عقار)
+└── messages/              # ملفات الترجمة (ar/en)
+نموذج بيانات الويب (مُستخرج من /src/types/)
+User:
+
+
+{
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  currentRole: "guest" | "host";
+  phone?: string;
+  profilePhoto?: string;
+  memberSince?: string;
+  initials?: string;
+}
+Property (من كود BookingConfirm وPropertyCard):
+
+
+{
+  id: string;
+  title: string;
+  description: string;
+  propertyType: string; // من 38 نوع
+  country: { id, name }
+  city: { id, name }
+  address: string;
+  latitude: number;
+  longitude: number;
+  pricePerNight: number;
+  cleaningFee: number;
+  serviceFee: number;
+  photos: string[];
+  amenities: string[];
+  bedrooms: number;
+  bathrooms: number;
+  maxGuests: number;
+  rating: number;
+  reviewsCount: number;
+  status: "DRAFT" | "PUBLISHED" | "INACTIVE" | "UNDER_REVIEW" | "SUSPENDED" | "ARCHIVED";
+  host: { id, firstName, lastName, profilePhoto }
+  discounts: { weekly, monthly, newListing }
+  houseRules: { checkIn, checkOut, minNights, maxNights, petsAllowed, smokingAllowed }
+  cancellationPolicy: { type, freeCancellationHours, freeCancellationDays }
+}
+Booking:
+
+
+{
+  id: string;
+  propertyId: string;
+  guestId: string;
+  hostId: string;
+  checkIn: Date;
+  checkOut: Date;
+  guests: number;
+  totalPrice: number;
+  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
+  paymentStatus: "PENDING" | "PAID" | "REFUNDED";
+  paymentMethod: "stripe" | "paypal" | "sadad";
+  property: Property;
+}
+تدفقات المستخدم الرئيسية (مُؤكَّدة من الكود)
+تدفق الحجز الكامل (Web):
+
+بحث → قائمة عقارات → تفاصيل العقار
+اختيار تواريخ وضيوف
+POST /api/bookings → إنشاء الحجز
+/booking/confirm → عرض ملخص + اختيار بوابة الدفع
+تنفيذ الدفع (PayPal/SADAD/Stripe)
+/payment/success أو /booking/success
+الحجز يظهر في /my-trips
+تدفق إنشاء القائمة (Web) — 13 خطوة:
+
+نوع العقار (38 خيار)
+التصنيف الفرعي
+الموقع (خريطة + عنوان)
+الأساسيات (غرف/حمامات/ضيوف)
+المرافق
+الوصف (عنوان + نص)
+الصور (تحميل Cloudinary/S3)
+التسعير + تقييم النجوم
+الخصومات (أسبوعي/شهري/جديد)
+قواعد المنزل
+سياسة الإلغاء
+الشروط القانونية
+الوثائق (هوية + ضريبي)
+4. تحليل UI/UX لمشروع الويب
+نظام التصميم (مُستخرج من tailwind.config + كود المكونات)
+الألوان:
+
+Primary: #FCC519 (ذهبي/أصفر) — متطابق مع Flutter ✅
+Dark Text: #1D242B — متطابق ✅
+Neutral Gray: #F0F2F5, #9CA3AF — مقارب ✅
+Error: #E74C3C / Red
+Background: #FDFDFD, White
+الخطوط:
+
+Readex Pro (الأساسي) — يدعم العربية ← مفقود في Flutter ❌
+Inter (الثانوي)
+Flutter يستخدم Google Fonts لكن لم يُحدَّد Readex Pro
+نمط البطاقات:
+
+بطاقة العقار: صورة 200px + تقييم + عنوان + موقع + سعر
+تأثير shadow خفيف: rgba(0,0,0,0.06) blur-8
+زوايا دائرية: radius-16
+أنماط التفاعل:
+
+بحث موسّع على الصفحة الرئيسية (4 حقول: أين/تسجيل دخول/تسجيل خروج/ضيوف)
+فلاتر شريط أفقي قابل للتمرير لأنواع العقارات
+تحميل كسول مع هياكل عظمية
+حالة مفضلة مع تحديث تفاؤلي فوري
+مودال تسجيل الدخول عند الوصول لميزات تستلزم مصادقة
+الأولويات البصرية:
+
+الصورة (أكبر عنصر)
+التقييم + عدد المراجعات
+العنوان + الموقع
+السعر لليلة
+شارة "Guest Favorite" / خصم
+عرض Desktop → تكيُّف موبايل:
+
+الشبكة: من 3-4 أعمدة → عمود واحد
+الشريط الجانبي للمضيف → Bottom Navigation
+الفلاتر الجانبية → ورقة سفلية (Bottom Sheet)
+الخريطة الكاملة → شاشة كاملة مستقلة
+الهيدر + بحث → شريط بحث مضغوط
+5. مراجعة مشروع Flutter الحالي
+البنية الحالية (مُؤكَّدة من فحص 172 ملف)
+
+lib/
+├── main.dart                 # دخول التطبيق (Firebase + DI)
+├── app.dart                  # MaterialApp + AuthCubit + Routing
+├── bloc_observer.dart        # مراقب BLoC للتصحيح
+├── core/
+│   ├── config/               # AppConfig (بيئة) + ClerkConfig
+│   ├── constants/            # ألوان, نصوص, مسارات, assets
+│   ├── errors/               # Failures + Exceptions
+│   ├── extensions/           # Context, DateTime, MediaQuery, String
+│   ├── injection/            # 6 ملفات DI (GetIt)
+│   ├── network/              # DioConsumer + AppInterceptors + EndPoints
+│   ├── services/             # 17 خدمة (Clerk, Auth, Payment, Chat, ...)
+│   ├── theme/                # light/dark + AppColors + AppSpacing
+│   ├── utils/                # Helper, InputValidator, SizeConfig
+│   └── widgets/              # AppBar, Button, NoInternet
+├── features/
+│   ├── auth/                 # 6 شاشات ✅ (Clerk كامل)
+│   ├── booking/              # 9 شاشات ⚠️ (دفع غير مكتمل)
+│   ├── bottom_nav/           # Cubit + Screen ✅
+│   ├── chat/                 # Socket.IO ✅
+│   ├── country/              # Country/City lookup ✅
+│   ├── dashboard/            # Client dashboard ✅
+│   ├── favorites/            # Toggle + List ✅
+│   ├── home/                 # Infinite scroll + favorites ✅
+│   ├── host/                 # معالج جزئي ⚠️
+│   ├── legal/                # Stubs ❌
+│   ├── notifications/        # FCM ready, UI stub ⚠️
+│   ├── profile/              # معظمها stubs ⚠️
+│   ├── properties/           # بحث + فلتر ⚠️
+│   ├── property_details/     # تفاصيل + تقييمات ✅
+│   ├── recommendations/      # "قريباً" ❌
+│   ├── search/               # بحث متقدم ⚠️
+│   ├── splash/               # فارغ ⚠️
+│   ├── support/              # Stubs ❌
+│   └── trips/                # قائمة + تفاصيل ✅
+└── shared/
+    └── widgets/              # بطاقات + هياكل عظمية + animations
+حالة التنفيذ التفصيلية (مُؤكَّدة)
+مكتمل فعلياً (API حقيقي):
+✅ AuthCubit — Clerk كامل مع multi-factor + password reset
+✅ HomeScreen — قائمة عقارات بصفحات + مفضلة
+✅ PropertyDetailsScreen — PropertyService + RatingsService
+✅ FavoritesScreen/FavoritesCubit — toggle + persist
+✅ TripsScreen/TripDetailsScreen — UserService.getTrips()
+✅ ChatCubit + ChatConversationScreen — Socket.IO حقيقي
+✅ HostDashboardScreen — EarningsService + PropertyService
+✅ AvailabilityCalendarScreen — HostCalendarService
+جزئي (UI جاهز، API ناقص):
+⚠️ BookingRequestScreen — واجهة جاهزة، تدفق الدفع مفقود
+⚠️ PaymentMethodScreen — اختيار البوابة UI فقط
+⚠️ SearchPropertiesScreen — فلاتر UI فقط، لا ترسل للـ API
+⚠️ ProfileScreen — يعرض البيانات، لا يعدلها
+⚠️ NotificationsScreen — هيكل فقط
+⚠️ ReviewsScreen — عرض فقط، لا إرسال
+Stubs كاملة (لا منطق):
+❌ AccountSettingsScreen — قائمة عناصر فقط
+❌ PersonalInformationScreen — نموذج placeholder
+❌ ChangePasswordScreen — واجهة فقط
+❌ NotificationSettingsScreen — تبديلات UI فقط
+❌ PrivacySettingsScreen — مربعات اختيار فقط
+❌ LanguageSettingsScreen — قائمة لغات فقط
+❌ CurrencySettingsScreen — قائمة عملات فقط
+❌ PaymentMethodsScreen — بيانات وهمية
+❌ SavedAddressesScreen — UI هيكل
+❌ KycVerificationScreen — نموذج placeholder
+❌ RecommendationsScreen — "قريباً"
+❌ HelpCenterScreen — نص ثابت
+❌ ContactSupportScreen — نموذج بلا إرسال
+❌ SplashInjection — فارغ تماماً
+مشاكل البنية المُؤكَّدة
+لا نماذج بيانات مكتوبة: كل الاستجابات Map<String, dynamic> — سطر كود مثل:
+
+
+final propertyId = (p['id'] ?? p['propertyId'] ?? '').toString();
+يُكرَّر في 5+ أماكن ويكسر عند تغيير مفتاح الـ API.
+
+لا Repository Pattern: الـ Services تُستدعى مباشرة من الـ Cubits والشاشات.
+
+منطق مُكرَّر في 3 أماكن: _toggleFavorite في HomeScreen + FavoritesScreen + FavoritesCubit.
+
+Google OAuth معطّل: موجود في GoogleAuthService لكن مُعلَّق في AuthCubit.
+
+لا i18n: لا يوجد أي نظام ترجمة، كل النصوص hardcoded بالإنجليزية.
+
+SplashInjection فارغ: initSplash() لا تفعل شيئاً.
+
+PaymentService غير مربوط بالـ UI: الخدمات جاهزة، لكن PaymentMethodScreen لا يستدعيها.
+
+SearchPropertiesScreen: تُرسل الفلاتر كـ Map بدون التحقق من نوع الحقول أو validation.
+
+6. تحليل الفجوات بين الويب وFlutter
+جدول الفجوات الشامل
+القطاع	الويب	Flutter الحالي	الفجوة	الأولوية
+المصادقة	Clerk كامل + Google + Apple	95% (Google معطّل)	تفعيل Google OAuth	عالية
+بحث العقارات	فلاتر متقدمة (نوع+سعر+مرافق+غرف)	UI الفلاتر موجود، لا ترسل للـ API	ربط الفلاتر بـ API	عالية
+تفاصيل العقار	عرض كامل + معرض + خريطة + تقييمات + مضيف	80% مكتمل	معرض صور + تقديم تقييم	عالية
+تدفق الحجز	اختيار→تأكيد→دفع→نجاح	60% (UI جزئي، دفع مفقود)	تدفق الدفع الكامل	حرجة
+PayPal	تدفق كامل مع API	خدمة موجودة، لا UI	بناء تدفق PayPal	حرجة
+Stripe	تكامل كامل	خدمة موجودة، لا UI	ربط Stripe UI	حرجة
+SADAD	تدفق form post كامل	خدمة مسجلة، لا UI	بناء تدفق SADAD	عالية (سوق خليجي)
+لوحة الضيف	/client-dashboard كامل	ClientDashboardScreen جزئي	إكمال الإحصاءات	متوسطة
+رحلاتي	قائمة + تفاصيل + إلغاء + تقييم	85%	إضافة إلغاء + تقييم	عالية
+قوائم الرغبات	/wishlists مكتمل	هيكل فقط	بناء قوائم رغبات	عالية
+ملف شخصي	تعديل كامل + صورة	عرض فقط	إضافة تعديل + رفع صورة	عالية
+معلومات شخصية	نموذج كامل	Stub	ربط بـ API /account/profile	عالية
+تغيير كلمة المرور	Clerk integration	Stub	ربط بـ Clerk	عالية
+إعدادات الإشعارات	تبديلات حقيقية محفوظة	UI فقط	ربط بـ API	متوسطة
+الخصوصية	مربعات حقيقية	UI فقط	ربط بـ API	منخفضة
+وسائل الدفع	قائمة حقيقية + حذف	بيانات وهمية	ربط بـ API	عالية
+العناوين المحفوظة	UI كامل	هيكل فقط	ربط بـ API	متوسطة
+التحقق من الهوية (KYC)	تحميل وثائق + حالة	Stub	بناء تدفق KYC	متوسطة
+لوحة المضيف	9 أقسام كاملة	2-3 أقسام	إضافة Bookings+Reviews+Insights	عالية
+معالج إنشاء القائمة	13 خطوة كاملة	~5 خطوات جزئية	إكمال 8 خطوات	عالية
+إشعارات	FCM + UI كامل	FCM جاهز، UI Stub	بناء قائمة إشعارات	متوسطة
+الرسائل	قائمة + chat window	90% مكتمل	صغير (UI polish)	منخفضة
+i18n (عربي)	عربي/إنجليزي كامل + RTL	غائب تماماً	نظام ترجمة من الصفر	عالية
+Readex Pro Font	خط أساسي	غائب	إضافة الخط	منخفضة
+نماذج البيانات	TypeScript interfaces كاملة	Map<String, dynamic>	Dart models مكتوبة	حرجة
+Repository Pattern	hooks/lib مبنيّة	غائب	طبقة Repository	عالية
+مركز المساعدة	محتوى حقيقي + FAQ	نص ثابت	ربط بمحتوى حقيقي	منخفضة
+لوحة الإدارة	مراجعة عقارات + دعم	خدمة فقط، لا UI	بناء شاشات الإدارة	منخفضة
+SEO / OG	JSON-LD + Open Graph	لا ينطبق (موبايل)	مشاركة ديناميكية بدلاً	منخفضة
+Google Sign-In	OAuth حقيقي	معطّل	تفعيل + ربط	عالية
+7. البنية المستهدفة داخل Flutter
+مبدأ التوجيه
+لا إعادة كتابة كاملة. البنية الحالية سليمة ويجب الإبقاء عليها مع إضافة طبقات مفقودة.
+
+التعديلات البنيوية المطلوبة
+أ) إضافة طبقة نماذج البيانات
+
+lib/core/models/
+├── property/
+│   ├── property_model.dart       # نموذج العقار الكامل
+│   ├── property_summary.dart     # نموذج مختصر للقوائم
+│   └── property_host.dart        # نموذج المضيف المضمّن
+├── user/
+│   ├── user_model.dart           # نموذج المستخدم
+│   └── user_profile.dart         # الملف الشخصي الكامل
+├── booking/
+│   ├── booking_model.dart        # نموذج الحجز
+│   └── booking_summary.dart      # ملخص للقوائم
+├── review/
+│   └── review_model.dart         # نموذج التقييم
+├── payment/
+│   └── payment_intent.dart       # نموذج نية الدفع
+└── common/
+    ├── api_response.dart          # غلاف الاستجابة
+    └── pagination.dart            # نموذج الصفحات
+ب) إضافة طبقة Repository (اختيارية في المرحلة الأولى)
+
+lib/core/repositories/
+├── property_repository.dart      # يغلّف PropertyService
+├── booking_repository.dart       # يغلّف UserService (bookings)
+├── user_repository.dart          # يغلّف UserService (profile)
+└── payment_repository.dart       # يغلّف PaymentService
+ملاحظة: في المرحلة الأولى يكفي تحويل Services لاستخدام النماذج المكتوبة بدون Repository Pattern منفصلة.
+
+ج) نظام i18n
+
+lib/core/l10n/
+├── app_localizations.dart        # تعريف الـ localizations
+├── arb/
+│   ├── app_en.arb                # الترجمة الإنجليزية
+│   └── app_ar.arb                # الترجمة العربية
+└── l10n_delegate.dart            # تسجيل في MaterialApp
+د) نظام الحالات العامة (Loading/Error/Empty)
+
+lib/shared/states/
+├── async_state.dart              # حالة موحّدة: idle/loading/success/error
+└── paginated_state.dart          # حالة مع صفحات
+
+lib/shared/widgets/
+├── states/
+│   ├── loading_widget.dart       # تحميل موحّد
+│   ├── error_widget.dart         # خطأ موحّد مع إعادة المحاولة
+│   └── empty_widget.dart         # حالة فارغة موحّدة
+└── ...existing widgets
+هـ) إعدادات الحساب (بنية جديدة مقترحة)
+
+lib/features/account/
+├── data/
+│   ├── models/                   # نماذج بيانات الحساب
+│   └── services/
+│       └── account_service.dart  # /api/account/* endpoints
+├── presentation/
+│   ├── cubit/
+│   │   ├── account_cubit.dart
+│   │   └── account_state.dart
+│   └── screens/
+│       ├── personal_info_screen.dart
+│       ├── security_screen.dart
+│       ├── payment_methods_screen.dart
+│       ├── payout_methods_screen.dart
+│       ├── notification_settings_screen.dart
+│       ├── privacy_settings_screen.dart
+│       ├── kyc_screen.dart
+│       └── account_overview_screen.dart
+الهيكل الكامل المستهدف (مع الحفاظ على الموجود)
+
+lib/
+├── core/
+│   ├── config/           ✅ موجود
+│   ├── constants/        ✅ موجود + إضافة routes جديدة
+│   ├── errors/           ✅ موجود
+│   ├── extensions/       ✅ موجود
+│   ├── injection/        ✅ موجود + إضافة account_injection.dart
+│   ├── l10n/             🆕 جديد تماماً
+│   ├── models/           🆕 جديد تماماً (حرج)
+│   ├── network/          ✅ موجود + تحديث end_points.dart
+│   ├── repositories/     🆕 اختياري مرحلة ثانية
+│   ├── services/         ✅ موجود + account_service.dart
+│   ├── theme/            ✅ موجود + Readex Pro
+│   ├── utils/            ✅ موجود
+│   └── widgets/          ✅ موجود
+├── features/
+│   ├── auth/             ✅ موجود + تفعيل Google
+│   ├── account/          🆕 ميزة جديدة (10 شاشات)
+│   ├── booking/          ⚡ تحديث كبير (تدفق دفع كامل)
+│   ├── bottom_nav/       ✅ موجود
+│   ├── chat/             ✅ موجود (polish فقط)
+│   ├── country/          ✅ موجود
+│   ├── dashboard/        ⚡ تحديث (إكمال إحصاءات)
+│   ├── favorites/        ✅ موجود (إصلاح تكرار)
+│   ├── home/             ✅ موجود
+│   ├── host/             ⚡ تحديث كبير (إكمال 8 خطوات)
+│   ├── legal/            ⚡ تحديث (محتوى حقيقي)
+│   ├── notifications/    ⚡ تحديث (بناء قائمة)
+│   ├── profile/          ⚡ تحديث (تعديل + رفع صورة)
+│   ├── properties/       ⚡ تحديث (ربط فلاتر بـ API)
+│   ├── property_details/ ⚡ تحديث (معرض + تقديم تقييم)
+│   ├── recommendations/  ⚡ تحديث (تنفيذ حقيقي)
+│   ├── search/           ⚡ تحديث (ربط بـ API)
+│   ├── splash/           ⚡ تحديث (منطق إعادة التوجيه)
+│   ├── support/          ⚡ تحديث (محتوى حقيقي)
+│   ├── trips/            ⚡ تحديث (إلغاء + تقييم)
+│   └── wishlists/        🆕 بناء من الصفر
+└── shared/
+    ├── states/           🆕 جديد
+    └── widgets/          ✅ موجود + إضافات
+8. مراحل التنفيذ الكبرى
+المرحلة 0 — الإصلاح والتثبيت (Foundation Fixes)
+المدة المقدرة: أسبوع واحد
+
+الهدف: إصلاح المشاكل البنيوية الحرجة قبل أي إضافة
+
+المحتوى:
+
+إنشاء نماذج البيانات المكتوبة (Property, User, Booking, Review)
+إصلاح تكرار منطق المفضلة
+تفعيل SplashInjection
+إصلاح SearchPropertiesScreen لترسل الفلاتر للـ API
+إصلاح معالجة أخطاء الـ Services (لا catch(_) { return []; })
+المرحلة 1 — تدفق الدفع الكامل (Payment Flow)
+المدة المقدرة: أسبوعان
+
+الهدف: إكمال رحلة الحجز كاملة من اختيار التواريخ حتى تأكيد الدفع
+
+المحتوى:
+
+ربط PaymentMethodScreen بـ StripePaymentService و PayPalPaymentService
+بناء تدفق PayPal (create-order → capture-order)
+بناء تدفق SADAD (form post → callback)
+بناء BookingConfirmationScreen الكاملة
+ربط PaymentPending/Failed/Cancel بحالات حقيقية
+APIs المستخدمة:
+
+POST /booking-manager (إنشاء حجز)
+POST /api/paypal/create-order, POST /api/paypal/capture-order
+POST /api/sadadpayment/initiate
+POST /api/stripe/create-intent, POST /api/stripe/confirm
+المرحلة 2 — إعدادات الحساب (Account Settings)
+المدة المقدرة: أسبوعان
+
+الهدف: تحويل 8 شاشات Stub إلى شاشات حقيقية
+
+المحتوى:
+
+AccountService يتصل بـ /api/account/*
+PersonalInformationScreen — ربط بـ Clerk + backend
+ChangePasswordScreen — ربط بـ Clerk
+PaymentMethodsScreen — قائمة حقيقية
+NotificationSettingsScreen — حفظ تفضيلات
+PrivacySettingsScreen — حفظ إعدادات
+KycVerificationScreen — تحميل وثائق
+EditProfileScreen — رفع صورة + تحديث بيانات
+المرحلة 3 — لوحة المضيف الكاملة (Host Dashboard Completion)
+المدة المقدرة: أسبوعان
+
+الهدف: إكمال تجربة المضيف
+
+المحتوى:
+
+إكمال معالج إنشاء القائمة (الخطوات 6-13 المفقودة)
+HostBookingsScreen (الحجوزات الواردة)
+HostReservationsScreen (قبول/رفض)
+HostReviewsScreen (مراجعات الضيوف)
+HostInsightsScreen (تحليلات)
+ربط تقويم التوفر بشكل صحيح
+المرحلة 4 — الملف الشخصي والرحلات (Profile & Trips)
+المدة المقدرة: أسبوع
+
+الهدف: تجربة الضيف الكاملة
+
+المحتوى:
+
+ProfileScreen: تعديل + رفع صورة
+TripsScreen: إضافة إلغاء + كتابة تقييم
+WishlistsScreen: بناء كامل
+ReviewPropertyModal: تقديم تقييم
+المرحلة 5 — البحث والاكتشاف (Search & Discovery)
+المدة المقدرة: أسبوع
+
+الهدف: بحث فعلي متقدم
+
+المحتوى:
+
+ربط AdvancedFiltersScreen بـ API فعلياً
+بناء RecommendationsScreen حقيقياً
+تحسين SearchPropertiesScreen مع Pagination صحيح
+استكمال LocationSearchScreen + MapFullScreen
+المرحلة 6 — الإشعارات وi18n (Notifications & Localization)
+المدة المقدرة: أسبوعان
+
+الهدف: دعم عربي كامل + إشعارات فعلية
+
+المحتوى:
+
+نظام i18n كامل (flutter_localizations + intl)
+ملفات ترجمة AR/EN
+دعم RTL كامل
+NotificationsScreen الحقيقية
+تفعيل Google OAuth
+المرحلة 7 — الجودة والصقل (Quality & Polish)
+المدة المقدرة: أسبوع
+
+الهدف: تجربة مستخدم عالية الجودة
+
+المحتوى:
+
+خط Readex Pro في Flutter
+حالات Loading/Error/Empty موحّدة
+اختبارات تكاملية
+تحسين أداء الصور
+إصلاح أي مشاكل navigation
+9. المهام الذرية التفصيلية
+المرحلة 0 — الإصلاح والتثبيت
+TASK-001
+
+الفئة: foundational
+العنوان: إنشاء نموذج بيانات Property المكتوب
+الهدف: استبدال Map<String, dynamic> بنموذج Dart مكتوب للعقار
+سبب الضرورة: 11+ مفتاح احتياطي في كل شاشة، كسر عند تغيير الـ API، لا type safety
+الملفات المُنشأة:
+lib/core/models/property/property_model.dart
+lib/core/models/property/property_summary.dart
+lib/core/models/property/property_host_model.dart
+خطوات التنفيذ:
+إنشاء مجلد lib/core/models/property/
+إنشاء PropertyModel بالحقول: id, title, description, propertyType, pricePerNight, cleaningFee, photos (List<String>), amenities, bedrooms, bathrooms, maxGuests, rating, reviewsCount, city (Map), country (Map), latitude, longitude, status, host (PropertyHostModel), discounts, houseRules
+إضافة fromJson(Map<String,dynamic>) يدعم الحقول البديلة (id أو propertyId، rating أو averageRating)
+إضافة toJson() للإرسال
+إنشاء PropertySummary مختصر لقوائم التمرير
+تحديث PropertyService.getProperties() ليرجع List<PropertySummary>
+تحديث PropertyService.getPropertyById() ليرجع PropertyModel
+حالات الحافة: مفاتيح API متعددة لنفس الحقل (id/propertyId)، قيم null للـ rating
+قائمة التحقق:
+ fromJson يتعامل مع null gracefully
+ الحقول الاختيارية nullable
+ الاختبار مع بيانات وهمية
+تعريف الإنجاز: PropertyService يرجع نماذج مكتوبة، لا مزيد من Map في الـ Services
+مستوى الخطر: منخفض (لا تغيير على الـ UI)
+TASK-002
+
+الفئة: foundational
+العنوان: إنشاء نموذج بيانات User و Booking
+الهدف: نماذج Dart مكتوبة للمستخدم والحجز
+الملفات المُنشأة:
+lib/core/models/user/user_model.dart
+lib/core/models/user/user_profile.dart
+lib/core/models/booking/booking_model.dart
+lib/core/models/booking/booking_summary.dart
+lib/core/models/review/review_model.dart
+خطوات التنفيذ:
+UserModel: id, email, firstName, lastName, profilePhoto, phone, role (guest/host), memberSince
+BookingModel: id, propertyId, guestId, hostId, checkIn (DateTime), checkOut (DateTime), guests, totalPrice, status (enum), paymentStatus (enum), paymentMethod, property (PropertySummary?)
+ReviewModel: id, guestId, propertyId, rating, comment, cleanliness, accuracy, communication, location, checkIn, value, createdAt
+إضافة BookingStatus و PaymentStatus enums
+تحديث UserService لاستخدام النماذج الجديدة
+حالات الحافة: التواريخ قد تأتي كـ String أو DateTime، تحويل آمن
+تعريف الإنجاز: UserService و BookingService يرجعان نماذج مكتوبة
+TASK-003
+
+الفئة: foundational / bug fix
+العنوان: إنشاء غلاف استجابة API موحّد
+الهدف: معالجة أخطاء API موحّدة بدلاً من catch(_) { return []; }
+الملفات المُنشأة:
+lib/core/models/common/api_response.dart
+lib/core/models/common/pagination_model.dart
+خطوات التنفيذ:
+إنشاء ApiResponse<T> يحمل: data، error، statusCode، isSuccess
+إنشاء PaginatedResponse<T> يحمل: data (List<T>)، total، page، limit، hasMore
+تحديث DioConsumer أو PropertyService لاستخدام الغلاف
+إزالة catch(_) { return []; } من جميع Services
+رمي استثناء معبّر بدلاً من الإرجاع الصامت
+تعريف الإنجاز: لا silently swallowed errors في الـ Services
+TASK-004
+
+الفئة: bug fix
+العنوان: توحيد منطق المفضلة ومنع التكرار
+الهدف: منطق واحد في FavoritesCubit، لا تكرار في HomeScreen و FavoritesScreen
+الملفات المُعدَّلة:
+lib/features/home/presentation/screens/home_screen.dart
+lib/features/favorites/presentation/screens/favorites_screen.dart
+lib/features/favorites/presentation/cubit/favorites_cubit.dart (إن وُجد)
+خطوات التنفيذ:
+نقل _toggleFavorite() كلياً إلى FavoritesCubit
+حذف النسختين المكررتين من HomeScreen و FavoritesScreen
+HomeScreen تستمع لـ FavoritesCubit عوضاً عن _favoriteProperties المحلي
+ربط الزر في PropertyCard بـ FavoritesCubit مباشرة
+تعريف الإنجاز: منطق المفضلة في مكان واحد فقط
+TASK-005
+
+الفئة: bug fix
+العنوان: إصلاح SearchPropertiesScreen لإرسال الفلاتر للـ API
+الهدف: الفلاتر المختارة ترسَل كـ query params فعلية لـ /api/property-search
+الملفات المُعدَّلة:
+lib/features/properties/presentation/screens/search_properties_screen.dart
+lib/features/search/presentation/screens/advanced_filters_screen.dart
+lib/core/services/property_service.dart
+خطوات التنفيذ:
+إنشاء PropertySearchParams class: location, checkIn, checkOut, guests, minPrice, maxPrice, propertyType, amenities, page, limit
+تحديث PropertyService.getProperties() لقبول PropertySearchParams
+AdvancedFiltersScreen تمرر النتائج كـ callback إلى SearchPropertiesScreen
+SearchPropertiesScreen تحمّل العقارات بعد تطبيق الفلاتر
+إضافة زر "تطبيق" و "إعادة ضبط" في AdvancedFiltersScreen
+تعريف الإنجاز: اختيار فلتر يُنتج نتائج مختلفة من الـ API
+المرحلة 1 — تدفق الدفع الكامل
+TASK-010
+
+الفئة: API wiring
+العنوان: ربط BookingRequestScreen بـ API إنشاء الحجز
+الهدف: الضغط على "تأكيد الحجز" ينشئ حجزاً حقيقياً في الـ API
+الملفات المُعدَّلة:
+lib/features/booking/presentation/screens/booking_request_screen.dart
+lib/core/services/user_service.dart (أو إنشاء booking_service.dart منفصل)
+lib/core/network/api/end_points.dart
+خطوات التنفيذ:
+التأكد من أن EndPoints.createBooking = '/booking-manager' موجود ✅
+تحديث UserService.createBooking() ليرجع BookingModel
+في BookingRequestScreen: إضافة BookingCubit أو استخدام موجود
+عند الضغط على تأكيد: POST /booking-manager مع propertyId, checkIn, checkOut, guests, totalPrice
+عند النجاح: الانتقال لـ Routes.paymentMethod مع تمرير bookingId
+عند الفشل: عرض رسالة خطأ واضحة
+حالات الحافة: المستخدم غير مسجّل، التواريخ محجوزة مسبقاً، العقار غير متاح
+تعريف الإنجاز: يُنشأ حجز حقيقي في الـ API وينتقل للدفع
+TASK-011
+
+الفئة: screen implementation
+العنوان: بناء PaymentMethodScreen الحقيقية
+الهدف: عرض خيارات الدفع الحقيقية والانتقال للتدفق المناسب
+الملفات المُعدَّلة:
+lib/features/booking/presentation/screens/payment_method_screen.dart
+الملفات المُنشأة:
+lib/features/booking/presentation/cubit/payment_cubit.dart
+lib/features/booking/presentation/cubit/payment_state.dart
+خطوات التنفيذ:
+PaymentMethodScreen تستقبل bookingId و totalAmount كـ arguments
+عرض 3 خيارات: PayPal, Stripe/Card, SADAD (مشروطة بالمنطقة إذا لزم)
+PaymentCubit يدير: selectedMethod, isProcessing, paymentResult
+الضغط على PayPal → TASK-012
+الضغط على Card → TASK-013
+الضغط على SADAD → TASK-014
+تعريف الإنجاز: المستخدم يرى خيارات دفع ويختار واحداً
+TASK-012
+
+الفئة: API wiring
+العنوان: تنفيذ تدفق PayPal الكامل
+الهدف: إتمام دفع PayPal من اختيار → موافقة → التقاط
+الملفات المُعدَّلة:
+lib/core/services/paypal_payment_service.dart
+lib/features/booking/presentation/screens/payment_method_screen.dart
+الملفات المُنشأة:
+lib/features/booking/presentation/screens/paypal_webview_screen.dart
+خطوات التنفيذ:
+PayPalPaymentService.createOrder(bookingId) → POST /api/paypal/create-order → يرجع approvalUrl
+فتح WebView على approvalUrl (استخدام webview_flutter أو url_launcher)
+اعتراض redirect إلى /payment/success?orderId=X
+عند الاعتراض: PayPalPaymentService.captureOrder(orderId) → POST /api/paypal/capture-order
+عند النجاح: Navigator.pushNamed(Routes.bookingConfirmation)
+عند الإلغاء: Navigator.pushNamed(Routes.paymentCancel)
+حالات الحافة: المستخدم يغلق WebView، انتهاء صلاحية الـ order، خطأ الشبكة
+تعريف الإنجاز: الدفع بـ PayPal يكتمل ويُؤكَّد الحجز
+TASK-013
+
+الفئة: API wiring
+العنوان: تنفيذ تدفق Stripe الكامل
+الهدف: إتمام دفع Stripe مع Payment Sheet
+الملفات المُعدَّلة:
+lib/core/services/stripe_payment_service.dart
+lib/features/booking/presentation/screens/payment_method_screen.dart
+خطوات التنفيذ:
+StripePaymentService.createPaymentIntent(bookingId, amount) → POST /api/stripe/create-intent → يرجع clientSecret
+تهيئة Stripe SDK: Stripe.publishableKey = AppConfig.stripePublishableKey
+عرض Payment Sheet: Stripe.instance.presentPaymentSheet()
+عند النجاح: POST /api/stripe/confirm مع paymentIntentId
+الانتقال لـ BookingConfirmationScreen
+حالات الحافة: إلغاء Payment Sheet، خطأ 3DS، شبكة منقطعة
+تعريف الإنجاز: الدفع بـ Stripe يكتمل ويُؤكَّد الحجز
+TASK-014
+
+الفئة: screen implementation
+العنوان: تنفيذ تدفق SADAD (بوابة الدفع الخليجية)
+الهدف: إرسال البيانات لبوابة SADAD وتلقي النتيجة
+الملفات المُنشأة:
+lib/features/booking/presentation/screens/sadad_payment_screen.dart
+الملفات المُعدَّلة:
+lib/core/services/payment_service.dart
+خطوات التنفيذ:
+PaymentService.createSadadPayment(amount, orderId, email, phone) → POST /api/sadadpayment/initiate → يرجع formAction + formData
+إنشاء SadadPaymentScreen: WebView يفتح formAction URL
+إرسال formData تلقائياً عبر JavaScript injection
+اعتراض redirect لـ /payment/success أو /payment/cancel
+عند النجاح: الانتقال لـ BookingConfirmationScreen
+تعريف الإنجاز: الدفع بـ SADAD يكتمل
+TASK-015
+
+الفئة: screen implementation
+العنوان: بناء BookingConfirmationScreen الكاملة
+الهدف: عرض تأكيد الحجز الكامل بعد نجاح الدفع
+الملفات المُعدَّلة:
+lib/features/booking/presentation/screens/booking_confirmation_screen.dart
+خطوات التنفيذ:
+الشاشة تستقبل bookingId
+تجلب GET /booking-manager/{id} للحصول على تفاصيل الحجز
+عرض: رمز الحجز، العقار، التواريخ، عدد الضيوف، المبلغ المدفوع
+زر "عرض رحلتي" → Routes.trips
+زر "العودة للرئيسية" → Routes.bottomNav
+مشاركة تفاصيل الحجز (اختياري، SocialSharingService موجود)
+تعريف الإنجاز: المستخدم يرى تأكيداً كاملاً بعد الدفع
+المرحلة 2 — إعدادات الحساب
+TASK-020
+
+الفئة: foundational
+العنوان: إنشاء AccountService يتصل بـ /api/account/*
+الهدف: خدمة مركزية لجميع عمليات الحساب
+الملفات المُنشأة:
+lib/core/services/account_service.dart
+lib/core/injection/account_injection.dart
+خطوات التنفيذ:
+إضافة endpoints في end_points.dart:
+
+static const String accountProfile = '/api/account/profile';
+static const String accountPaymentMethods = '/api/account/payment-methods';
+static const String accountSessions = '/api/account/sessions';
+static const String accountDeleteAccount = '/api/account/delete-account';
+static const String accountDataRequest = '/api/account/data-request';
+static const String accountPrivacySettings = '/api/account/privacy-settings';
+إنشاء AccountService مع methods:
+getProfile() → GET /api/account/profile
+updateProfile(Map data) → POST /api/account/profile
+uploadProfilePhoto(File photo) → POST /api/profile/upload-photo
+getPaymentMethods() → GET /api/account/payment-methods
+deletePaymentMethod(String id) → DELETE /api/account/payment-methods/{id}
+getSessions() → GET /api/account/sessions
+requestDataExport() → POST /api/account/data-request
+deleteAccount() → POST /api/account/delete-account
+updatePrivacySettings(Map settings) → POST /api/account/privacy-settings
+تسجيل في injection_container.dart
+تعريف الإنجاز: AccountService مسجّل ويمكن inject في أي Cubit
+TASK-021
+
+الفئة: foundational
+العنوان: إنشاء AccountCubit الموحّد
+الهدف: Cubit يدير حالة جميع شاشات الحساب
+الملفات المُنشأة:
+lib/features/account/presentation/cubit/account_cubit.dart
+lib/features/account/presentation/cubit/account_state.dart
+خطوات التنفيذ:
+AccountState: initial, loading, profileLoaded(UserProfile), paymentMethodsLoaded(List), error(String)
+AccountCubit methods:
+loadProfile()
+updateProfile({firstName, lastName, phone})
+uploadPhoto(File photo)
+loadPaymentMethods()
+deletePaymentMethod(String id)
+updatePrivacySettings(Map settings)
+requestDataExport()
+deleteAccount(String password)
+تسجيل AccountCubit في DI
+تعريف الإنجاز: AccountCubit يمكن inject في شاشات الحساب
+TASK-022
+
+الفئة: screen implementation
+العنوان: بناء PersonalInformationScreen الحقيقية
+الهدف: تعديل وحفظ المعلومات الشخصية
+الملفات المُعدَّلة:
+lib/features/profile/presentation/screens/personal_information_screen.dart (أو نقله لـ account)
+خطوات التنفيذ:
+تحميل البيانات الحالية من AccountCubit.loadProfile()
+نموذج: الاسم الأول، الاسم الأخير، رقم الهاتف (مع country code)
+Email: معروض للقراءة فقط (لا يُعدَّل من هنا كما في الويب)
+زر حفظ → AccountCubit.updateProfile()
+رسالة نجاح/خطأ
+حالات الحافة: validation (الاسم لا يقل عن حرفين)، خطأ شبكة
+تعريف الإنجاز: المستخدم يعدّل اسمه وهاتفه ويحفظ
+TASK-023
+
+الفئة: screen implementation
+العنوان: بناء EditProfileScreen مع رفع الصورة
+الهدف: تعديل صورة الملف الشخصي
+الملفات المُعدَّلة:
+lib/features/profile/presentation/screens/edit_profile_screen.dart (أو account)
+خطوات التنفيذ:
+عرض الصورة الحالية (CachedNetworkImage) أو placeholder
+زر تغيير الصورة → image_picker (كاميرا أو معرض)
+ضغط حفظ → AccountCubit.uploadPhoto(File) → POST /api/profile/upload-photo
+تحديث UserSession بعد نجاح الرفع
+عرض مؤشر تحميل أثناء الرفع
+تعريف الإنجاز: المستخدم يغير صورته وتُحفظ
+TASK-024
+
+الفئة: screen implementation
+العنوان: بناء PaymentMethodsScreen الحقيقية
+الهدف: عرض وحذف وسائل الدفع الحقيقية
+الملفات المُعدَّلة:
+lib/features/profile/presentation/screens/payment_methods_screen.dart
+خطوات التنفيذ:
+AccountCubit.loadPaymentMethods() → GET /api/account/payment-methods
+عرض قائمة بطاقات (آخر 4 أرقام، نوع البطاقة، تاريخ الانتهاء)
+حذف بطاقة: تأكيد dialog → AccountCubit.deletePaymentMethod(id)
+إضافة بطاقة → يُفتح PaymentMethodScreen من تدفق Stripe
+تعريف الإنجاز: المستخدم يرى بطاقاته الحقيقية ويحذف منها
+TASK-025
+
+الفئة: screen implementation
+العنوان: بناء KycVerificationScreen الكاملة
+الهدف: تحميل وثائق التحقق من الهوية
+الملفات المُعدَّلة:
+lib/features/profile/presentation/screens/kyc_verification_screen.dart
+خطوات التنفيذ:
+عرض حالة KYC الحالية (من AccountService.getProfile())
+نموذج تحميل: وثيقة الهوية الأمامية + الخلفية
+استخدام image_picker للالتقاط
+رفع عبر POST /api/files/upload أو POST /api/files/upload-multiple
+تحديث حالة KYC في الـ backend
+تعريف الإنجاز: المستخدم يحمّل وثائقه وتُقبَل
+TASK-026
+
+الفئة: screen implementation
+العنوان: بناء ChangePasswordScreen الحقيقية
+الهدف: تغيير كلمة المرور عبر Clerk
+الملفات المُعدَّلة:
+lib/features/profile/presentation/screens/change_password_screen.dart
+خطوات التنفيذ:
+نموذج: كلمة المرور الحالية، الجديدة، تأكيد الجديدة
+validation: طول ≥8، تطابق الحقلين
+ClerkService لا تدعم تغيير كلمة المرور من جهة العميل مباشرة — استخدام PUT /users/{userId} عبر Backend API مع secret key
+عند النجاح: رسالة تأكيد + تسجيل خروج اختياري
+تعريف الإنجاز: المستخدم يغيّر كلمة مروره
+المرحلة 3 — لوحة المضيف
+TASK-030
+
+الفئة: screen implementation
+العنوان: إكمال معالج إنشاء القائمة — الخطوات 6-10
+الهدف: إضافة خطوات الوصف والصور والتسعير والخصومات وقواعد المنزل
+الملفات المُنشأة:
+lib/features/host/presentation/screens/wizard/description_step_screen.dart
+lib/features/host/presentation/screens/wizard/photos_step_screen.dart
+lib/features/host/presentation/screens/wizard/pricing_step_screen.dart
+lib/features/host/presentation/screens/wizard/discounts_step_screen.dart
+lib/features/host/presentation/screens/wizard/house_rules_step_screen.dart
+خطوات التنفيذ (لكل خطوة):
+DescriptionStep: حقل عنوان (max 50 char) + نص وصف (max 500 char) + validation
+PhotosStep: image_picker متعدد + رفع POST /api/files/upload-multiple + إعادة ترتيب
+PricingStep: حقل السعر (الحد الأدنى 1000) + رسوم تنظيف + تقييم النجوم (1-5)
+DiscountsStep: خصم أسبوعي% + شهري% + قائمة جديدة%
+HouseRulesStep: وقت الدخول/الخروج + min/max ليالٍ + حيوانات + تدخين + حفلات
+تعريف الإنجاز: كل خطوة تحفظ بياناتها في state موحّد للمعالج
+TASK-031
+
+الفئة: screen implementation
+العنوان: إكمال معالج القائمة — الخطوات 11-13 وإرسال نهائي
+الهدف: سياسة الإلغاء + القانوني + الوثائق + إرسال القائمة للـ API
+الملفات المُنشأة:
+lib/features/host/presentation/screens/wizard/cancellation_policy_step_screen.dart
+lib/features/host/presentation/screens/wizard/legal_step_screen.dart
+lib/features/host/presentation/screens/wizard/documents_step_screen.dart
+خطوات التنفيذ:
+CancellationPolicyStep: اختيار FLEXIBLE/MODERATE/STRICT + ساعات/أيام إلغاء مجاني
+LegalStep: موافقة على الشروط (Checkbox + رابط)
+DocumentsStep: تحميل هوية + وثائق ضريبية اختياري
+الإرسال النهائي: POST /api/properties مع كامل البيانات المجمّعة
+عند النجاح: انتقال لـ HostDashboardScreen + رسالة "قيد المراجعة"
+تعريف الإنجاز: المضيف ينشئ قائمة كاملة
+TASK-032
+
+الفئة: screen implementation
+العنوان: بناء HostBookingsScreen (الحجوزات الواردة)
+الهدف: المضيف يرى حجوزات عقاراته ويديرها
+الملفات المُنشأة:
+lib/features/host/presentation/screens/host_bookings_screen.dart
+خطوات التنفيذ:
+GET /api/bookings?role=host&status=PENDING|CONFIRMED|COMPLETED
+قائمة بطاقات: اسم الضيف، العقار، التواريخ، الحالة، المبلغ
+فلاتر: كل، قادمة، ماضية، مُلغاة
+الضغط على حجز → تفاصيل + إمكانية الإلغاء (POST /booking-manager/{id}/cancel)
+تعريف الإنجاز: المضيف يرى ويدير حجوزاته
+TASK-033
+
+الفئة: screen implementation
+العنوان: بناء HostReviewsScreen
+الهدف: المضيف يرى تقييمات ضيوفه
+الملفات المُنشأة:
+lib/features/host/presentation/screens/host_reviews_screen.dart
+خطوات التنفيذ:
+GET /api/ratings/property/{propertyId} لكل عقار مضيف
+عرض: التقييم، اسم الضيف، التعليق، التاريخ، أبعاد التقييم
+ملخص إجمالي (متوسط التقييم، التوزيع)
+تعريف الإنجاز: المضيف يرى تقييمات ضيوفه
+المرحلة 4 — الملف الشخصي والرحلات
+TASK-040
+
+الفئة: screen implementation
+العنوان: إضافة إلغاء الحجز إلى TripsScreen
+الهدف: الضيف يلغي حجزاً من قائمة رحلاته
+الملفات المُعدَّلة:
+lib/features/trips/presentation/screens/trips_screen.dart
+lib/features/trips/presentation/screens/trip_details_screen.dart
+خطوات التنفيذ:
+إضافة زر "إلغاء" في TripDetailsScreen (مشروط: الحالة PENDING أو CONFIRMED)
+dialog تأكيد الإلغاء مع عرض سياسة الاسترداد
+POST /booking-manager/{id}/cancel
+تحديث الحالة في الـ UI
+تعريف الإنجاز: الضيف يلغي حجزاً
+TASK-041
+
+الفئة: screen implementation
+العنوان: إضافة تقديم مراجعة بعد الإقامة
+الهدف: الضيف يُقيّم العقار من صفحة رحلاته المكتملة
+الملفات المُنشأة:
+lib/features/trips/presentation/widgets/review_modal.dart
+الملفات المُعدَّلة:
+lib/features/trips/presentation/screens/trip_details_screen.dart
+lib/core/services/ratings_service.dart
+خطوات التنفيذ:
+في TripDetailsScreen: زر "اكتب مراجعة" يظهر إذا: status=COMPLETED وlastReviewDate=null
+Bottom Sheet: تقييم نجوم إجمالي + تقييمات الأبعاد (6 أبعاد) + نص تعليق
+RatingsService.submitReview(propertyId, bookingId, rating, comment, dimensions)
+POST /api/ratings/property-by-guest
+إخفاء زر المراجعة بعد الإرسال
+تعريف الإنجاز: الضيف يكتب مراجعة بعد إقامته
+TASK-042
+
+الفئة: screen implementation
+العنوان: بناء WishlistsScreen الكاملة
+الهدف: المستخدم يرى عقاراته المحفوظة وينظمها
+الملفات المُعدَّلة:
+lib/features/favorites/presentation/screens/wishlists_screen.dart
+خطوات التنفيذ:
+GET /users/{userId}/favorites
+عرض شبكة عقارات محفوظة (PropertyCard مع زر إزالة)
+حالة فارغة مناسبة
+الضغط على عقار → PropertyDetailsScreen
+الضغط على قلب → إزالة من المفضلة (FavoritesCubit.toggleFavorite)
+تعريف الإنجاز: المستخدم يرى عقاراته المحفوظة ويحذف منها
+المرحلة 5 — البحث والاكتشاف
+TASK-050
+
+الفئة: screen implementation
+العنوان: بناء RecommendationsScreen حقيقياً
+الهدف: استبدال "قريباً" بعقارات موصى بها من الـ API
+الملفات المُعدَّلة:
+lib/features/recommendations/presentation/screens/recommendations_screen.dart
+خطوات التنفيذ:
+استخدام PropertyService.getProperties() مع فرز بالتقييم أو الأحدث
+قسمين: "عقارات مميزة" + "وجهات شائعة"
+"الوجهات الشائعة": قائمة من CountryService أو hardcoded مع صور من الـ API
+بطاقة عقار قابلة للنقر → PropertyDetailsScreen
+تعريف الإنجاز: الشاشة تعرض عقارات حقيقية لا placeholder
+TASK-051
+
+الفئة: API wiring
+العنوان: توحيد PropertiesCubit للبحث المتقدم
+الهدف: PropertiesCubit يدعم كل فلاتر البحث مع Pagination
+الملفات المُعدَّلة:
+lib/features/properties/presentation/cubit/properties_cubit.dart (أو إنشاؤه)
+خطوات التنفيذ:
+PropertiesState يحمل: properties, filters, page, hasMore, isLoading, isLoadingMore, error
+PropertiesCubit.search(PropertySearchParams) → يبدأ من صفحة 1
+PropertiesCubit.loadMore() → يضيف للقائمة
+PropertiesCubit.applyFilters(filters) → يعيد البحث
+PropertiesCubit.resetFilters() → يعيد لحالة فارغة
+تعريف الإنجاز: البحث المتقدم يعمل مع Pagination صحيح
+المرحلة 6 — الإشعارات وi18n
+TASK-060
+
+الفئة: screen implementation
+العنوان: بناء NotificationsScreen الحقيقية
+الهدف: عرض قائمة إشعارات حقيقية مع تمييز المقروء/غير المقروء
+الملفات المُعدَّلة:
+lib/features/notifications/presentation/screens/notifications_screen.dart
+خطوات التنفيذ:
+FCMService.getNotifications() أو قائمة محلية من FCM token
+عرض: أيقونة نوع + نص + وقت + حالة قراءة
+الضغط يفتح الشاشة المرتبطة (حجز، رسالة، إلخ)
+"تمييز الكل كمقروء" → حذف من badge
+تحديث عداد الإشعارات في BottomNav
+تعريف الإنجاز: المستخدم يرى إشعاراته الحقيقية
+TASK-061
+
+الفئة: foundational
+العنوان: إعداد نظام i18n للعربية والإنجليزية
+الهدف: دعم ثنائي اللغة في التطبيق
+الملفات المُنشأة:
+lib/core/l10n/app_en.arb
+lib/core/l10n/app_ar.arb
+lib/core/l10n/l10n.dart
+الملفات المُعدَّلة:
+pubspec.yaml (إضافة flutter_localizations)
+lib/app.dart (إضافة localizationsDelegates + supportedLocales)
+خطوات التنفيذ:
+إضافة flutter_localizations في pubspec.yaml
+إنشاء ملفات .arb بمفاتيح لكل النصوص في التطبيق
+تفعيل code generation لـ AppLocalizations
+تحديث MaterialApp: localizationsDelegates, supportedLocales
+استبدال النصوص الـ hardcoded بـ context.l10n.keyName تدريجياً
+دعم RTL: TextDirection.rtl عند اللغة العربية
+تعريف الإنجاز: التطبيق يدعم العربية مع RTL
+TASK-062
+
+الفئة: API wiring
+العنوان: تفعيل Google OAuth في AuthCubit
+الهدف: المستخدم يسجل الدخول بحساب Google
+الملفات المُعدَّلة:
+lib/features/auth/presentation/cubit/auth_cubit.dart
+lib/core/services/google_auth_service.dart
+خطوات التنفيذ:
+إلغاء التعليق من signInWithGoogle() في AuthCubit
+تهيئة GoogleAuthService بـ AppConfig.googleClientId
+التحقق من AppConfig.isGoogleSignInConfigured قبل الاستدعاء
+ربط بـ Clerk OAuth عبر Frontend API
+إضافة زر Google في LoginScreen و SignUpScreen
+اختبار التوافق مع Android SHA-1 fingerprint
+تعريف الإنجاز: تسجيل الدخول بـ Google يعمل
+المرحلة 7 — الجودة والصقل
+TASK-070
+
+الفئة: UI system
+العنوان: إضافة خط Readex Pro لدعم العربية بصرياً
+الهدف: توافق بصري مع الويب
+الملفات المُعدَّلة:
+pubspec.yaml
+lib/core/theme/light_theme.dart
+lib/core/theme/dark_theme.dart
+خطوات التنفيذ:
+إضافة google_fonts مع Readex Pro
+تحديث TextTheme في light_theme و dark_theme
+الخط الاحتياطي: Tajawal لدعم عربي أفضل
+تعريف الإنجاز: التطبيق يستخدم Readex Pro مطابقاً للويب
+TASK-071
+
+الفئة: UI system
+العنوان: توحيد حالات Loading/Error/Empty في جميع الشاشات
+الهدف: تجربة متسقة عبر التطبيق
+الملفات المُنشأة:
+lib/shared/widgets/states/app_loading_widget.dart
+lib/shared/widgets/states/app_error_widget.dart
+lib/shared/widgets/states/app_empty_widget.dart
+خطوات التنفيذ:
+AppLoadingWidget: Skeletonizer مع نمط متسق
+AppErrorWidget: أيقونة + نص + زر "إعادة المحاولة" مع callback
+AppEmptyWidget: قابل للتخصيص (أيقونة + عنوان + نص ثانوي + زر اختياري)
+استبدال تطبيقات مختلفة في كل شاشة بهذه الـ widgets
+تعريف الإنجاز: جميع الشاشات تستخدم نفس نمط الحالات
+TASK-072
+
+الفئة: stabilization
+العنوان: إصلاح SplashScreen لمنطق إعادة التوجيه الصحيح
+الهدف: splash يتحقق من session موجود ويوجّه للصفحة المناسبة
+الملفات المُعدَّلة:
+lib/features/splash/presentation/screens/splash_screen.dart
+lib/core/injection/splash_injection.dart
+خطوات التنفيذ:
+SplashScreen تنتظر DI initialization
+تتحقق من UserSession.isLoggedIn
+إذا مسجّل: انتقال لـ Routes.bottomNav
+إذا غير مسجّل: انتقال لـ Routes.onboarding
+إضافة تحميل logo + أنيميشن بسيط
+تعريف الإنجاز: Splash يوجّه المستخدم بشكل صحيح
+10. ترتيب التنفيذ والاعتماديات
+خريطة الاعتماديات
+
+TASK-001 (PropertyModel) ──────────────────► TASK-010 (Booking API)
+                                             ► TASK-015 (Booking Confirmation)
+                                             ► TASK-050 (Recommendations)
+                                             ► TASK-051 (Search Cubit)
+
+TASK-002 (UserModel + BookingModel) ─────────► TASK-010
+                                             ► TASK-032 (Host Bookings)
+                                             ► TASK-040 (Cancel Trip)
+                                             ► TASK-041 (Review)
+
+TASK-003 (ApiResponse) ──────────────────────► كل مهام الـ API
+
+TASK-004 (إصلاح التكرار) ────────────────────► TASK-042 (Wishlists)
+
+TASK-005 (SearchParams) ─────────────────────► TASK-051 (Search Cubit)
+
+TASK-010 (Create Booking) ───────────────────► TASK-011 (Payment Method Screen)
+
+TASK-011 (Payment Method Screen) ────────────► TASK-012 (PayPal)
+                                             ► TASK-013 (Stripe)
+                                             ► TASK-014 (SADAD)
+
+TASK-012/013/014 (Payment Flows) ────────────► TASK-015 (Confirmation Screen)
+
+TASK-020 (AccountService) ───────────────────► TASK-021 (AccountCubit)
+                                             ► TASK-022-026 (Account Screens)
+
+TASK-030 (Wizard Steps 6-10) ────────────────► TASK-031 (Wizard Steps 11-13)
+
+TASK-061 (i18n) ─────────────────────────────► TASK-070 (Readex Pro)
+                                             ► TASK-071 (UI States)
+أول 10 مهام آمنة للبدء (بالترتيب الموصى به)
+الترتيب	المهمة	السبب
+1	TASK-001 — PropertyModel	أساس كل شيء، لا كسر للـ UI الحالي
+2	TASK-002 — UserModel + BookingModel	مكمّل لـ 001، مستقل
+3	TASK-003 — ApiResponse غلاف	يُحسّن معالجة الأخطاء فوراً
+4	TASK-072 — SplashScreen Fix	بسيط، يُصلح مشكلة navigation واضحة
+5	TASK-004 — توحيد المفضلة	يزيل bug موجود، تغيير محدود
+6	TASK-005 — SearchParams	يُصلح بحثاً معطوباً، تغيير محدود
+7	TASK-020 — AccountService	يُنشئ بنية تحتية لـ 6+ مهام
+8	TASK-021 — AccountCubit	يعتمد على 020 مباشرة
+9	TASK-010 — Create Booking API	يكمل حلقة الحجز المنقطعة
+10	TASK-011 — PaymentMethodScreen	يعتمد على 010، يفتح تدفق الدفع
+لماذا هذه العشرة أولاً؟
+
+المهام 1-3 تُنشئ الأساس البيانات الآمن الذي يحمي باقي المهام
+TASK-072 إصلاح سريع بدون مخاطر
+TASK-004 و TASK-005 إصلاحات للأعطال الموجودة
+TASK-020+021 تُنشئ البنية التحتية لـ 6 شاشات حساب
+TASK-010+011 تفتح أهم مسار تجاري (الدفع)
+11. خطة الإصلاح والتثبيت
+الأعطال الحرجة الواجبة الإصلاح قبل أي ميزة جديدة
+1. صمت الأخطاء في الخدمات (Silent Failures)
+المشكلة: catch(_) { return []; } في جميع Services يخفي الأخطاء الحقيقية
+
+التأثير: المستخدم يرى قائمة فارغة بدلاً من رسالة خطأ، يستحيل تشخيص المشاكل
+
+الإصلاح: رمي AppException بدلاً من الإرجاع الصامت، معالجة في Cubit
+
+2. SplashInjection فارغة
+المشكلة: initSplash() لا تفعل شيئاً، SplashScreen بلا منطق
+
+التأثير: التطبيق يبدأ دائماً من BottomNav بدون فحص session
+
+الإصلاح: TASK-072
+
+3. Google OAuth معطّل
+المشكلة: GoogleAuthService موجود لكن مُعلَّق
+
+التأثير: مستخدمو Google لا يستطيعون تسجيل الدخول
+
+الإصلاح: TASK-062
+
+4. SearchPropertiesScreen لا ترسل الفلاتر
+المشكلة: الفلاتر في الـ UI لكنها لا تُرسَل للـ API
+
+التأثير: البحث المتقدم غير وظيفي
+
+الإصلاح: TASK-005
+
+5. تكرار منطق المفضلة
+المشكلة: نفس الكود في 3 أماكن
+
+التأثير: تحديث في مكان لا يعكسه مكان آخر
+
+الإصلاح: TASK-004
+
+6. PaymentMethodScreen لا تتصل بالـ API
+المشكلة: الخدمات موجودة لكن الـ UI لا يستدعيها
+
+التأثير: لا يمكن إتمام أي حجز
+
+الإصلاح: TASK-011 → TASK-012/013/014
+
+7. نماذج بيانات غير مكتوبة
+المشكلة: Map<String, dynamic> في كل مكان
+
+التأثير: كسر صامت عند تغيير مفتاح API، لا compile-time safety
+
+الإصلاح: TASK-001 → TASK-002
+
+12. استراتيجية التطابق البصري والوظيفي
+ما يجب أن يبقى قريباً جداً من الويب
+1. نظام الألوان:
+
+Primary: #FCC519 — يبدو أن Flutter يستخدمه ✅
+Dark text: #1D242B ✅
+Gray shades: #9CA3AF, #6B7280, #E5E7EB ✅
+الإجراء: مراجعة AppColors والتأكد من تطابق دقيق
+2. نمط بطاقة العقار:
+
+صورة 200px، shadow خفيف، radius-16
+ترتيب: نجمة+تقييم → عنوان → موقع → سعر
+الإجراء: Flutter لديه property_card_v2.dart — مراجعة وتوحيد
+3. شريط البحث:
+
+4 حقول مضغوطة: أين / دخول / خروج / ضيوف
+زر بحث دائري ذهبي
+الإجراء: تم بناؤه في HomeScreen — يبدو متطابقاً ✅
+4. تدفق الحجز:
+
+نفس الخطوات: تواريخ → ضيوف → تأكيد → دفع → نجاح
+الإجراء: إكمال حسب TASK-010 إلى TASK-015
+5. نظام التقييمات:
+
+أبعاد 6: نظافة، دقة، تواصل، موقع، تسجيل دخول، قيمة
+الإجراء: عند بناء ReviewModal تحترم هذه الأبعاد
+ما يجب تكييفه للموبايل
+1. التصفح والاكتشاف:
+
+الويب: شبكة 3-4 أعمدة
+موبايل: قائمة عمود واحد أو شبكة 2 أعمدة (اختبر أيهما أفضل UX)
+2. الفلاتر:
+
+الويب: فلاتر جانبية
+موبايل: Bottom Sheet مع "تطبيق" و"إعادة ضبط" ✅ (موجود بالفعل)
+3. الخريطة:
+
+الويب: inline في الصفحة
+موبايل: زر "عرض الخريطة" يفتح شاشة كاملة ✅ (موجود)
+4. معالج القائمة:
+
+الويب: wizard صفحات
+موبايل: wizard بـ PageView مع progress indicator في الأعلى
+5. لوحة المضيف:
+
+الويب: sidebar navigation
+موبايل: Tabs أو Bottom Navigation منفصل عند فتح Host Mode
+6. إعدادات الحساب:
+
+الويب: تحرير inline
+موبايل: نوافذ منفصلة لكل إعداد (أكثر طبيعية للموبايل)
+ما لا يجب نسخه حرفياً
+1. SEO و JSON-LD: غير قابل للتطبيق على موبايل، بدلاً منه: Open Graph للمشاركة
+
+2. Newsletter Signup: موبايل يكتفي بـ Push Notifications
+
+3. Intercom/Zendesk Widgets: يستبدل بـ in-app contact form أو deep link
+
+4. Analytics Vercel: يستبدل بـ Firebase Analytics
+
+5. ISR (Incremental Static Regeneration): غير موجود في موبايل، يستبدل بـ caching strategy
+
+13. استراتيجية إعادة استخدام الـ API
+المبدأ العام
+الـ Flutter تتصل بنفس endpoints الـ backend تماماً. لا تتصل بـ Next.js API routes، بل مباشرة بالـ backend.
+
+تفسير هام مُستخرج من الكود:
+
+الويب يستخدم Next.js API Routes (/api/bookings, /api/properties إلخ) كـ proxy أو BFF (Backend for Frontend)
+هذه الـ routes تستدعي بدورها backend أصلي على Railway
+Flutter يتجاوز Next.js وتتصل مباشرة بالـ backend
+أمثلة على الفرق:
+
+الويب يتصل بـ	Flutter تتصل بـ
+POST /api/bookings (Next.js)	POST /booking-manager (Backend مباشر)
+GET /api/favorites (Next.js)	GET /users/{id}/favorites (Backend)
+GET /api/property-search (Next.js proxy)	GET /api/property-search (نفس endpoint)
+معالجة فروق الـ API
+1. الفروق في مسار نقاط الـ API:
+
+المُؤكَّد: Flutter تستخدم /booking-manager لكن الويب يستخدم /api/bookings — هذا لأن الويب يستخدم Next.js API Routes كـ proxy. نفس الـ backend endpoint.
+
+2. Authentication:
+
+الويب: يمرر Clerk session token كـ Bearer في Header
+Flutter: يمرر clerk_user_id كـ path/query parameter
+الحل: تحديث AppInterceptors لإضافة header إذا اكتُشف أن الـ backend يحتاجه
+3. Pagination:
+
+الويب يرسل: ?page=1&limit=20
+
+Flutter ترسل نفس الشيء ✅
+
+4. الفلاتر:
+
+
+الويب: ?location=X&guests=X&minPrice=X&maxPrice=X&propertyType=X
+Flutter: نفس Query Params يجب إرسالها في PropertySearchParams
+5. الصور:
+
+الويب يرفع لـ S3/Cloudinary عبر Next.js routes
+Flutter ترفع مباشرة لـ /api/files/upload على الـ backend ✅ (EndPoints موجود)
+6. Socket.IO:
+
+الويب يتصل بـ custom server على Railway
+Flutter تتصل بـ نفس Socket.IO URL عبر SocketService ✅
+طريقة إرسال Headers
+
+// في DioConsumer أو AppInterceptors
+options.headers['Authorization'] = 'Bearer ${userSession.sessionId}';
+options.headers['lang'] = Localizations.localeOf(context).languageCode;
+14. خطة الاختبار وQA
+المسارات السعيدة (Happy Paths)
+التدفق	خطوات الاختبار
+تسجيل الدخول	بريد + كلمة مرور → OTP → الرئيسية
+تسجيل مستخدم جديد	نموذج → تحقق البريد → الرئيسية
+بحث + حجز	بحث عقار → تفاصيل → تواريخ → ضيوف → دفع → تأكيد
+المفضلة	إضافة عقار → ظهور في قائمة الرغبات
+مراسلة مضيف	تفاصيل عقار → "راسل المضيف" → محادثة
+إلغاء حجز	رحلاتي → الحجز → إلغاء → تأكيد
+إنشاء قائمة	13 خطوة → إرسال → ظهور في لوحة المضيف
+حالات الحافة
+الموقف	التوقع
+انقطاع الشبكة أثناء الدفع	رسالة خطأ واضحة + إمكانية إعادة المحاولة
+انتهاء جلسة Clerk	إعادة توجيه لتسجيل الدخول
+عقار غير متاح في التواريخ المختارة	رسالة واضحة + تعطيل تلك التواريخ
+حجم صورة كبير (>5MB)	رسالة تحذير + ضغط تلقائي
+قائمة فارغة من الـ API	Empty State widget مع نص مناسب
+استجابة API بطيئة (>3 ثواني)	Skeleton loader
+تاريخ تسجيل خروج قبل الدخول	منع التحديد + رسالة توضيحية
+اختبارات المصادقة
+تسجيل دخول بيانات خاطئة → رسالة خطأ واضحة
+تسجيل مستخدم بريد موجود → رسالة "البريد مستخدم"
+OTP منتهي الصلاحية → طلب إعادة إرسال
+2FA مع strategy مختلفة (TOTP/Email/Phone)
+Apple Sign-in على iOS
+Google Sign-in بعد TASK-062
+اختبارات الحالات
+الحالة	كيفية الاختبار
+Loading	تقليل سرعة الشبكة في dev tools
+Error	تعطيل الـ API مؤقتاً
+Empty	استخدام حساب جديد بلا بيانات
+Pagination	تمرير لنهاية قائمة طويلة
+Offline	تفعيل وضع الطيران
+اختبارات الأجهزة
+الجهاز	ما يجب فحصه
+Android صغير (360px)	لا قطع في النصوص، لا overflow
+Android كبير (412px)	مساحة استخدام جيدة
+iPhone SE (375px)	Bottom Nav لا يغطي المحتوى
+iPhone 14 Pro (393px)	Dynamic Island لا تتعارض
+Tablet (720px+)	شبكة عمودين بدلاً من واحد
+التحقق من عقود الـ API
+لكل endpoint رئيسي:
+
+ المعاملات المطلوبة موجودة جميعها
+ أنواع البيانات متطابقة مع الـ backend
+ معالجة status codes: 200, 400, 401, 403, 404, 500
+ الـ pagination parameters مُرسَلة وتُحترَم
+15. المخاطر والافتراضات والمجهولات
+حقائق مُؤكَّدة (من الكود)
+✅ PropertyService/UserService/ChatService موجودة وتعمل جزئياً
+✅ Clerk auth مكتمل مع multi-factor
+✅ Socket.IO للدردشة يعمل
+✅ FCM مُهيَّأ لكنه لم يُختبَر على production
+✅ Flutter يستخدم نفس endpoints الـ backend مباشرة
+✅ PaymentService مُنشأ مع Stripe/PayPal/SADAD
+افتراضات (تحتاج تأكيداً)
+⚠️ الـ backend يقبل نفس طريقة المصادقة من Flutter وWeb: قد يختلف طريقة تمرير Clerk token
+⚠️ بوابة SADAD متاحة في بيئة dev: قد تحتاج credentials خاصة
+⚠️ Stripe Key محدّد في بيئة dev: لم يُؤكَّد وجود test key
+⚠️ Socket.IO URL للـ Flutter هو نفسه للويب: يحتاج تأكيد من AppConfig
+⚠️ backend يدعم CORS لطلبات Flutter: من الأرجح نعم لكن غير مؤكد
+⚠️ PayPal يدعم Mobile WebView redirects: قد يحتاج deep links مخصصة
+مجهولات (تحتاج استكشافاً)
+❓ هل الـ backend يتحقق من Clerk session token في الـ header أم user ID في الـ path فقط؟
+❓ ما هو SADAD test environment URL وبياناته؟
+❓ هل PayPal Capture تعمل مع mobile redirect URL؟
+❓ ما هو مخطط push notifications payloads من الـ backend؟
+❓ هل يوجد rate limiting على الـ API يؤثر على الـ Flutter app؟
+❓ هل معالج القائمة يدعم draft saving بدون إرسال كامل؟
+❓ ما هو حجم الصور المسموح برفعه في /api/files/upload؟
+المخاطر وخطط التخفيف
+الخطر	الاحتمال	التأثير	الحل المقترح
+SADAD لا يعمل مع WebView	متوسط	عالٍ	استخدام Custom Tabs أو deep link
+Clerk session ينتهي أثناء الاستخدام	عالٍ	عالٍ	إضافة token refresh logic في AppInterceptors
+Google OAuth يحتاج SHA-1 configuration	عالٍ	متوسط	توثيق setup لكل بيئة
+تغيير مفاتيح API الـ backend	منخفض	عالٍ	النماذج المكتوبة تحمي من هذا
+حجم معالج القائمة (13 خطوة) كبير	متوسط	متوسط	استخدام PageView مع state محلي
+i18n يكسر existing tests	منخفض	منخفض	استبدال تدريجي
+16. توقع تأثير الملفات
+المرحلة 0 (الإصلاح)
+ملفات جديدة:
+
+
+lib/core/models/property/property_model.dart
+lib/core/models/property/property_summary.dart
+lib/core/models/user/user_model.dart
+lib/core/models/booking/booking_model.dart
+lib/core/models/booking/booking_summary.dart
+lib/core/models/review/review_model.dart
+lib/core/models/common/api_response.dart
+lib/core/models/common/pagination_model.dart
+ملفات محدَّثة:
+
+
+lib/core/services/property_service.dart
+lib/core/services/user_service.dart
+lib/features/home/presentation/screens/home_screen.dart
+lib/features/favorites/presentation/screens/favorites_screen.dart
+lib/features/favorites/presentation/cubit/favorites_cubit.dart
+lib/features/splash/presentation/screens/splash_screen.dart
+lib/core/injection/splash_injection.dart
+المرحلة 1 (الدفع)
+ملفات جديدة:
+
+
+lib/features/booking/presentation/cubit/payment_cubit.dart
+lib/features/booking/presentation/cubit/payment_state.dart
+lib/features/booking/presentation/screens/paypal_webview_screen.dart
+lib/features/booking/presentation/screens/sadad_payment_screen.dart
+ملفات محدَّثة:
+
+
+lib/core/network/api/end_points.dart
+lib/core/services/paypal_payment_service.dart
+lib/core/services/stripe_payment_service.dart
+lib/core/services/payment_service.dart
+lib/features/booking/presentation/screens/booking_request_screen.dart
+lib/features/booking/presentation/screens/payment_method_screen.dart
+lib/features/booking/presentation/screens/booking_confirmation_screen.dart
+lib/core/constants/routes/routes.dart
+lib/core/constants/routes/app_routes.dart
+المرحلة 2 (الحساب)
+ملفات جديدة:
+
+
+lib/core/services/account_service.dart
+lib/core/injection/account_injection.dart
+lib/features/account/presentation/cubit/account_cubit.dart
+lib/features/account/presentation/cubit/account_state.dart
+ملفات محدَّثة:
+
+
+lib/features/profile/presentation/screens/personal_information_screen.dart
+lib/features/profile/presentation/screens/kyc_verification_screen.dart
+lib/features/profile/presentation/screens/change_password_screen.dart
+lib/features/profile/presentation/screens/payment_methods_screen.dart
+lib/features/profile/presentation/screens/notification_settings_screen.dart
+lib/features/profile/presentation/screens/privacy_settings_screen.dart
+lib/core/injection/injection_container.dart
+المرحلة 3 (المضيف)
+ملفات جديدة:
+
+
+lib/features/host/presentation/screens/wizard/description_step_screen.dart
+lib/features/host/presentation/screens/wizard/photos_step_screen.dart
+lib/features/host/presentation/screens/wizard/pricing_step_screen.dart
+lib/features/host/presentation/screens/wizard/discounts_step_screen.dart
+lib/features/host/presentation/screens/wizard/house_rules_step_screen.dart
+lib/features/host/presentation/screens/wizard/cancellation_policy_step_screen.dart
+lib/features/host/presentation/screens/wizard/legal_step_screen.dart
+lib/features/host/presentation/screens/wizard/documents_step_screen.dart
+lib/features/host/presentation/screens/host_bookings_screen.dart
+lib/features/host/presentation/screens/host_reviews_screen.dart
+المرحلة 6 (i18n)
+ملفات جديدة:
+
+
+lib/core/l10n/app_en.arb
+lib/core/l10n/app_ar.arb
+lib/core/l10n/l10n.dart
+ملفات محدَّثة:
+
+
+pubspec.yaml
+lib/app.dart
+كل شاشة تُستبدل فيها النصوص الـ hardcoded (متدرّج)
+17. نقطة البداية الموصى بها
+الخطوة الفعلية الأولى: أجرِ هذه المهام الخمس
+اليوم 1:
+
+TASK-001 — إنشاء property_model.dart مع fromJson يدعم مفاتيح متعددة
+
+→ هذا وحده يحمي 80% من شاشات الـ Flutter من الكسر المستقبلي
+
+TASK-072 — إصلاح SplashScreen
+
+→ إصلاح سريع (30 دقيقة)، يُصلح مشكلة navigation حقيقية
+
+اليوم 2:
+3. TASK-002 — UserModel + BookingModel
+
+4. TASK-003 — ApiResponse wrapper
+
+اليوم 3:
+5. TASK-004 — توحيد منطق المفضلة
+
+6. TASK-005 — إصلاح SearchPropertiesScreen
+
+بعدها مباشرة:
+
+ابدأ TASK-010 لأنه يفتح أهم مسار تجاري في التطبيق (الحجز والدفع).
+
+18. قالب جاهز لتس
+18. قالب جاهز لتسليم Task منفردة لاحقًا
+
+نفّذ TASK-[XXX] فقط.
+
+المهمة: [عنوان المهمة]
+
+ممنوع الخروج عن نطاق المهمة.
+ممنوع تعديل أي ملف خارج Flutter.
+ممنوع تغيير الـ API أو الـ backend.
+ممنوع إعادة كتابة ملفات غير مذكورة في قائمة "الملفات المتأثرة".
+
+الاعتماديات المطلوبة أولاً:
+- [TASK-XXX يجب أن تكون مكتملة]
+
+الملفات المتأثرة:
+- إنشاء: [قائمة]
+- تعديل: [قائمة]
+
+خطوات التنفيذ:
+1. [خطوة واضحة ومحددة]
+2. [خطوة واضحة ومحددة]
+...
+
+حالات الحافة التي يجب مراعاتها:
+- [حالة]
+
+في النهاية أعطني:
+1) ملخص ما تم
+2) الملفات التي تم إنشاؤها أو تعديلها
+3) سبب صحة التنفيذ
+4) أي مخاطر أو ملاحظات متبقية
+أمثلة جاهزة للاستخدام الفوري
+لتنفيذ TASK-001:
+
+
+نفّذ TASK-001 فقط.
+
+المهمة: إنشاء نموذج بيانات Property المكتوب
+
+ممنوع الخروج عن نطاق المهمة.
+ممنوع تعديل أي ملف خارج Flutter.
+ممنوع تغيير الـ API أو الـ backend.
+
+الاعتماديات: لا يوجد
+
+الملفات المتأثرة:
+- إنشاء: lib/core/models/property/property_model.dart
+- إنشاء: lib/core/models/property/property_summary.dart
+- إنشاء: lib/core/models/property/property_host_model.dart
+- تعديل: lib/core/services/property_service.dart
+
+خطوات التنفيذ:
+1. إنشاء PropertyModel بحقول: id, title, description, propertyType, pricePerNight, cleaningFee, photos (List<String>), amenities (List<String>), bedrooms, bathrooms, maxGuests, rating (double), reviewsCount, city (Map), country (Map), latitude, longitude, status, host (PropertyHostModel)
+2. fromJson يدعم مفاتيح بديلة: id أو propertyId، rating أو averageRating أو ratingAverage، photos أو images أو coverPhoto
+3. إنشاء PropertySummary بالحقول الأساسية فقط (للقوائم)
+4. إنشاء PropertyHostModel: id, firstName, lastName, profilePhoto, rating
+5. تحديث PropertyService.getProperties() ليرجع List<PropertySummary>
+6. تحديث PropertyService.getPropertyById() ليرجع PropertyModel
+
+حالات الحافة:
+- photos قد تكون List<String> أو List<Map> أو String واحدة
+- rating قد تكون int أو double أو null
+- city قد يكون Map أو String
+
+في النهاية أعطني:
+1) ملخص ما تم
+2) الملفات التي تم إنشاؤها أو تعديلها
+3) سبب صحة التنفيذ
+4) أي مخاطر أو ملاحظات متبقية
+لتنفيذ TASK-010:
+
+
+نفّذ TASK-010 فقط.
+
+المهمة: ربط BookingRequestScreen بـ API إنشاء الحجز
+
+ممنوع الخروج عن نطاق المهمة.
+ممنوع تعديل أي ملف خارج Flutter.
+
+الاعتماديات المطلوبة أولاً:
+- TASK-001 (PropertyModel) يجب أن تكون مكتملة
+- TASK-002 (BookingModel) يجب أن تكون مكتملة
+
+الملفات المتأثرة:
+- تعديل: lib/features/booking/presentation/screens/booking_request_screen.dart
+- تعديل: lib/core/services/user_service.dart
+- تعديل: lib/core/network/api/end_points.dart (التحقق من وجود createBooking)
+
+خطوات التنفيذ:
+1. التحقق من أن EndPoints.createBooking = '/booking-manager' موجود
+2. تحديث UserService.createBooking() ليرجع BookingModel بدلاً من Map
+3. في BookingRequestScreen: عند الضغط على تأكيد، استدعاء createBooking مع propertyId, checkIn, checkOut, guests, totalPrice
+4. إضافة loading state أثناء الإرسال
+5. عند النجاح: Navigator.pushNamed(Routes.paymentMethod) مع bookingId و totalAmount كـ arguments
+6. عند الفشل: عرض رسالة خطأ واضحة (ليس الإرجاع الصامت)
+7. حالة: المستخدم غير مسجّل → توجيهه لتسجيل الدخول
+
+حالات الحافة:
+- التواريخ قد تكون محجوزة (API يرجع 400/409)
+- العقار غير متاح (API يرجع 404)
+- انقطاع الشبكة أثناء الإرسال
+
+في النهاية أعطني:
+1) ملخص ما تم
+2) الملفات التي تم إنشاؤها أو تعديلها
+3) سبب صحة التنفيذ
+4) أي مخاطر أو ملاحظات متبقية
+جدول الأولويات الإجمالي للرجوع إليه
+الأولوية	المهمة	المرحلة	النوع
+🔴 حرجة	TASK-001	0	Foundation
+🔴 حرجة	TASK-002	0	Foundation
+🔴 حرجة	TASK-010	1	API Wiring
+🔴 حرجة	TASK-011	1	Screen
+🔴 حرجة	TASK-012	1	API Wiring
+🔴 حرجة	TASK-013	1	API Wiring
+🟠 عالية	TASK-003	0	Foundation
+🟠 عالية	TASK-004	0	Bug Fix
+🟠 عالية	TASK-005	0	Bug Fix
+🟠 عالية	TASK-020	2	Foundation
+🟠 عالية	TASK-021	2	Foundation
+🟠 عالية	TASK-022-026	2	Screens
+🟠 عالية	TASK-030-031	3	Screens
+🟠 عالية	TASK-040-042	4	Screens
+🟡 متوسطة	TASK-014	1	Screen (SADAD)
+🟡 متوسطة	TASK-060	6	Screen
+🟡 متوسطة	TASK-061	6	Foundation
+🟡 متوسطة	TASK-062	6	API Wiring
+🟢 منخفضة	TASK-070	7	UI System
+🟢 منخفضة	TASK-071	7	UI System
+🟢 منخفضة	TASK-072	7	Bug Fix

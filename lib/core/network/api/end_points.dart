@@ -1,0 +1,109 @@
+import 'package:houseiana_mobile_app/core/config/app_config.dart';
+
+class EndPoints {
+  EndPoints._();
+
+  // Base URL — pulled from AppConfig per environment.
+  static String get baseUrl => AppConfig.backendApiUrl;
+
+  // ── Auth ────────────────────────────────────────────────────────────────────
+  // POST /api/auth/login                → backend session sync (Bearer token required)
+  static const String authLogin = '/api/auth/login';
+  // GET  /api/auth/version-check?version={v}&platform={IOS|ANDROID}
+  // Force-update gate. Response: { success, data: { forceUpdate: bool, updateUrl: String } }
+  static const String versionCheck = '/api/auth/version-check';
+
+  // ── Properties ──────────────────────────────────────────────────────────────
+  // GET  /api/property-search           → search / list properties
+  // GET  /api/property-search/{id}      → single property details
+  // GET  /api/property-search/{id}/availability
+  // GET  /api/property-search/{id}/booked-dates
+  static const String propertySearch = '/api/property-search';
+  static String propertyDetails(String id) => '/api/property-search/$id';
+  static String propertyAvailability(String id) =>
+      '/api/property-search/$id/availability';
+  static String propertyBookedDates(String id) =>
+      '/api/property-search/$id/booked-dates';
+  // GET /api/property-search/{id}/nightly-prices?page={n}  → ~1 month of prices per page
+  static String propertyNightlyPrices(String id) =>
+      '/api/property-search/$id/nightly-prices';
+
+  // ── Users ───────────────────────────────────────────────────────────────────
+  // GET  /users/{id}                    → get user profile
+  // POST /users/{id}/profile            → update user profile (multipart)
+  // POST /users/favorites               → add / remove favorite
+  // GET  /users/{userId}/favorites      → list user favorites
+  // GET  /users/{userId}/user-trips     → get trips (query: status)
+  // POST /users/{userId}/passport       → add/update passport
+  // GET  /users/{userId}/passport       → get passport
+  // POST /users/address                 → add/update address
+  // GET  /users/{userId}/address        → get address
+  // POST /users/{userId}/emergency-contact
+  // GET  /users/{userId}/emergency-contact
+  static String userById(String id) => '/users/$id';
+  static String updateUserProfile(String id) => '/users/$id/profile';
+  // POST /users/delete-account         → permanently delete account (body: { userId })
+  static const String deleteAccount = '/users/delete-account';
+  static const String favorites = '/users/favorites';
+  static String userFavorites(String userId) => '/users/$userId/favorites';
+  static String userTrips(String userId) => '/users/$userId/user-trips';
+  static String userPassport(String userId) => '/users/$userId/passport';
+  static const String userAddress = '/users/address';
+  static String getUserAddress(String userId) => '/users/$userId/address';
+  static String emergencyContact(String userId) =>
+      '/users/$userId/emergency-contact';
+
+  // ── Properties (Host) ───────────────────────────────────────────────────────
+  // POST /api/properties                → create listing
+  // POST /api/properties/draft          → save draft
+  // GET  /api/properties/by-host        → host listings
+  // PUT  /api/properties/{id}           → update listing
+  // DELETE /api/properties/{id}         → delete listing
+  static const String properties = '/api/properties';
+  static const String propertiesDraft = '/api/properties/draft';
+  static String propertyById(String id) => '/api/properties/$id';
+
+  // ── Host Dashboard ──────────────────────────────────────────────────────────
+  static String hostDashboard(String userId) => '/users/$userId/host-dashboard';
+
+  // ── Bookings ────────────────────────────────────────────────────────────────
+  // POST /booking-manager               → create booking
+  // GET  /booking-manager/{id}          → booking details
+  // POST /booking-manager/{id}/cancel   → cancel booking
+  // POST /booking-manager/{id}/approve  → approve booking (host)
+  static const String createBooking = '/booking-manager';
+  static String bookingById(String id) => '/booking-manager/$id';
+  static const String listBookings = '/api/bookings/list';
+  static const String bookingDisplayStatusLookup = '/api/Lookups/BookingDisplayStatus';
+  static String cancelBooking(String id) => '/booking-manager/$id/cancel';
+  static String approveBooking(String id) => '/booking-manager/$id/approve';
+
+  // ── Chat ────────────────────────────────────────────────────────────────────
+  // GET  /api/chat/conversations        → list conversations (query: userId)
+  // POST /api/chat/conversations        → create conversation
+  // GET  /api/chat/conversations/{id}   → conversation details
+  // POST /api/chat/start-booking-chat   → start chat about a booking
+  // GET  /api/chat/firebase-token       → firebase custom token
+  static const String conversations = '/api/chat/conversations';
+  static String conversationById(String id) => '/api/chat/conversations/$id';
+  static const String startBookingChat = '/api/chat/start-booking-chat';
+  static const String firebaseToken = '/api/chat/firebase-token';
+
+  // ── Ratings ─────────────────────────────────────────────────────────────────
+  // GET  /api/ratings/property/{propertyId}
+  // POST /api/ratings/property-by-guest
+  static String propertyRatings(String propertyId) =>
+      '/api/ratings/property/$propertyId';
+  static const String ratePropertyByGuest = '/api/ratings/property-by-guest';
+
+  // ── Lookups ─────────────────────────────────────────────────────────────────
+  static const String amenitiesLookup = '/api/lookups/Amenities';
+  static const String propertyTypesLookup = '/api/lookups/PropertyType';
+  static const String countriesLookup = '/api/lookups/country';
+  static String statesLookup(int countryId) => '/api/lookups/states?countryId=$countryId';
+  static String citiesLookup(int stateId) => '/api/lookups/cities?stateId=$stateId';
+  static String villagesLookup(int cityId) => '/api/lookups/villages?cityId=$cityId';
+  static const String propertyHighlightsLookup = '/api/Lookups/PropertyHighlight';
+  static const String propertyAdminStatusLookup = '/api/Lookups/PropertyAdminStatus';
+  static const String propertySortingLookup = '/api/Lookups/PropertySorting';
+}

@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze *)",
+      "Read(//f/f/Houseiana-mobile-main/Houseiana-mobile-main/Houseiana-mobile-main/Houseiana-Holidays-Homes-main_web/src/**)",
+      "Read(//f/f/Houseiana-mobile-main/Houseiana-mobile-main/Houseiana-mobile-main/**)",
+      "Bash(xargs grep *)",
+      "Read(//f//**)",
+      "PowerShell(flutter pub cache dir)",
+      "PowerShell($env:PUB_CACHE; \\(flutter --version 2>&1 | Select-String \"Flutter\"\\) | Select-Object -First 1)",
+      "Read(//c/users/**)",
+      "Bash(flutter pub *)",
+      "Read(//f/Houseiana-mobile-main/Houseiana-mobile-main/**)",
+      "Read(//d/osama/Ali Eldeeb/**)",
+      "Bash(awk 'NR>=200 && NR<=720' \"d:/osama/Ali Eldeeb/Houseiana-mobile-main-sa/lib/features/properties/presentation/screens/properties_screen.dart\")",
+      "Bash(awk 'NR>=100 && NR<=200' \"d:/osama/Ali Eldeeb/Houseiana-mobile-main-sa/lib/features/properties/presentation/screens/properties_screen.dart\")",
+      "PowerShell(flutter analyze lib/features/host lib/features/dashboard lib/i18n 2>&1)",
+      "PowerShell(flutter analyze lib/features/trips lib/features/favorites lib/i18n 2>&1)",
+      "PowerShell(flutter analyze lib/features/chat lib/features/notifications lib/features/legal lib/features/support lib/features/splash lib/features/recommendations lib/i18n 2>&1)",
+      "PowerShell(flutter analyze \"d:\\\\osama\\\\Ali Eldeeb\\\\Houseiana-mobile-main-sa\\\\lib\\\\features\\\\host\\\\presentation\\\\screens\\\\wizard\\\\step_03_location_screen.dart\")",
+      "Bash(python -c \"import json; json.load\\(open\\('lib/i18n/translations/en.json', encoding='utf-8'\\)\\); json.load\\(open\\('lib/i18n/translations/ar.json', encoding='utf-8'\\)\\); print\\('Both JSON files are valid'\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('lib/i18n/translations/en.json','utf8'\\)\\); JSON.parse\\(require\\('fs'\\).readFileSync\\('lib/i18n/translations/ar.json','utf8'\\)\\); console.log\\('Both JSON files are valid'\\)\")",
+      "PowerShell(flutter analyze lib/features/host/presentation/screens/wizard lib/features/demo lib/i18n 2>&1)",
+      "PowerShell(flutter analyze lib/features/host/presentation/screens/property_wizard_screen.dart lib/shared/widgets/empty_state 2>&1)",
+      "Bash(flutter doctor *)"
+    ]
+  }
+}

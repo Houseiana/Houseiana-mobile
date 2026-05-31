@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tee analyze_initial.txt)",
+      "Bash(grep -oE \"IconData [a-z_0-9]+\" \"/c/Users/lap shop/AppData/Local/Pub/Cache/hosted/pub.dev/iconsax_plus-1.0.0/lib/src/iconsax_plus_linear.dart\" | sed 's/IconData //' | sort -u > /tmp/iconsax_icons.txt *)",
+      "Read(//tmp/**)",
+      "Bash(grep -E \"^\\(buliding|building|huse|bed|bed1|hospital|home_3|key|key_square|book|crown|crown_1|verify|map|map_1|element_2|element_3|element_4|grid_2|grid_1|grid_3|grid_8|menu_1|profile_2user|user_remove|user_tick|like|like_1|cleaning|wash|wash_machine|first_aid|aid_box|firstaid|emergency|microphone|microphone_2|maximize|maximize_1|maximize_3|category|category_2|tag|tag_2|task|task_square|message_question|message_text|messages_1|message_search\\)\\\\$\" /tmp/iconsax_icons.txt)",
+      "Bash(grep -E \"^\\(message_3|home_3|home_2|message_text|message_text_1|note|note_text|note_2|emergency|first_aid|firstaid|broom|wash|laundry|key_2|key_1|tree|tree_1|car|car_2|building_3|building_4|element_4|grid_2|grid_8|grid_5|grid_edit|grid_lock|menu_board|filter_edit|filter_remove|filter_tick|filter_add|airplane|airplane_square|airdrop|drop|tag_cross|tag_right|user_remove|user_minus|user_search|user_octagon|user_tick|user_cirlce_add|user_square|profile_add|profile_remove|profile_delete|task_square\\)\\\\$\" /tmp/iconsax_icons.txt)",
+      "Bash(grep -qE '^__TRACKED_VAR__$' /tmp/iconsax_icons.txt)",
+      "Bash(:)",
+      "Bash(tee /tmp/warnings.txt)",
+      "Bash(xargs -0 grep -l \"\\\\.withOpacity\\(\")",
+      "Bash(flutter test *)"
+    ]
+  }
+}
