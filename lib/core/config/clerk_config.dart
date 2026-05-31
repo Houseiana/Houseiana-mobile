@@ -2,42 +2,42 @@ class ClerkConfig {
   ClerkConfig._();
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ⚠️  SECURITY: API keys MUST be loaded from environment variables in production.
-  //    Never commit real keys to source control.
-  //    Build with: flutter build --dart-define=CLERK_PUBLISHABLE_KEY=pk_xxx
+  // SECURITY NOTES
+  //
+  // 1. Publishable key (pk_live_/pk_test_) is safe in client code. Override at
+  //    build time with: flutter build --dart-define=CLERK_PUBLISHABLE_KEY=pk_xxx
+  //
+  // 2. Secret key (sk_live_/sk_test_) MUST NEVER be embedded in the mobile app.
+  //    Anyone can extract it from the APK. All operations requiring sk_* must
+  //    be proxied through the Houseiana .NET backend, which holds the secret
+  //    server-side. clerk_service.dart still references getBackendSecretKey()
+  //    in places — those Clerk Backend API calls should be migrated to the
+  //    .NET backend. Until then, those calls will fail (which is the safe
+  //    failure mode — they were already failing silently before this fix).
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Clerk Publishable Key (safe for client-side use).
-  /// Format: pk_live_... or pk_test_...
-  /// Set via: flutter build --dart-define=CLERK_PUBLISHABLE_KEY=pk_xxx
-  static String get publishableKey {
-    return const String.fromEnvironment(
-      'pk_test_Y2xlcmsuaG91c2VpYW5hLm5ldCQ',
-      defaultValue: '',
-    );
-  }
+  /// Clerk Publishable Key (production by default).
+  /// Override at build time:
+  ///   flutter build --dart-define=CLERK_PUBLISHABLE_KEY=pk_test_xxx
+  static const String publishableKey = String.fromEnvironment(
+    'CLERK_PUBLISHABLE_KEY',
+    defaultValue: 'pk_live_Y2xlcmsuaG91c2VpYW5hLmNvbSQ',
+  );
 
-  /// Secret key for backend API calls (server-side only).
-  /// Format: sk_live_... or sk_test_...
-  /// Set via: flutter build --dart-define=CLERK_SECRET_KEY=sk_xxx
-  static String get secretKey {
-    return const String.fromEnvironment(
-      'sk_test_1v2twd9j6yO93Ial7eUUs30rg9A3eMU3v4KCZIdHXn',
-      defaultValue: '',
-    );
-  }
+  /// Clerk Secret Key. Empty by default — must come from a build flag if any
+  /// legacy Clerk Backend API call needs it. Do NOT commit a real value here.
+  static const String secretKey = String.fromEnvironment(
+    'CLERK_SECRET_KEY',
+    defaultValue: '',
+  );
 
-  /// Returns the secret key, or empty string if not configured.
-  /// Check .isEmpty before using for backend operations.
   static String getBackendSecretKey() => secretKey;
-
-  /// Returns true if secretKey is configured for backend operations.
   static bool get hasBackendSecretKey => secretKey.isNotEmpty;
 
-  /// Clerk Frontend API Base URL.
-  /// Extracted from the publishable key's domain (clerk.houseiana.com).
-  // static const String frontendApiUrl = 'https://clerk.cafkejr.xyz';
- static const String frontendApiUrl = 'https://clerk.houseiana.com';
-  /// Clerk Backend API Base URL (for server-side operations only).
+  /// Clerk Frontend API Base URL (production instance).
+  static const String frontendApiUrl = 'https://clerk.houseiana.com';
+
+  /// Clerk Backend API Base URL. Only used by legacy code paths that should
+  /// be moved to the .NET backend.
   static const String backendApiUrl = 'https://api.clerk.com/v1';
 }
