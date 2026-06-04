@@ -24,12 +24,14 @@ class PropertyModel extends Equatable {
   final List<String>? amenities;
   final String? propertyType;
   final String? hostId;
+  final Map<String, dynamic>? host;
   final Map<String, dynamic>? fees;
   final bool? isFavourited;
   final bool? isGuestFavorite;
   final double? averageRating;
   final int? reviewsCount;
   final int? beds;
+  final int? minNights;
   final String? currency;
   final double? priceWithoutDiscount;
   final double? weeklyDiscount;
@@ -42,6 +44,14 @@ class PropertyModel extends Equatable {
   final double? revenueThisMonth;
   final double? latitude;
   final double? longitude;
+  final Map<String, dynamic>? cancellationPolicy;
+  final String? checkInTime;
+  final String? checkOutTime;
+  final bool? allowSmoking;
+  final bool? allowPets;
+  final bool? allowEvents;
+  final bool? allowGuests;
+  final bool? allowMarriedOnly;
 
   const PropertyModel({
     required this.id,
@@ -67,12 +77,14 @@ class PropertyModel extends Equatable {
     this.amenities,
     this.propertyType,
     this.hostId,
+    this.host,
     this.fees,
     this.isFavourited,
     this.isGuestFavorite,
     this.averageRating,
     this.reviewsCount,
     this.beds,
+    this.minNights,
     this.currency,
     this.priceWithoutDiscount,
     this.weeklyDiscount,
@@ -85,6 +97,14 @@ class PropertyModel extends Equatable {
     this.revenueThisMonth,
     this.latitude,
     this.longitude,
+    this.cancellationPolicy,
+    this.checkInTime,
+    this.checkOutTime,
+    this.allowSmoking,
+    this.allowPets,
+    this.allowEvents,
+    this.allowGuests,
+    this.allowMarriedOnly,
   });
 
   factory PropertyModel.fromJson(Map<String, dynamic> json) {
@@ -95,6 +115,12 @@ class PropertyModel extends Equatable {
     } else if (photosRaw is String) {
       photosList = [photosRaw];
     }
+
+    // House rules may arrive nested under `houseRules` or flat at the top level
+    // (matches the web's `p.houseRules?.X ?? p.X` fallback).
+    final houseRules = json['houseRules'] is Map
+        ? Map<String, dynamic>.from(json['houseRules'] as Map)
+        : null;
 
     return PropertyModel(
       id: json['_id'] ?? json['id'] ?? '',
@@ -126,6 +152,9 @@ class PropertyModel extends Equatable {
       amenities: (json['amenities'] as List<dynamic>?)?.cast<String>(),
       propertyType: json['propertyType'] as String? ?? json['type'] as String?,
       hostId: json['hostId'] as String? ?? json['owner'] as String?,
+      host: json['host'] is Map
+          ? Map<String, dynamic>.from(json['host'] as Map)
+          : null,
       fees: json['fees'] as Map<String, dynamic>?,
       isFavourited:
           json['isFavourited'] as bool? ?? json['isFavorite'] as bool?,
@@ -133,6 +162,8 @@ class PropertyModel extends Equatable {
       averageRating: _toDouble(json['averageRating'] ?? json['avgRating'] ?? json['rating']),
       reviewsCount: json['reviewsCount'] as int? ?? json['reviewCount'] as int? ?? json['numReviews'] as int?,
       beds: json['beds'] as int?,
+      minNights: (json['minimumNights'] as num?)?.toInt() ??
+          (json['minNights'] as num?)?.toInt(),
       currency: json['currency'] as String?,
       priceWithoutDiscount: _toDouble(json['priceWithoutDiscount'] ?? json['originalPrice']),
       weeklyDiscount: _toDouble(json['weeklyDiscount']),
@@ -145,6 +176,28 @@ class PropertyModel extends Equatable {
       revenueThisMonth: _toDouble(json['revenueThisMonth']) ?? 0.0,
       latitude: _toDouble(json['latitude'] ?? json['lat']),
       longitude: _toDouble(json['longitude'] ?? json['lng'] ?? json['lon']),
+      cancellationPolicy: json['cancellationPolicy'] is Map
+          ? Map<String, dynamic>.from(json['cancellationPolicy'] as Map)
+          : null,
+      checkInTime:
+          (houseRules?['checkInTime'] ?? json['checkInTime'])?.toString(),
+      checkOutTime:
+          (houseRules?['checkOutTime'] ?? json['checkOutTime'])?.toString(),
+      allowSmoking: (houseRules?['allowSmoking'] ??
+          json['allowSmoking'] ??
+          json['smokingAllowed']) as bool?,
+      allowPets: (houseRules?['allowPets'] ??
+          json['allowPets'] ??
+          json['petsAllowed']) as bool?,
+      allowEvents: (houseRules?['allowEvents'] ??
+          json['allowEvents'] ??
+          json['eventsAllowed']) as bool?,
+      allowGuests: (houseRules?['allowGuests'] ??
+          json['allowGuests'] ??
+          json['guestsAllowed']) as bool?,
+      allowMarriedOnly: (houseRules?['allowMarriedOnly'] ??
+          json['allowMarriedOnly'] ??
+          json['marriedOnly']) as bool?,
     );
   }
 
@@ -167,10 +220,12 @@ class PropertyModel extends Equatable {
         'bedrooms': bedrooms,
         'bathrooms': bathrooms,
         'beds': beds,
+        'minNights': minNights,
         'maxGuests': maxGuests,
         'amenities': amenities,
         'propertyType': propertyType,
         'hostId': hostId,
+        'host': host,
         'fees': fees,
         'isFavourited': isFavourited,
         'isGuestFavorite': isGuestFavorite,
@@ -188,6 +243,14 @@ class PropertyModel extends Equatable {
         'revenueThisMonth': revenueThisMonth,
         'latitude': latitude,
         'longitude': longitude,
+        'cancellationPolicy': cancellationPolicy,
+        'checkInTime': checkInTime,
+        'checkOutTime': checkOutTime,
+        'allowSmoking': allowSmoking,
+        'allowPets': allowPets,
+        'allowEvents': allowEvents,
+        'allowGuests': allowGuests,
+        'allowMarriedOnly': allowMarriedOnly,
       };
 
   String get displayTitle => title ?? name ?? 'Property';

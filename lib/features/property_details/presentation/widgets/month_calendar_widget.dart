@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/models/nightly_price_model.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/nightly_price_cell.dart';
+import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:intl/intl.dart';
 
 class MonthCalendarWidget extends StatelessWidget {
@@ -72,9 +73,9 @@ class MonthCalendarWidget extends StatelessWidget {
           const Icon(Icons.error_outline,
               color: AppColors.error, size: 32),
           const SizedBox(height: 8),
-          const Text(
-            "Couldn't load prices",
-            style: TextStyle(
+          Text(
+            context.tr('propertyDetails.calendarLoadError'),
+            style: const TextStyle(
               fontSize: 13,
               color: AppColors.neutral600,
               fontWeight: FontWeight.w500,
@@ -83,9 +84,9 @@ class MonthCalendarWidget extends StatelessWidget {
           const SizedBox(height: 8),
           TextButton(
             onPressed: onRetry,
-            child: const Text(
-              'Retry',
-              style: TextStyle(
+            child: Text(
+              context.tr('common.retry'),
+              style: const TextStyle(
                 color: AppColors.primaryDark,
                 fontWeight: FontWeight.w600,
               ),

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
+import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/services/property_service.dart';
+import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/features/booking/cubit/booking_cubit.dart';
 import 'package:houseiana_mobile_app/features/booking/cubit/booking_state.dart';
+import 'package:houseiana_mobile_app/features/booking/presentation/widgets/guest_info_modal.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class BookingRequestScreen extends StatefulWidget {
@@ -13,20 +17,20 @@ class BookingRequestScreen extends StatefulWidget {
 }
 
 class _BookingRequestScreenState extends State<BookingRequestScreen> {
-  final _messageController = TextEditingController();
+  final _propertyService = sl<PropertyService>();
 
   Map<String, dynamic> _property = {};
+  Map<String, dynamic>? _availability;
   String _propertyId = '';
   String _title = '';
   double _pricePerNight = 0;
 
   DateTime? _checkIn;
   DateTime? _checkOut;
-  int _adults = 1;
-  int _children = 0;
-  int _infants = 0;
+  int _guests = 1;
 
   bool _didInit = false;
+  bool _loadingDialogOpen = false;
 
   @override
   void didChangeDependencies() {
@@ -58,12 +62,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
       final co = args['checkOut'];
       if (co is String && co.isNotEmpty) _checkOut = DateTime.tryParse(co);
     }
-  }
-
-  @override
-  void dispose() {
-    _messageController.dispose();
-    super.dispose();
+    _loadAvailability();
   }
 
   int get _nights {
@@ -86,13 +85,109 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
     return (service is num ? service.toDouble() : double.tryParse('$service') ?? 0);
   }
 
-  double get _cleaningFee => _nights > 0 ? _cleaningFeeFromProperty() : 0;
-  double get _serviceFee => _nights > 0 ? _serviceFeeFromProperty() : 0;
+  /// Service fee for the selected dates, taken from the availability API
+  /// (`/property-search/{id}/availability` → `serviceFee`) when present,
+  /// falling back to the property's `fees.service`. Mirrors the web reserve
+  /// flow which reads `avail.serviceFee`.
+  double? get _availServiceFee {
+    final v = _availability?['serviceFee'];
+    return v is num ? v.toDouble() : null;
+  }
+
+  /// Cleaning fee for the selected dates, taken from the availability API
+  /// (`/property-search/{id}/availability` → `cleaningFee`) when present,
+  /// falling back to the property's `fees.cleaning`. Mirrors the web reserve
+  /// flow which reads `avail.cleaningFee` (the property payload often omits the
+  /// fee, so it must come from the availability response to show correctly).
+  double? get _availCleaningFee {
+    final v = _availability?['cleaningFee'];
+    return v is num ? v.toDouble() : null;
+  }
+
+  double get _cleaningFee =>
+      _nights > 0 ? (_availCleaningFee ?? _cleaningFeeFromProperty()) : 0;
+  double get _serviceFee =>
+      _nights > 0 ? (_availServiceFee ?? _serviceFeeFromProperty()) : 0;
   double get _total => _subtotal + _cleaningFee + _serviceFee;
 
-  int get _totalGuests => _adults + _children;
+  /// Currency code for price display (e.g. EGP). Matches the web, which
+  /// prefixes amounts with the currency code instead of a `$` sign and treats
+  /// a missing OR empty currency as `EGP` (`property.currency || 'EGP'`).
+  String get _currency {
+    final c = _property['currency']?.toString();
+    return (c != null && c.isNotEmpty) ? c : 'EGP';
+  }
 
-  int get _minAdults => (_children > 0 || _infants > 0) ? 1 : 0;
+  /// Formats a number with up to 2 decimals, dropping trailing zeros — mirrors
+  /// the web `fmt()` helper used in PriceSummary.
+  String _fmt(num? n) {
+    final v = (n ?? 0).toDouble();
+    final rounded = (v * 100).round() / 100;
+    return rounded % 1 == 0
+        ? rounded.toStringAsFixed(0)
+        : rounded.toStringAsFixed(2);
+  }
+
+  /// Currency-prefixed amount, e.g. "EGP 2500".
+  String _money(num? n) => '$_currency ${_fmt(n)}';
+
+  /// Resolves the unit's cancellation policy text from the property payload,
+  /// using the same precedence as the web (fixed → free days → free hours →
+  /// named type), falling back to the friendly default when absent.
+  String _cancellationPolicyText() {
+    final raw = _property['cancellationPolicy'] ?? _property['cancelPolicy'];
+    if (raw is Map) {
+      final policyType = (raw['policyType'] ?? '').toString();
+      final days = (raw['freeCancellationDays'] as num?)?.toInt() ?? 0;
+      final hours = (raw['freeCancellationHours'] as num?)?.toInt() ?? 0;
+      if (policyType.toLowerCase() == 'fixed') {
+        return context.tr('propertyDetails.cancelFixedPolicy');
+      }
+      if (days > 0) {
+        return context.tr('propertyDetails.cancelFreeDays', args: {'days': days});
+      }
+      if (hours > 0) {
+        return context.tr('propertyDetails.cancelFreeHours', args: {'hours': hours});
+      }
+      if (policyType.isNotEmpty) {
+        return context.tr('propertyDetails.cancelPolicyType',
+            args: {'type': policyType});
+      }
+    }
+    if (raw is String && raw.isNotEmpty) return raw;
+    return context.tr('booking.freeCancellation');
+  }
+
+  /// Fetches availability/pricing for the selected dates so the price
+  /// breakdown (notably the service fee) reflects the backend, matching the
+  /// web reserve flow. Silently falls back to local values on failure.
+  Future<void> _loadAvailability() async {
+    if (_propertyId.isEmpty || _checkIn == null || _checkOut == null) return;
+    try {
+      final avail = await _propertyService.getAvailability(
+        _propertyId,
+        checkIn: _checkIn!.toIso8601String(),
+        checkOut: _checkOut!.toIso8601String(),
+      );
+      if (!mounted) return;
+      setState(() => _availability = avail);
+    } catch (_) {
+      // Ignore — fall back to property fees / local calculation.
+    }
+  }
+
+  /// Maximum guests allowed for this property, derived from the API payload
+  /// (`maxGuests`, falling back to `guests`). Defaults to 16 when unspecified.
+  int get _maxGuests {
+    final raw = _property['maxGuests'] ?? _property['guests'] ?? _property['maxGuest'];
+    final n = raw is num ? raw.toInt() : int.tryParse('$raw');
+    return (n != null && n > 0) ? n : 16;
+  }
+
+  /// Whether this property allows instant booking (go straight to payment).
+  /// When false, tapping "Request to book" creates a PENDING request and waits
+  /// for host approval before any payment is collected (matches the web flow).
+  bool get _isInstantBook => _property['instantBook'] == true;
 
   String _formatDate(DateTime? dt) {
     if (dt == null) return '–';
@@ -127,6 +222,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
         _checkIn = date;
         if (_checkOut != null && !_checkOut!.isAfter(date)) _checkOut = null;
       });
+      _loadAvailability();
     }
   }
 
@@ -150,6 +246,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
     );
     if (date != null && mounted) {
       setState(() => _checkOut = date);
+      _loadAvailability();
     }
   }
 
@@ -158,31 +255,31 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
     return BlocListener<BookingCubit, BookingState>(
       listener: (context, state) {
         if (state is BookingLoading) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) => const Center(
-              child: CircularProgressIndicator(color: Color(0xFFFCC519)),
-            ),
-          );
+          _showLoadingDialog();
         } else if (state is BookingCreated) {
-          Navigator.pop(context);
-          Navigator.pushNamed(
-            context,
-            Routes.paymentMethod,
-            arguments: {
-              'bookingId': state.booking.id,
-              'totalPrice': state.booking.totalPrice,
-              'property': _property,
-              'checkIn': _checkIn?.toIso8601String(),
-              'checkOut': _checkOut?.toIso8601String(),
-              'nights': _nights,
-              'guests': _totalGuests,
-              'message': _messageController.text,
-            },
-          );
+          _dismissLoadingDialog();
+          if (_isInstantBook) {
+            // Instant book → collect payment immediately.
+            Navigator.pushNamed(
+              context,
+              Routes.paymentMethod,
+              arguments: {
+                'bookingId': state.booking.id,
+                'totalPrice': state.booking.totalPrice,
+                'property': _property,
+                'checkIn': _checkIn?.toIso8601String(),
+                'checkOut': _checkOut?.toIso8601String(),
+                'nights': _nights,
+                'guests': _guests,
+              },
+            );
+          } else {
+            // Request to book → booking is created as PENDING and waits for
+            // host approval; no payment is collected yet.
+            _showRequestSentDialog();
+          }
         } else if (state is BookingError) {
-          Navigator.pop(context);
+          _dismissLoadingDialog();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
@@ -239,35 +336,6 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                       const SizedBox(height: 28),
                     ],
 
-                    _buildSectionTitle(context.tr('booking.messageToHostOptional')),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _messageController,
-                      maxLines: 4,
-                      decoration: InputDecoration(
-                        hintText: context.tr('booking.tellHostPlans'),
-                        hintStyle: const TextStyle(
-                            fontSize: 14, color: Color(0xFF9CA3AF)),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: Color(0xFFFCC519), width: 2),
-                        ),
-                        filled: true,
-                        fillColor: const Color(0xFFF9F9FA),
-                      ),
-                    ),
-
-                    const SizedBox(height: 28),
-
                     _buildSectionTitle(context.tr('booking.cancellationPolicyTitle')),
                     const SizedBox(height: 12),
                     Container(
@@ -277,7 +345,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        context.tr('booking.freeCancellation'),
+                        _cancellationPolicyText(),
                         style: const TextStyle(
                           fontSize: 14,
                           color: Color(0xFF6B7280),
@@ -391,7 +459,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                     const SizedBox(width: 3),
                     Text(
                       context.tr('booking.pricePerNightFormat',
-                          args: {'price': '\$${_pricePerNight.toStringAsFixed(0)}'}),
+                          args: {'price': _money(_pricePerNight)}),
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -505,61 +573,14 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
 
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.tr('booking.guestsLabel'),
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1,
-                    color: Color(0xFF6B7280),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _buildGuestRow(
-                    context.tr('booking.adults'),
-                    context.tr('booking.agesPlus'),
-                    _adults,
-                    _adults > _minAdults
-                        ? () => setState(() => _adults--)
-                        : null,
-                    _adults < 16 ? () => setState(() => _adults++) : null),
-                const SizedBox(height: 12),
-                _buildGuestRow(
-                    context.tr('booking.children'),
-                    context.tr('booking.agesRange'),
-                    _children,
-                    _children > 0
-                        ? () => setState(() {
-                              _children--;
-                            })
-                        : null,
-                    _children < 5
-                        ? () => setState(() {
-                              _children++;
-                              if (_adults < 1) _adults = 1;
-                            })
-                        : null),
-                const SizedBox(height: 12),
-                _buildGuestRow(
-                    context.tr('booking.infants'),
-                    context.tr('booking.under2'),
-                    _infants,
-                    _infants > 0
-                        ? () => setState(() {
-                              _infants--;
-                            })
-                        : null,
-                    _infants < 5
-                        ? () => setState(() {
-                              _infants++;
-                              if (_adults < 1) _adults = 1;
-                            })
-                        : null),
-              ],
-            ),
+            child: _buildGuestRow(
+                context.tr('booking.guestsTitle'),
+                '',
+                _guests,
+                _guests > 1 ? () => setState(() => _guests--) : null,
+                _guests < _maxGuests
+                    ? () => setState(() => _guests++)
+                    : null),
           ),
         ],
       ),
@@ -584,9 +605,10 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF1D242B))),
-              Text(sublabel,
-                  style:
-                      const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF))),
+              if (sublabel.isNotEmpty)
+                Text(sublabel,
+                    style: const TextStyle(
+                        fontSize: 11, color: Color(0xFF9CA3AF))),
             ],
           ),
         ),
@@ -628,7 +650,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   }
 
   Widget _buildPriceCard() {
-    final priceFormatted = '\$${_pricePerNight.toStringAsFixed(0)}';
+    final priceFormatted = _money(_pricePerNight);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -643,13 +665,13 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                       args: {'price': priceFormatted, 'nights': _nights})
                   : context.tr('booking.priceByNightsTemplate',
                       args: {'price': priceFormatted, 'nights': _nights}),
-              '\$${_subtotal.toStringAsFixed(0)}'),
+              _money(_subtotal)),
           const SizedBox(height: 12),
-          _priceRow(context.tr('booking.cleaningFee'), '\$${_cleaningFee.toStringAsFixed(0)}'),
+          _priceRow(context.tr('booking.cleaningFee'), _money(_cleaningFee)),
           const SizedBox(height: 12),
-          _priceRow(context.tr('booking.serviceFee'), '\$${_serviceFee.toStringAsFixed(0)}'),
+          _priceRow(context.tr('booking.serviceFee'), _money(_serviceFee)),
           const Divider(height: 24, color: Color(0xFFE5E7EB)),
-          _priceRow(context.tr('booking.totalUsd'), '\$${_total.toStringAsFixed(0)}',
+          _priceRow(context.tr('booking.totalUsd'), _money(_total),
               isTotal: true),
         ],
       ),
@@ -679,7 +701,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
 
   Widget _buildBottomBar() {
     final canContinue =
-        _checkIn != null && _checkOut != null && _adults >= 1;
+        _checkIn != null && _checkOut != null && _guests >= 1;
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       decoration: BoxDecoration(
@@ -709,7 +731,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                   ),
                   Text(
                     context.tr('booking.totalAmount',
-                        args: {'amount': '\$${_total.toStringAsFixed(0)}'}),
+                        args: {'amount': _money(_total)}),
                     style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -725,20 +747,8 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
               builder: (context, bookingState) {
                 final isLoading = bookingState is BookingLoading;
                 return ElevatedButton(
-                  onPressed: (canContinue && !isLoading)
-                      ? () {
-                          if (_propertyId.isEmpty || _checkIn == null || _checkOut == null) return;
-                          final hostId = (_property['hostId'] ?? _property['owner'] ?? _property['host']?['id'] ?? _property['host']?['_id'] ?? '').toString();
-                          context.read<BookingCubit>().createBooking(
-                            propertyId: _propertyId,
-                            hostId: hostId,
-                            checkIn: _checkIn!,
-                            checkOut: _checkOut!,
-                            guests: _totalGuests,
-                            message: _messageController.text,
-                          );
-                        }
-                      : null,
+                  onPressed:
+                      (canContinue && !isLoading) ? _onReservePressed : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFCC519),
                     foregroundColor: const Color(0xFF1D242B),
@@ -758,13 +768,158 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                         )
                       : Text(
                           canContinue
-                              ? context.tr('propertyDetails.requestToBook')
+                              ? (_isInstantBook
+                                  ? context.tr('propertyDetails.reserve')
+                                  : context.tr('propertyDetails.requestToBook'))
                               : context.tr('booking.selectDatesAndGuests'),
                           style:
                               const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                 );
               },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Host id resolved from the property payload, tolerating the several shapes
+  /// the backend may use (`hostId`, `owner`, nested `host.id`/`host._id`).
+  String get _hostId => (_property['hostId'] ??
+          _property['owner'] ??
+          _property['host']?['id'] ??
+          _property['host']?['_id'] ??
+          '')
+      .toString();
+
+  void _startBooking() {
+    context.read<BookingCubit>().createBooking(
+          propertyId: _propertyId,
+          hostId: _hostId,
+          checkIn: _checkIn!,
+          checkOut: _checkOut!,
+          guests: _guests,
+        );
+  }
+
+  /// Handles the reserve / request-to-book button.
+  ///
+  /// Instant-book units create the booking immediately. Request-to-book (non
+  /// instant) units mirror the web flow: first show the "Confirm your details"
+  /// sheet, persist the guest's name/phone via `POST /users/update`, and only
+  /// then create the PENDING booking request.
+  Future<void> _onReservePressed() async {
+    if (_propertyId.isEmpty || _checkIn == null || _checkOut == null) return;
+
+    if (!_isInstantBook) {
+      final session = sl<UserSession>();
+      final result = await GuestInfoModalSheet.show(
+        context,
+        defaultFirstName: session.firstName ?? '',
+        defaultLastName: session.lastName ?? '',
+        defaultPhone: session.phone ?? '',
+      );
+      // Guest cancelled / dismissed the sheet → do not create a booking.
+      if (result == null || !mounted) return;
+      // The sheet already saved these to the backend; cache them locally so
+      // the next booking pre-fills them.
+      await session.updateProfile(
+        firstName: result['firstName'],
+        lastName: result['lastName'],
+        phone: result['phone'],
+      );
+      if (!mounted) return;
+    }
+
+    _startBooking();
+  }
+
+  void _showLoadingDialog() {
+    if (_loadingDialogOpen) return;
+    _loadingDialogOpen = true;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: Color(0xFFFCC519)),
+      ),
+    ).whenComplete(() => _loadingDialogOpen = false);
+  }
+
+  /// Dismisses the loading dialog safely. If a 401 forced a logout, the whole
+  /// navigation stack may already have been replaced — popping blindly would
+  /// crash with `_history.isNotEmpty`, so we only pop when there is something
+  /// to pop and a dialog is actually open.
+  void _dismissLoadingDialog() {
+    if (!_loadingDialogOpen || !mounted) return;
+    final nav = Navigator.of(context, rootNavigator: true);
+    if (nav.canPop()) nav.pop();
+    _loadingDialogOpen = false;
+  }
+
+  void _showRequestSentDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFEF3C7),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.schedule,
+                  color: Color(0xFFD97706), size: 30),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              context.tr('booking.requestSentTitle'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1D242B),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          context.tr('booking.requestSentMessage'),
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                // Return to the home shell, clearing the booking stack.
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  Routes.bottomNav,
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFCC519),
+                foregroundColor: const Color(0xFF1D242B),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(
+                context.tr('common.ok'),
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],

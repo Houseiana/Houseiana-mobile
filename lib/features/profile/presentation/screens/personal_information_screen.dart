@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/models/gender_option.dart';
 import 'package:houseiana_mobile_app/core/models/user_model.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/features/profile/cubit/personal_info_cubit.dart';
@@ -147,8 +148,10 @@ class _PersonalInformationContentState
   late final TextEditingController _addressController;
 
   bool _didHydrateFromBackend = false;
-  String _gender = 'Male';
+  int? _genderId;
+  List<GenderOption> _genderOptions = GenderOption.fallback;
   DateTime? _selectedDate;
+  String _originalEmail = '';
 
   @override
   void initState() {
@@ -158,6 +161,7 @@ class _PersonalInformationContentState
     _firstNameController = TextEditingController(text: session.firstName ?? '');
     _lastNameController = TextEditingController(text: session.lastName ?? '');
     _emailController = TextEditingController(text: session.email ?? '');
+    _originalEmail = session.email ?? '';
     _phoneController = TextEditingController();
     _dateOfBirthController = TextEditingController();
     _addressController = TextEditingController();
@@ -175,8 +179,10 @@ class _PersonalInformationContentState
 
   void _applyStateData(PersonalInfoState state) {
     if (state is PersonalInfoLoaded) {
+      _genderOptions = state.genderOptions;
       _applyUser(state.user);
     } else if (state is PersonalInfoSaved) {
+      _genderOptions = state.genderOptions;
       _applyUser(state.user);
     }
   }
@@ -185,6 +191,7 @@ class _PersonalInformationContentState
     _firstNameController.text = user.firstName ?? '';
     _lastNameController.text = user.lastName ?? '';
     _emailController.text = user.email ?? '';
+    _originalEmail = user.email ?? '';
     _phoneController.text = user.phone ?? '';
     _addressController.text = _composeAddress(user);
 
@@ -202,21 +209,9 @@ class _PersonalInformationContentState
       _dateOfBirthController.text = '';
     }
 
-    final genderValue = user.gender;
-    if (genderValue != null && genderValue.isNotEmpty) {
-      _gender = _normalizeGender(genderValue);
-    }
+    _genderId = user.genderId;
 
     _didHydrateFromBackend = true;
-  }
-
-  String _normalizeGender(String value) {
-    final lower = value.toLowerCase();
-    if (lower == 'male' || lower == 'm') return 'Male';
-    if (lower == 'female' || lower == 'f') return 'Female';
-    if (lower == 'other') return 'Other';
-    if (lower.contains('prefer')) return 'Prefer not to say';
-    return _gender;
   }
 
   String _composeAddress(UserModel user) {
@@ -294,20 +289,45 @@ class _PersonalInformationContentState
 
     if (_formKey.currentState?.validate() != true) return;
 
-    final body = {
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    final address = _addressController.text.trim();
+
+    final body = <String, dynamic>{
       'firstName': _firstNameController.text.trim(),
       'lastName': _lastNameController.text.trim(),
-      'email': _emailController.text.trim(),
-      if (_phoneController.text.trim().isNotEmpty)
-        'phone': _phoneController.text.trim(),
-      if (_dateOfBirthController.text.isNotEmpty)
-        'dateOfBirth': _dateOfBirthController.text,
-      'gender': _gender,
-      if (_addressController.text.trim().isNotEmpty)
-        'address': _addressController.text.trim(),
+      // Email changes trigger a separate verification flow on the backend, so
+      // only send it when the user actually changed it (matches the web).
+      if (email.isNotEmpty && email != _originalEmail) 'email': email,
+      if (phone.isNotEmpty) 'phone': phone,
+      // Backend expects an ISO date (`yyyy-MM-dd`), not the m/d/y display text.
+      if (_selectedDate != null) 'dateOfBirth': _formatIsoDate(_selectedDate!),
+      // Backend binds `genderId` (int), not a gender name string.
+      if (_genderId != null) 'genderId': _genderId.toString(),
+      if (address.isNotEmpty) 'address': address,
     };
 
     context.read<PersonalInfoCubit>().saveProfile(userId, body);
+  }
+
+  /// Formats a date as `yyyy-MM-dd` for the profile-update endpoint.
+  String _formatIsoDate(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
+  }
+
+  /// Localizes the well-known gender ids while falling back to the lookup name
+  /// for any others the backend may add.
+  String _genderLabel(BuildContext context, GenderOption option) {
+    switch (option.id) {
+      case 1:
+        return context.tr('profile.genderMale');
+      case 2:
+        return context.tr('profile.genderFemale');
+      default:
+        return option.name;
+    }
   }
 
   @override
@@ -322,13 +342,10 @@ class _PersonalInformationContentState
             ? (widget.state as PersonalInfoError).message
             : null;
 
-    // Build gender options with translation
-    final genderOptions = <_GenderOption>[
-      _GenderOption('Male', context.tr('profile.genderMale')),
-      _GenderOption('Female', context.tr('profile.genderFemale')),
-      _GenderOption('Other', context.tr('profile.genderOther')),
-      _GenderOption('Prefer not to say', context.tr('profile.genderPreferNotToSay')),
-    ];
+    // Only allow a pre-selected id that actually exists in the loaded options,
+    // otherwise the dropdown asserts. Null renders the placeholder hint.
+    final selectedGenderId =
+        _genderOptions.any((o) => o.id == _genderId) ? _genderId : null;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -458,18 +475,19 @@ class _PersonalInformationContentState
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _gender,
+                            child: DropdownButton<int>(
+                              value: selectedGenderId,
                               isExpanded: true,
-                              items: genderOptions.map((option) {
-                                return DropdownMenuItem<String>(
-                                  value: option.value,
-                                  child: Text(option.label),
+                              hint: Text(context.tr('profile.selectGender')),
+                              items: _genderOptions.map((option) {
+                                return DropdownMenuItem<int>(
+                                  value: option.id,
+                                  child: Text(_genderLabel(context, option)),
                                 );
                               }).toList(),
                               onChanged: (newValue) {
                                 if (newValue == null) return;
-                                setState(() => _gender = newValue);
+                                setState(() => _genderId = newValue);
                               },
                             ),
                           ),
@@ -520,12 +538,6 @@ class _PersonalInformationContentState
                 ),
     );
   }
-}
-
-class _GenderOption {
-  final String value;
-  final String label;
-  const _GenderOption(this.value, this.label);
 }
 
 class _SectionLabel extends StatelessWidget {

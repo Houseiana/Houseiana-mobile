@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
+import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 /// Modern property card with enhanced design
 class PropertyCardV2 extends StatefulWidget {
@@ -196,7 +197,7 @@ class _PropertyCardV2State extends State<PropertyCardV2>
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Superhost',
+                    context.tr('propertyDetails.superhostBadge'),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,

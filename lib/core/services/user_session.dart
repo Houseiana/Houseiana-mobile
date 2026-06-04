@@ -5,6 +5,7 @@ class UserSession {
   static const _keyEmail = 'user_email';
   static const _keyFirstName = 'user_first_name';
   static const _keyLastName = 'user_last_name';
+  static const _keyPhone = 'user_phone';
   static const _keySessionId = 'clerk_session_id';
   static const _keyAuthToken = 'auth_token';
   static const _keyIsHost = 'user_is_host';
@@ -33,11 +34,35 @@ class UserSession {
     await _prefs.setString(_keyAuthToken, token);
   }
 
+  /// Updates the cached profile fields (name/email) without touching the
+  /// auth identifiers. Used to backfill the name after login when the
+  /// sign-in response did not include it.
+  Future<void> updateProfile({
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? phone,
+  }) async {
+    if (firstName != null && firstName.isNotEmpty) {
+      await _prefs.setString(_keyFirstName, firstName);
+    }
+    if (lastName != null && lastName.isNotEmpty) {
+      await _prefs.setString(_keyLastName, lastName);
+    }
+    if (email != null && email.isNotEmpty) {
+      await _prefs.setString(_keyEmail, email);
+    }
+    if (phone != null && phone.isNotEmpty) {
+      await _prefs.setString(_keyPhone, phone);
+    }
+  }
+
   Future<void> clear() async {
     await _prefs.remove(_keyUserId);
     await _prefs.remove(_keyEmail);
     await _prefs.remove(_keyFirstName);
     await _prefs.remove(_keyLastName);
+    await _prefs.remove(_keyPhone);
     await _prefs.remove(_keySessionId);
     await _prefs.remove(_keyAuthToken);
     await _prefs.remove(_keyIsHost);
@@ -47,6 +72,7 @@ class UserSession {
   String? get email => _prefs.getString(_keyEmail);
   String? get firstName => _prefs.getString(_keyFirstName);
   String? get lastName => _prefs.getString(_keyLastName);
+  String? get phone => _prefs.getString(_keyPhone);
   String? get sessionId => _prefs.getString(_keySessionId);
   String? get authToken => _prefs.getString(_keyAuthToken);
 

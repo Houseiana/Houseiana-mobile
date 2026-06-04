@@ -4,6 +4,7 @@ import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/features/booking/cubit/booking_cubit.dart';
 import 'package:houseiana_mobile_app/features/chat/presentation/cubit/chat_cubit.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/host_bookings_cubit.dart';
+import 'package:houseiana_mobile_app/features/host/presentation/cubit/host_calendar_management_cubit.dart';
 import 'package:houseiana_mobile_app/features/notifications/cubit/notifications_cubit.dart';
 import 'package:houseiana_mobile_app/features/properties/cubit/search_cubit.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/property_details_cubit.dart';
@@ -66,13 +67,14 @@ import 'package:houseiana_mobile_app/features/profile/presentation/screens/accou
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/notification_settings_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/privacy_settings_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/language_settings_screen.dart';
-import 'package:houseiana_mobile_app/features/profile/presentation/screens/currency_settings_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/payment_methods_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/payment_history_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/saved_addresses_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/change_password_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/personal_information_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/profile_screen.dart';
+import 'package:houseiana_mobile_app/features/profile/presentation/screens/owner_profile_screen.dart';
+import 'package:houseiana_mobile_app/features/profile/presentation/cubit/owner_profile_cubit.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/kyc_verification_screen.dart';
 
 // Host Screens
@@ -87,6 +89,7 @@ import 'package:houseiana_mobile_app/features/host/presentation/screens/host_pay
 import 'package:houseiana_mobile_app/features/host/presentation/screens/host_reviews_screen.dart';
 import 'package:houseiana_mobile_app/features/host/presentation/screens/property_wizard_screen.dart';
 import 'package:houseiana_mobile_app/features/host/presentation/screens/host_listings_screen.dart';
+import 'package:houseiana_mobile_app/features/host/presentation/screens/host_calendar_screen.dart';
 
 // Support
 import 'package:houseiana_mobile_app/features/support/presentation/screens/help_center_screen.dart';
@@ -186,11 +189,11 @@ class Routes {
 
   // Profile & Settings
   static const String profile = '/profile';
+  static const String ownerProfile = '/owner-profile';
   static const String accountSettings = '/account-settings';
   static const String notificationSettings = '/notification-settings';
   static const String privacySettings = '/privacy-settings';
   static const String languageSettings = '/language-settings';
-  static const String currencySettings = '/currency-settings';
   static const String paymentMethods = '/payment-methods';
   static const String savedAddresses = '/saved-addresses';
   static const String changePassword = '/change-password';
@@ -204,6 +207,7 @@ class Routes {
   static const String propertySetup = '/property-setup';
   static const String pricingSetup = '/pricing-setup';
   static const String availabilityCalendar = '/availability-calendar';
+  static const String hostCalendar = '/host-calendar';
   static const String hostDashboard = '/host-dashboard';
   static const String hostListings = '/host-listings';
   static const String hostBookings = '/host-bookings';

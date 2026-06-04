@@ -23,7 +23,7 @@ Future<void> initCore() async {
 
   // Session & Core Services
   sl.registerLazySingleton(() => UserSession(sl()));
-  sl.registerLazySingleton(() => ClerkService());
+  sl.registerLazySingleton(() => ClerkService(sl<SharedPreferences>()));
 
   // Dio — with interceptors attached at creation
   final dio = Dio();

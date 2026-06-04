@@ -18,7 +18,7 @@ class AuthCubit extends Cubit<AuthState> {
     ClerkService? clerkService,
     GoogleAuthService? googleAuthService,
     AppleAuthService? appleAuthService,
-  })  : _clerkService = clerkService ?? ClerkService(),
+  })  : _clerkService = clerkService ?? sl<ClerkService>(),
         _googleAuthService = googleAuthService ?? GoogleAuthService(),
         _appleAuthService = appleAuthService ?? AppleAuthService(),
         super(AuthInitial());
@@ -189,8 +189,9 @@ class AuthCubit extends Cubit<AuthState> {
           }
         }
         await _syncBackendSession();
-        emit(const AuthSuccess(
-            message: 'Account verified! Welcome to Houseiana.'));
+        // Translation key; UI resolves via context.tr (which falls back to the
+        // key itself for plain/server messages).
+        emit(const AuthSuccess(message: 'auth.accountVerifiedWelcome'));
       } else {
         emit(AuthError(message: result['message'] ?? 'Verification failed'));
       }

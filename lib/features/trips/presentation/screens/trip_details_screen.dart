@@ -45,6 +45,8 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
   }
 
   String _extractImage() {
+    final cover = _booking?.propertyCoverPhoto;
+    if (cover != null && cover.isNotEmpty) return cover;
     return _booking?.property?.firstImageUrl ?? '';
   }
 
@@ -199,8 +201,11 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
     final title = _extractTitle(context);
     final location = _extractLocation();
     final guestsCount = _booking!.guests;
-    final totalStr =
-        _booking != null ? '\$${_booking!.totalPrice.toStringAsFixed(0)}' : '--';
+    final currencyLabel =
+        (_booking?.currency != null && _booking!.currency!.isNotEmpty)
+            ? _booking!.currency!
+            : 'EGP';
+    final totalStr = '$currencyLabel ${_booking!.totalPrice.toStringAsFixed(0)}';
     final localizedStatus = _localizedStatus(context, _status);
 
     return Scaffold(

@@ -15,6 +15,7 @@ class PropertySearchParams {
   final List<String>? amenities;
   final String? propertyType;
   final int? minBedrooms;
+  final int? beds;
   final int? minBathrooms;
   final double? minRating;
   final int page;
@@ -32,6 +33,7 @@ class PropertySearchParams {
     this.amenities,
     this.propertyType,
     this.minBedrooms,
+    this.beds,
     this.minBathrooms,
     this.minRating,
     this.page = 1,
@@ -50,6 +52,7 @@ class PropertySearchParams {
         if (amenities?.isNotEmpty == true) 'amenities': amenities!.join(','),
         if (propertyType != null) 'type': propertyType,
         if (minBedrooms != null) 'minBedrooms': minBedrooms,
+        if (beds != null) 'beds': beds,
         if (minBathrooms != null) 'minBathrooms': minBathrooms,
         if (minRating != null) 'minRating': minRating,
         if (isSorted == true) 'isSorted': 'true',

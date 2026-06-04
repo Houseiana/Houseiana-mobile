@@ -78,7 +78,6 @@ class AllScreensDemo extends StatelessWidget {
           _buildScreenButton(context, context.tr('wizard.screenNotificationSettings'), Routes.notificationSettings),
           _buildScreenButton(context, context.tr('wizard.screenPrivacySettings'), Routes.privacySettings),
           _buildScreenButton(context, context.tr('wizard.screenLanguageSettings'), Routes.languageSettings),
-          _buildScreenButton(context, context.tr('wizard.screenCurrencySettings'), Routes.currencySettings),
           _buildScreenButton(context, context.tr('wizard.screenPaymentMethods'), Routes.paymentMethods),
           _buildScreenButton(context, context.tr('wizard.screenSavedAddresses'), Routes.savedAddresses),
           _buildScreenButton(context, context.tr('wizard.screenChangePassword'), Routes.changePassword),

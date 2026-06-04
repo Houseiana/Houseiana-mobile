@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/models/property_model.dart';
+import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class HostListingCard extends StatelessWidget {
   final PropertyModel property;
@@ -35,15 +36,15 @@ class HostListingCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildImageSection(),
-            _buildInfoSection(),
+            _buildImageSection(context),
+            _buildInfoSection(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildImageSection() {
+  Widget _buildImageSection(BuildContext context) {
     return Stack(
       children: [
         ClipRRect(
@@ -95,7 +96,7 @@ class HostListingCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  _formatStatus(property.status),
+                  _formatStatus(context, property.status),
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -127,9 +128,9 @@ class HostListingCard extends StatelessWidget {
                     color: AppColors.charcoal,
                   ),
                 ),
-                const Text(
-                  ' /night',
-                  style: TextStyle(
+                Text(
+                  ' ${context.tr('home.perNight')}',
+                  style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.neutral500,
                   ),
@@ -154,7 +155,8 @@ class HostListingCard extends StatelessWidget {
                 const Icon(Icons.visibility_outlined, color: Colors.white, size: 14),
                 const SizedBox(width: 6),
                 Text(
-                  '${property.viewCount ?? 0} views',
+                  context.tr('host.cardViewsCount',
+                      args: {'n': property.viewCount ?? 0}),
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -169,7 +171,7 @@ class HostListingCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoSection() {
+  Widget _buildInfoSection(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -181,7 +183,9 @@ class HostListingCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  property.displayTitle.isNotEmpty ? property.displayTitle : 'Untitled Property',
+                  property.displayTitle.isNotEmpty
+                      ? property.displayTitle
+                      : context.tr('host.untitledProperty'),
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -216,7 +220,9 @@ class HostListingCard extends StatelessWidget {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  property.displayLocation.isNotEmpty ? property.displayLocation : 'null, null',
+                  property.displayLocation.isNotEmpty
+                      ? property.displayLocation
+                      : context.tr('propertyDetails.locationNotAvailable'),
                   style: const TextStyle(
                     fontSize: 14,
                     color: AppColors.neutral500,
@@ -233,13 +239,17 @@ class HostListingCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               if (property.bedrooms != null)
-                _buildFeaturePill(Icons.door_sliding_outlined, '${property.bedrooms} bedrooms'),
+                _buildFeaturePill(Icons.door_sliding_outlined,
+                    context.tr('propertyDetails.bedrooms', args: {'n': property.bedrooms})),
               if (property.beds != null)
-                _buildFeaturePill(Icons.bed_outlined, '${property.beds} beds'),
+                _buildFeaturePill(Icons.bed_outlined,
+                    context.tr('host.cardBeds', args: {'n': property.beds})),
               if (property.bathrooms != null)
-                _buildFeaturePill(Icons.bathtub_outlined, '${property.bathrooms} bath'),
+                _buildFeaturePill(Icons.bathtub_outlined,
+                    context.tr('propertyDetails.bathrooms', args: {'n': property.bathrooms})),
               if (property.maxGuests != null)
-                _buildFeaturePill(Icons.people_outline, '${property.maxGuests} guests'),
+                _buildFeaturePill(Icons.people_outline,
+                    context.tr('propertyDetails.guests', args: {'n': property.maxGuests})),
             ],
           ),
           const SizedBox(height: 20),
@@ -248,7 +258,7 @@ class HostListingCard extends StatelessWidget {
               Expanded(
                 child: _buildStatBlock(
                   value: '${(property.occupancyRate ?? 0).toStringAsFixed(0)}%',
-                  label: 'Occupancy',
+                  label: context.tr('host.cardOccupancy'),
                   valueColor: const Color(0xFFC79100), // Darker yellow for text
                   backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
                 ),
@@ -257,7 +267,7 @@ class HostListingCard extends StatelessWidget {
               Expanded(
                 child: _buildStatBlock(
                   value: (property.revenueThisMonth ?? 0).toStringAsFixed(0),
-                  label: 'This month',
+                  label: context.tr('host.cardThisMonth'),
                   valueColor: AppColors.charcoal,
                   backgroundColor: const Color(0xFFF5F6F8),
                 ),
@@ -266,7 +276,7 @@ class HostListingCard extends StatelessWidget {
               Expanded(
                 child: _buildStatBlock(
                   value: (property.viewCount ?? 0).toString(),
-                  label: 'Total views',
+                  label: context.tr('host.cardTotalViews'),
                   valueColor: AppColors.charcoal,
                   backgroundColor: const Color(0xFFF5F6F8),
                 ),
@@ -353,8 +363,17 @@ class HostListingCard extends StatelessWidget {
     }
   }
 
-  String _formatStatus(String? status) {
-    if (status == null || status.isEmpty) return 'Unknown';
-    return status[0].toUpperCase() + status.substring(1).toLowerCase();
+  String _formatStatus(BuildContext context, String? status) {
+    if (status == null || status.isEmpty) return context.tr('host.statusUnknown');
+    switch (status.toUpperCase()) {
+      case 'DRAFT':
+        return context.tr('host.statusDraft');
+      case 'ACTIVE':
+        return context.tr('host.statusActive');
+      case 'PENDING':
+        return context.tr('host.statusPending');
+      default:
+        return status[0].toUpperCase() + status.substring(1).toLowerCase();
+    }
   }
 }

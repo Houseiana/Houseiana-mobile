@@ -36,7 +36,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         final user = await _userService.getUser(_session.userId!);
         emit(ProfileLoaded(user: user));
       } else {
-        emit(const ProfileError(message: 'Failed to update profile'));
+        emit(const ProfileError(message: 'profile.profileUpdateFailed'));
       }
     } catch (e) {
       emit(ProfileError(message: e.toString()));

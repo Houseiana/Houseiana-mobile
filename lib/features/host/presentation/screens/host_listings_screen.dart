@@ -205,10 +205,15 @@ class _HostListingsViewState extends State<_HostListingsView> {
   }
 
   Widget _buildStatsCardsRow(BuildContext context, Map<String, dynamic> stats) {
-    final upcomingBookings = stats['upcomingBookings']?.toString() ?? '0';
-    final averageRating = stats['averageRating']?.toString() ?? '--';
-    final activeListings = stats['activeListings']?.toString() ?? '0';
-    final monthlyRevenue = stats['monthlyRevenue']?.toString() ?? '0.00';
+    // Field names must match the /users/{userId}/host-dashboard response
+    // (same keys the web project consumes).
+    final upcomingBookings = stats['upcomingBookingsCount']?.toString() ?? '0';
+    final rawRating = stats['averagePropertyRating'];
+    final averageRating = (rawRating != null && rawRating.toString().isNotEmpty)
+        ? num.tryParse(rawRating.toString())?.toStringAsFixed(2) ?? '--'
+        : '--';
+    final activeListings = stats['activeProperties']?.toString() ?? '0';
+    final monthlyRevenue = stats['currentMonthEarnings']?.toString() ?? '0.00';
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -478,6 +483,16 @@ class _HostListingsViewState extends State<_HostListingsView> {
                 property: property,
                 onTap: () {
                   if (state.isReloadingList) return;
+                  // Only active listings open the public details page.
+                  if ((property.status ?? '').toLowerCase() != 'active') {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(context.tr('host.onlyActiveCanBeViewed')),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
                   Navigator.pushNamed(
                     context,
                     Routes.propertyDetails,

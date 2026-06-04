@@ -108,7 +108,7 @@ class HostBookingsScreen extends StatelessWidget {
                 ? _buildEmptyState()
                 : _BookingList(
                     bookings: state.bookings,
-                    showActions: state.selectedStatusId == 2 || state.selectedStatusId == 8, // Pending or Requested
+                    showActions: state.selectedStatusId == 8, // Requested only
                     cubit: context.read<HostBookingsCubit>(),
                     emptyTitle: context.tr('host.noBookingsFound'),
                     emptySubtitle: context.tr('host.tryChangingStatusFilter'),
@@ -452,7 +452,8 @@ class _BookingCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              context.tr('host.bookingIdLabel', args: {'id': booking.id}),
+              context.tr('host.bookingCodeLabel',
+                  args: {'code': booking.bookingCodeFormatted}),
               style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.neutral600,
@@ -498,14 +499,13 @@ class _BookingCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 16),
                 const Icon(
-                  Icons.attach_money,
+                  Icons.payments_outlined,
                   size: 14,
                   color: AppColors.neutral600,
                 ),
+                const SizedBox(width: 4),
                 Text(
-                  booking.totalPrice > 0
-                      ? booking.totalPrice.toStringAsFixed(0)
-                      : '0',
+                  '${booking.currencyLabel} ${booking.totalPrice.toStringAsFixed(0)}',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,

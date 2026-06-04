@@ -100,12 +100,6 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             subtitle: context.tr('profile.english'),
             onTap: () => Navigator.pushNamed(context, Routes.languageSettings),
           ),
-          _buildSettingTile(
-            icon: Icons.attach_money,
-            title: context.tr('profile.currency'),
-            subtitle: context.tr('profile.usdSymbol'),
-            onTap: () => Navigator.pushNamed(context, Routes.currencySettings),
-          ),
 
           const SizedBox(height: 32),
 

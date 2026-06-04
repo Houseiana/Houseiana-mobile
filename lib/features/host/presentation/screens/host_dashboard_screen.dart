@@ -276,8 +276,7 @@ class _HostDashboardView extends StatelessWidget {
               child: _buildActionButton(
                 icon: Icons.calendar_today_outlined,
                 label: context.tr('host.calendarAction'),
-                onTap: () =>
-                    Navigator.pushNamed(context, Routes.availabilityCalendar),
+                onTap: () => Navigator.pushNamed(context, Routes.hostCalendar),
               ),
             ),
             const SizedBox(width: 10),
@@ -449,22 +448,61 @@ class _HostDashboardView extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.success.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              context.tr('host.activeBadge'),
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: AppColors.success,
-              ),
-            ),
-          ),
+          _buildListingStatusBadge(context, property.status),
         ],
+      ),
+    );
+  }
+
+  Widget _buildListingStatusBadge(BuildContext context, String? status) {
+    late final Color color;
+    late final String label;
+
+    switch ((status ?? '').toLowerCase()) {
+      case 'active':
+        color = AppColors.success;
+        label = context.tr('host.statusActive');
+        break;
+      case 'pending':
+        color = AppColors.warning;
+        label = context.tr('host.statusPending');
+        break;
+      case 'draft':
+        color = AppColors.neutral600;
+        label = context.tr('host.statusDraft');
+        break;
+      case 'inactive':
+        color = AppColors.neutral600;
+        label = context.tr('host.statusInactive');
+        break;
+      case 'action required':
+        color = AppColors.warning;
+        label = context.tr('host.statusActionRequired');
+        break;
+      case 'rejected':
+        color = AppColors.error;
+        label = context.tr('host.statusRejected');
+        break;
+      default:
+        color = AppColors.neutral600;
+        label = (status == null || status.isEmpty)
+            ? context.tr('host.statusInactive')
+            : status;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }

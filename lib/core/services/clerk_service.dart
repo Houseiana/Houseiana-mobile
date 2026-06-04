@@ -1,12 +1,20 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:houseiana_mobile_app/core/config/clerk_config.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ClerkService {
   late final Dio _frontendDio;
   final Dio _backendDio;
+  final SharedPreferences _prefs;
 
-  // In-memory cookie store to maintain session state across multi-step calls
+  static const _keyClerkCookies = 'clerk_client_cookies';
+
+  // Cookie store that keeps the Clerk client/session state. Persisted to
+  // SharedPreferences so the long-lived `__client` device cookie survives app
+  // restarts — that cookie is what lets us mint a fresh, short-lived session
+  // JWT (via [getSessionToken]) without forcing the user to sign in again.
   final _cookies = <String, String>{};
 
   // Clerk Frontend API requires form-urlencoded, not JSON
@@ -14,7 +22,7 @@ class ClerkService {
     contentType: 'application/x-www-form-urlencoded',
   );
 
-  ClerkService()
+  ClerkService(this._prefs)
       : _backendDio = Dio(
           BaseOptions(
             baseUrl: ClerkConfig.backendApiUrl,
@@ -24,6 +32,7 @@ class ClerkService {
             },
           ),
         ) {
+    _restoreCookies();
     _frontendDio = Dio(
       BaseOptions(
         baseUrl: '${ClerkConfig.frontendApiUrl}/v1',
@@ -32,7 +41,7 @@ class ClerkService {
       ),
     );
 
-    // Persist cookies between multi-step auth calls
+    // Persist cookies between multi-step auth calls (and across app restarts)
     _frontendDio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
@@ -44,14 +53,17 @@ class ClerkService {
         },
         onResponse: (response, handler) {
           final setCookies = response.headers['set-cookie'] ?? [];
+          var changed = false;
           for (final raw in setCookies) {
             final nameValue = raw.split(';').first.trim();
             final eqIdx = nameValue.indexOf('=');
             if (eqIdx > 0) {
               _cookies[nameValue.substring(0, eqIdx).trim()] =
                   nameValue.substring(eqIdx + 1).trim();
+              changed = true;
             }
           }
+          if (changed) _persistCookies();
           handler.next(response);
         },
       ),
@@ -106,7 +118,7 @@ class ClerkService {
     String? phoneNumber,
   }) async {
     try {
-      _cookies.clear();
+      _clearCookies();
       await _initClient();
 
       final body = <String, String>{
@@ -214,7 +226,7 @@ class ClerkService {
     required String password,
   }) async {
     try {
-      _cookies.clear();
+      _clearCookies();
       await _initClient();
 
       // Step 1: Create sign-in with identifier (form-urlencoded)
@@ -506,7 +518,7 @@ class ClerkService {
     required String email,
   }) async {
     try {
-      _cookies.clear();
+      _clearCookies();
       await _initClient();
 
       // Step 1: Create sign-in with the email to get the user context
@@ -684,6 +696,64 @@ class ClerkService {
     } on DioException catch (e) {
       return _handleError(e);
     }
+  }
+
+  /// Mints a fresh, short-lived session JWT for [sessionId] via the Clerk
+  /// **Frontend** API (`POST /client/sessions/{id}/tokens`).
+  ///
+  /// Clerk session tokens are short-lived by design; the stored login token
+  /// expires quickly and must be re-minted. This relies on the persisted
+  /// `__client` device cookie to authorize the request, so no secret key is
+  /// involved. Returns the new JWT, or null if it can't be obtained (e.g. the
+  /// device cookie is missing/revoked → caller should sign the user out).
+  Future<String?> getSessionToken(String sessionId) async {
+    if (sessionId.isEmpty) return null;
+    try {
+      final response = await _frontendDio.post(
+        '/client/sessions/$sessionId/tokens',
+        options: _formOptions,
+      );
+      final data = response.data;
+      final jwt = data is Map ? data['jwt']?.toString() : null;
+      return (jwt != null && jwt.isNotEmpty) ? jwt : null;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        debugPrint(
+            'ClerkService: token refresh failed: ${e.response?.statusCode} ${e.message}');
+      }
+      return null;
+    }
+  }
+
+  /// Clears all stored Clerk client/session cookies (memory + disk).
+  /// Called on logout so a stale device cookie can't resurrect a dead session.
+  void clearSession() => _clearCookies();
+
+  // ── Cookie Persistence ─────────────────────────────────────────────────────
+
+  void _restoreCookies() {
+    final raw = _prefs.getString(_keyClerkCookies);
+    if (raw == null || raw.isEmpty) return;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        _cookies
+          ..clear()
+          ..addAll(decoded.map((k, v) => MapEntry(k.toString(), v.toString())));
+      }
+    } catch (_) {
+      // Corrupt cache — drop it and start fresh.
+      _prefs.remove(_keyClerkCookies);
+    }
+  }
+
+  void _persistCookies() {
+    _prefs.setString(_keyClerkCookies, jsonEncode(_cookies));
+  }
+
+  void _clearCookies() {
+    _cookies.clear();
+    _prefs.remove(_keyClerkCookies);
   }
 
   // ── Token Helper ──────────────────────────────────────────────────────────

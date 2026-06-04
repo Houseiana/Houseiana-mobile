@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
@@ -13,30 +14,23 @@ class AdvancedFiltersScreen extends StatefulWidget {
 }
 
 class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
-  RangeValues _priceRange = const RangeValues(50, 500);
+  /// Price filter operates in EGP and opens up to this nightly ceiling.
+  static const double _maxPriceLimit = 200000;
+  static const RangeValues _defaultPriceRange =
+      RangeValues(0, _maxPriceLimit);
+
+  final NumberFormat _priceFormatter = NumberFormat('#,##0');
+
+  RangeValues _priceRange = _defaultPriceRange;
   int _bedrooms = 0;
+  int _beds = 0;
   int _bathrooms = 0;
-  String? _propertyType;
   final List<String> _selectedAmenities = [];
-  double _minRating = 0;
   bool _lookupsLoading = true;
   bool _lookupsFailed = false;
 
-  List<String> _propertyTypes = [
-    'Apartment / Condo',
-    'House',
-    'Villa',
-    'Studio / Loft',
-    'Townhouse',
-    'Guesthouse / Annex',
-    'Serviced Apartment',
-    'Aparthotel',
-    'Cabin / Chalet',
-    'Farm Stay',
-    'Houseboat',
-    'Casa',
-    'Other',
-  ];
+  String _formatPrice(double value) =>
+      'EGP ${_priceFormatter.format(value.toInt())}';
 
   List<String> _amenities = [
     'WiFi',
@@ -77,15 +71,10 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
   Future<void> _loadLookups() async {
     try {
       final api = sl<ApiConsumer>();
-      final results = await Future.wait([
-        api.get(EndPoints.propertyTypesLookup),
-        api.get(EndPoints.amenitiesLookup),
-      ]);
-      final propertyTypes = _extractLookupNames(results[0]);
-      final amenities = _extractLookupNames(results[1]);
+      final response = await api.get(EndPoints.amenitiesLookup);
+      final amenities = _extractLookupNames(response);
       if (!mounted) return;
       setState(() {
-        if (propertyTypes.isNotEmpty) _propertyTypes = propertyTypes;
         if (amenities.isNotEmpty) _amenities = amenities;
         _lookupsLoading = false;
         _lookupsFailed = false;
@@ -156,12 +145,11 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
           TextButton(
             onPressed: () {
               setState(() {
-                _priceRange = const RangeValues(50, 500);
+                _priceRange = _defaultPriceRange;
                 _bedrooms = 0;
+                _beds = 0;
                 _bathrooms = 0;
-                _propertyType = null;
                 _selectedAmenities.clear();
-                _minRating = 0;
               });
             },
             child: Text(
@@ -195,14 +183,16 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '\$${_priceRange.start.toInt()}',
+                      _formatPrice(_priceRange.start),
                       style: const TextStyle(
                         fontSize: 14,
                         color: AppColors.neutral600,
                       ),
                     ),
                     Text(
-                      '\$${_priceRange.end.toInt()}+',
+                      _priceRange.end >= _maxPriceLimit
+                          ? '${_formatPrice(_priceRange.end)}+'
+                          : _formatPrice(_priceRange.end),
                       style: const TextStyle(
                         fontSize: 14,
                         color: AppColors.neutral600,
@@ -213,9 +203,15 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                 RangeSlider(
                   values: _priceRange,
                   min: 0,
-                  max: 1000,
-                  divisions: 20,
+                  max: _maxPriceLimit,
+                  divisions: 40,
                   activeColor: AppColors.primaryColor,
+                  labels: RangeLabels(
+                    _formatPrice(_priceRange.start),
+                    _priceRange.end >= _maxPriceLimit
+                        ? '${_formatPrice(_priceRange.end)}+'
+                        : _formatPrice(_priceRange.end),
+                  ),
                   onChanged: (values) {
                     setState(() {
                       _priceRange = values;
@@ -241,6 +237,22 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
 
                 const SizedBox(height: 24),
 
+                // Beds
+                Text(
+                  context.tr('filters.beds'),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.charcoal,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildCounter(_beds, (val) {
+                  setState(() => _beds = val);
+                }),
+
+                const SizedBox(height: 24),
+
                 // Bathrooms
                 Text(
                   context.tr('filters.bathrooms'),
@@ -256,103 +268,10 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                 }),
 
                 const SizedBox(height: 32),
-
-                // Minimum Rating
-                Text(
-                  context.tr('filters.minRating'),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.charcoal,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryColor,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.star,
-                          size: 18, color: AppColors.charcoal),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _minRating == 0
-                                ? context.tr('filters.anyRating')
-                                : '${_minRating.toStringAsFixed(1)}+',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.charcoal,
-                            ),
-                          ),
-                          Slider(
-                            value: _minRating,
-                            min: 0,
-                            max: 5,
-                            divisions: 10,
-                            activeColor: AppColors.primaryColor,
-                            inactiveColor: AppColors.neutral200,
-                            onChanged: (val) {
-                              setState(() => _minRating = val);
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 32),
                 if (_lookupsLoading || _lookupsFailed) ...[
                   _buildLookupStatus(),
                   const SizedBox(height: 24),
                 ],
-
-                // Property Type
-                Text(
-                  context.tr('filters.propertyType'),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.charcoal,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _propertyTypes.map((type) {
-                    final isSelected = _propertyType == type;
-                    return FilterChip(
-                      label: Text(type),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        setState(() {
-                          _propertyType = selected ? type : null;
-                        });
-                      },
-                      selectedColor: AppColors.primaryColor,
-                      labelStyle: TextStyle(
-                        color: isSelected
-                            ? AppColors.charcoal
-                            : AppColors.neutral600,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w400,
-                      ),
-                    );
-                  }).toList(),
-                ),
-
-                const SizedBox(height: 32),
 
                 // Amenities
                 Text(
@@ -417,10 +336,9 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                   Navigator.pop(context, {
                     'priceRange': _priceRange,
                     'bedrooms': _bedrooms,
+                    'beds': _beds,
                     'bathrooms': _bathrooms,
-                    'propertyType': _propertyType,
                     'amenities': _selectedAmenities,
-                    'minRating': _minRating,
                   });
                 },
                 style: ElevatedButton.styleFrom(

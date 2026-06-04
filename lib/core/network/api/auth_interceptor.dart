@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/clerk_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
@@ -44,40 +43,70 @@ class AuthInterceptor extends Interceptor {
   ) async {
     final sessionId = _userSession.sessionId;
     if (sessionId == null || sessionId.isEmpty) {
-      _navigateToLogin();
+      _logout();
       return handler.next(err);
     }
 
+    // Mint a fresh session JWT (deduped across concurrent 401s) and retry the
+    // original request with it. Only sign the user out if a fresh token can't
+    // be obtained — i.e. the session is genuinely dead.
+    final freshToken = await _refreshToken(sessionId);
+    if (freshToken == null || freshToken.isEmpty) {
+      _logout();
+      return handler.next(err);
+    }
+
+    await _userSession.saveAuthToken(freshToken);
+
     try {
-      final result = await _clerkService.getSession(sessionId);
-      if (result == null || result['success'] != true) {
-        _navigateToLogin();
-        return handler.next(err);
-      }
-      final response = await _retry(err.requestOptions);
+      final response = await _retry(err.requestOptions, freshToken);
       handler.resolve(response);
+    } on DioException catch (retryErr) {
+      // Retry still failed — surface the real error without looping.
+      handler.next(retryErr);
     } catch (_) {
-      _navigateToLogin();
       handler.next(err);
     }
   }
 
-  Future<Response<dynamic>> _retry(RequestOptions requestOptions) async {
-    final dio = Dio();
-    final options = Options(
-      method: requestOptions.method,
-      headers: requestOptions.headers,
-    );
-    return dio.request<dynamic>(
-      requestOptions.path,
+  /// De-duplicates concurrent refreshes: many requests may 401 at once, but we
+  /// only want a single call to Clerk; everyone awaits the same future.
+  Future<String?>? _refreshFuture;
+
+  Future<String?> _refreshToken(String sessionId) {
+    return _refreshFuture ??= _clerkService
+        .getSessionToken(sessionId)
+        .whenComplete(() => _refreshFuture = null);
+  }
+
+  /// Replays the failed request on a bare Dio (no interceptors → no 401 loop)
+  /// with the freshly minted token. Uses the absolute URI so the request is
+  /// fully self-contained regardless of the original client's base URL.
+  Future<Response<dynamic>> _retry(
+    RequestOptions requestOptions,
+    String token,
+  ) async {
+    final headers = Map<String, dynamic>.from(requestOptions.headers)
+      ..['Authorization'] = 'Bearer $token';
+    return Dio().request<dynamic>(
+      requestOptions.uri.toString(),
       data: requestOptions.data,
-      queryParameters: requestOptions.queryParameters,
-      options: options,
+      options: Options(
+        method: requestOptions.method,
+        headers: headers,
+        contentType: requestOptions.contentType,
+        responseType: requestOptions.responseType,
+      ),
     );
   }
 
-  void _navigateToLogin() {
-    sl<UserSession>().clear();
+  void _logout() {
+    _clerkService.clearSession();
+    _userSession.clear();
+    // Reset the whole stack to login. `removeUntil((r) => false)` is idempotent
+    // here — repeated 401s each collapse to a single `[login]` stack rather
+    // than piling up. Screens must dismiss their own dialogs defensively, since
+    // this can run while a route is mid-flight.
     navigatorKey.currentState?.pushNamedAndRemoveUntil(
       Routes.login,
       (route) => false,

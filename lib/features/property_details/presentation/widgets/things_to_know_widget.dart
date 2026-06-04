@@ -9,6 +9,7 @@ class ThingsToKnowWidget extends StatefulWidget {
   final bool allowPets;
   final bool allowEvents;
   final bool allowGuests;
+  final bool allowMarriedOnly;
   final List<String>? houseRules;
 
   final bool hasEnhancedCleaning;
@@ -31,6 +32,7 @@ class ThingsToKnowWidget extends StatefulWidget {
     this.allowPets = false,
     this.allowEvents = false,
     this.allowGuests = true,
+    this.allowMarriedOnly = false,
     this.houseRules,
     this.hasEnhancedCleaning = true,
     this.hasSecurityCamera = false,
@@ -180,6 +182,13 @@ class _ThingsToKnowWidgetState extends State<ThingsToKnowWidget>
       text: widget.allowGuests
           ? context.tr('propertyDetails.guestsAllowed')
           : context.tr('propertyDetails.noGuests'),
+    ));
+
+    rules.add(_RuleItem(
+      icon: Icons.favorite_border,
+      text: widget.allowMarriedOnly
+          ? context.tr('propertyDetails.marriedOnly')
+          : context.tr('propertyDetails.notMarriedOnly'),
     ));
 
     if (widget.houseRules != null) {

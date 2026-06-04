@@ -2,11 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _refreshProfile();
+  }
+
+  /// The sign-in response does not always include the user's name, so the
+  /// session can fall back to "User". Fetch the full profile from the backend
+  /// and backfill the cached name/email so the header shows the real name.
+  Future<void> _refreshProfile() async {
+    final session = sl<UserSession>();
+    final userId = session.userId;
+    if (userId == null || userId.isEmpty) return;
+    try {
+      final user = await sl<UserService>().getUser(userId);
+      if (user == null) return;
+      await session.updateProfile(
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      );
+      if (mounted) setState(() {});
+    } catch (_) {
+      // Non-fatal: keep whatever the session already has.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -211,11 +244,6 @@ class ProfileScreen extends StatelessWidget {
                   icon: Icons.language_outlined,
                   label: context.tr('profile.language'),
                   onTap: () => Navigator.pushNamed(context, Routes.languageSettings),
-                ),
-                _MenuItem(
-                  icon: Icons.attach_money,
-                  label: context.tr('profile.currency'),
-                  onTap: () => Navigator.pushNamed(context, Routes.currencySettings),
                 ),
                 _MenuItem(
                   icon: Icons.payment_outlined,

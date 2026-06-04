@@ -16,33 +16,29 @@ class PropertyDetailsLoading extends PropertyDetailsState {}
 class PropertyDetailsLoaded extends PropertyDetailsState {
   final PropertyModel property;
   final List<ReviewModel> ratings;
-  final Map<String, dynamic>? availability;
   final int ratingsPage;
   final bool hasMoreRatings;
 
   const PropertyDetailsLoaded({
     required this.property,
     this.ratings = const [],
-    this.availability,
     this.ratingsPage = 1,
     this.hasMoreRatings = false,
   });
 
   @override
   List<Object?> get props =>
-      [property, ratings, availability, ratingsPage, hasMoreRatings];
+      [property, ratings, ratingsPage, hasMoreRatings];
 
   PropertyDetailsLoaded copyWith({
     PropertyModel? property,
     List<ReviewModel>? ratings,
-    Map<String, dynamic>? availability,
     int? ratingsPage,
     bool? hasMoreRatings,
   }) {
     return PropertyDetailsLoaded(
       property: property ?? this.property,
       ratings: ratings ?? this.ratings,
-      availability: availability ?? this.availability,
       ratingsPage: ratingsPage ?? this.ratingsPage,
       hasMoreRatings: hasMoreRatings ?? this.hasMoreRatings,
     );

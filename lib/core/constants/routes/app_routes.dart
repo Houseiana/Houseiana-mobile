@@ -162,6 +162,16 @@ class AppRoutes {
           ),
           settings,
         );
+      case Routes.ownerProfile:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final userId = (args?['userId'] ?? args?['id'] ?? '').toString();
+        return _buildRoute(
+          BlocProvider(
+            create: (_) => sl<OwnerProfileCubit>()..load(userId),
+            child: OwnerProfileScreen(userId: userId),
+          ),
+          settings,
+        );
       case Routes.discover:
         return _buildRoute(const DiscoverScreen(), settings);
       case Routes.recommendations:
@@ -198,8 +208,6 @@ class AppRoutes {
         return _buildRoute(const PrivacySettingsScreen(), settings);
       case Routes.languageSettings:
         return _buildRoute(const LanguageSettingsScreen(), settings);
-      case Routes.currencySettings:
-        return _buildRoute(const CurrencySettingsScreen(), settings);
       case Routes.paymentMethods:
         return _buildRoute(
           BlocProvider(
@@ -242,6 +250,17 @@ class AppRoutes {
         return _buildRoute(const PricingSetupScreen(), settings);
       case Routes.availabilityCalendar:
         return _buildRoute(const AvailabilityCalendarScreen(), settings);
+      case Routes.hostCalendar:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final propertyId = args?['propertyId']?.toString();
+        return _buildRoute(
+          BlocProvider(
+            create: (_) => sl<HostCalendarManagementCubit>()
+              ..init(initialPropertyId: propertyId),
+            child: const HostCalendarScreen(),
+          ),
+          settings,
+        );
       case Routes.hostDashboard:
         return _buildRoute(const HostDashboardScreen(), settings);
       case Routes.hostListings:

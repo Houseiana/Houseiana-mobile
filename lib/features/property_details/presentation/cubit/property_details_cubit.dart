@@ -24,22 +24,8 @@ class PropertyDetailsCubit extends Cubit<PropertyDetailsState> {
       if (property != null) {
         emit(PropertyDetailsLoaded(property: property));
       } else {
-        emit(const PropertyDetailsError(message: 'Property not found'));
+        emit(const PropertyDetailsError(message: 'propertyDetails.propertyNotFound'));
       }
-    } catch (e) {
-      emit(PropertyDetailsError(message: e.toString()));
-    }
-  }
-
-  Future<void> loadAvailability(String propertyId,
-      {String? checkIn, String? checkOut}) async {
-    final current = state;
-    if (current is! PropertyDetailsLoaded) return;
-
-    try {
-      final availability = await _propertyService.getAvailability(propertyId,
-          checkIn: checkIn, checkOut: checkOut);
-      emit(current.copyWith(availability: availability));
     } catch (e) {
       emit(PropertyDetailsError(message: e.toString()));
     }

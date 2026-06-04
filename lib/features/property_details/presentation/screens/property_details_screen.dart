@@ -15,7 +15,7 @@ import 'package:houseiana_mobile_app/features/property_details/presentation/scre
 import 'package:houseiana_mobile_app/features/property_details/presentation/screens/location_map_screen.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/screens/reviews_screen.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/property_highlights_widget.dart';
-import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/meet_your_host_widget.dart';
+import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/hosted_by_widget.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/things_to_know_widget.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
@@ -63,7 +63,6 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
             userId: _session.userId,
           );
       await cubit.loadRatings(widget.propertyIdToLoad!);
-      await cubit.loadAvailability(widget.propertyIdToLoad!);
       if (mounted) {
         final loaded = cubit.state;
         if (loaded is PropertyDetailsLoaded) {
@@ -198,6 +197,9 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   int _getBedrooms(Map<String, dynamic> p) =>
       ((p['bedrooms'] ?? p['bedroomCount'] ?? 0) as num).toInt();
 
+  int _getBeds(Map<String, dynamic> p) =>
+      ((p['beds'] ?? p['bedsCount'] ?? p['bedCount'] ?? 0) as num).toInt();
+
   int _getBathrooms(Map<String, dynamic> p) =>
       ((p['bathrooms'] ?? p['bathroomCount'] ?? 0) as num).toInt();
 
@@ -208,7 +210,12 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   String _getHostName(Map<String, dynamic> p) {
     final host = p['host'];
     if (host is Map) {
-      return (host['name'] ?? host['firstName'] ?? '').toString();
+      final first = (host['firstName'] ?? '').toString().trim();
+      final last = (host['lastName'] ?? '').toString().trim();
+      final full = '$first $last'.trim();
+      if (full.isNotEmpty) return full;
+      final name = (host['name'] ?? '').toString().trim();
+      if (name.isNotEmpty) return name;
     }
     return (p['hostName'] ?? p['ownerName'] ?? '').toString();
   }
@@ -248,12 +255,34 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     return [];
   }
 
-  String _getCancellationPolicy(Map<String, dynamic> p) =>
-      (p['cancellationPolicy'] ?? p['cancelPolicy'] ?? '').toString();
+  String _getCancellationPolicy(BuildContext context, Map<String, dynamic> p) {
+    final raw = p['cancellationPolicy'] ?? p['cancelPolicy'];
+    if (raw is Map) {
+      final policyType = (raw['policyType'] ?? '').toString();
+      final days = (raw['freeCancellationDays'] as num?)?.toInt() ?? 0;
+      final hours = (raw['freeCancellationHours'] as num?)?.toInt() ?? 0;
+      if (policyType.toLowerCase() == 'fixed') {
+        return context.tr('propertyDetails.cancelFixedPolicy');
+      }
+      if (days > 0) {
+        return context.tr('propertyDetails.cancelFreeDays', args: {'days': days});
+      }
+      if (hours > 0) {
+        return context.tr('propertyDetails.cancelFreeHours', args: {'hours': hours});
+      }
+      if (policyType.isNotEmpty) {
+        return context.tr('propertyDetails.cancelPolicyType', args: {'type': policyType});
+      }
+      return context.tr('propertyDetails.noCancellationPolicy');
+    }
+    if (raw is String && raw.isNotEmpty) return raw;
+    return context.tr('propertyDetails.noCancellationPolicy');
+  }
 
   bool _isSuperhost(Map<String, dynamic> p) => (p['isSuperhost'] ??
       p['host']?['isSuperhost'] ??
       p['host']?['superhost'] ??
+      p['host']?['verified'] ??
       false) as bool;
 
   bool _hasEnhancedCleaning(Map<String, dynamic> p) =>
@@ -264,19 +293,6 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
 
   bool _isEntirePlace(Map<String, dynamic> p) =>
       (p['isEntirePlace'] ?? p['entirePlace'] ?? true) as bool;
-
-  String? _getHostBio(Map<String, dynamic> p) =>
-      (p['host']?['bio'] ?? p['host']?['about'] ?? p['hostBio'])?.toString();
-
-  double _getHostRating(Map<String, dynamic> p) => ((p['host']?['rating'] ??
-          p['host']?['averageRating'] ??
-          p['hostRating'] ??
-          0) as num)
-      .toDouble();
-
-  String? _getHostingSince(Map<String, dynamic> p) =>
-      (p['host']?['createdAt'] ?? p['host']?['hostingSince'] ?? p['hostSince'])
-          ?.toString();
 
   bool _allowSmoking(Map<String, dynamic> p) =>
       (p['allowSmoking'] ?? p['smokingAllowed'] ?? false) as bool;
@@ -289,6 +305,9 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
 
   bool _allowGuests(Map<String, dynamic> p) =>
       (p['allowGuests'] ?? p['guestsAllowed'] ?? true) as bool;
+
+  bool _allowMarriedOnly(Map<String, dynamic> p) =>
+      (p['allowMarriedOnly'] ?? p['marriedOnly'] ?? false) as bool;
 
   bool _hasSecurityCamera(Map<String, dynamic> p) =>
       (p['hasSecurityCamera'] ?? p['securityCamera'] ?? false) as bool;
@@ -324,7 +343,9 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     }
 
     if (state is PropertyDetailsError) {
-      return _buildErrorState(state.message);
+      // state.message may be a translation key (client-side errors) or a plain
+      // server/exception string; tr() falls back to the input when not a key.
+      return _buildErrorState(context.tr(state.message));
     }
 
     if (state is PropertyDetailsLoaded) {
@@ -336,18 +357,21 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       final rating = _getRating(property);
       final reviewCount = _getReviewCount(property);
       final bedrooms = _getBedrooms(property);
+      final beds = _getBeds(property);
       final bathrooms = _getBathrooms(property);
       final maxGuests = _getMaxGuests(property);
       final area = _getArea(property);
       final hostName = _getHostName(property);
       final hostAvatar = _getHostAvatar(property);
+      final hostMap = property['host'] is Map ? property['host'] as Map : const {};
+      final hostId = (hostMap['id'] ?? hostMap['_id'] ?? '').toString();
       final propertyType = _getPropertyType(property);
       final description = _getDescription(property);
       final amenities = _getAmenities(property);
       final checkInTime = _getCheckInTime(property);
       final checkOutTime = _getCheckOutTime(property);
       final rules = _getRules(property);
-      final cancellationPolicy = _getCancellationPolicy(property);
+      final cancellationPolicy = _getCancellationPolicy(context, property);
       final ratings = state.ratings;
 
       return Column(
@@ -361,7 +385,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   _buildPhotoHeader(photos, property),
                   if (photos.isNotEmpty) _buildThumbnailStrip(photos),
                   _buildPropertyInfo(propertyType, title, rating, reviewCount,
-                      location, bedrooms, bathrooms, maxGuests, area),
+                      location, bedrooms, beds, bathrooms, maxGuests, area),
                   const _SectionDivider(),
                   PropertyHighlightsWidget(
                     hostName: hostName,
@@ -371,41 +395,30 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     isEntirePlace: _isEntirePlace(property),
                   ),
                   const _SectionDivider(),
-                  if (hostName.isNotEmpty)
-                    MeetYourHostWidget(
+                  if (hostId.isNotEmpty) ...[
+                    HostedByWidget(
                       hostName: hostName,
                       hostAvatar: hostAvatar,
                       isSuperhost: _isSuperhost(property),
-                      hostRating: _getHostRating(property),
-                      hostingSince: _getHostingSince(property),
-                      hostBio: _getHostBio(property),
-                      onContactHost: () => Navigator.pushNamed(
+                      onTap: () => Navigator.pushNamed(
                         context,
-                        Routes.contactHost,
-                        arguments: {'property': property},
+                        Routes.ownerProfile,
+                        arguments: {'userId': hostId},
                       ),
-                      onViewProfile: () {
-                        final host = property['host'];
-                        if (host is Map) {
-                          Navigator.pushNamed(
-                            context,
-                            Routes.hostProfile,
-                            arguments: {'host': host},
-                          );
-                        }
-                      },
                     ),
-                  if (hostName.isNotEmpty) const _SectionDivider(),
+                    const _SectionDivider(),
+                  ],
                   if (description.isNotEmpty) ...[
                     _buildAboutSection(description),
                     const _SectionDivider(),
                   ],
                   if (bedrooms > 0 ||
+                      beds > 0 ||
                       bathrooms > 0 ||
                       maxGuests > 0 ||
                       area.isNotEmpty) ...[
                     _buildPropertyDetailsSection(
-                        bedrooms, bathrooms, maxGuests, area),
+                        bedrooms, beds, bathrooms, maxGuests, area),
                     const _SectionDivider(),
                   ],
                   if (amenities.isNotEmpty) ...[
@@ -419,6 +432,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     allowPets: _allowPets(property),
                     allowEvents: _allowEvents(property),
                     allowGuests: _allowGuests(property),
+                    allowMarriedOnly: _allowMarriedOnly(property),
                     houseRules: rules,
                     hasEnhancedCleaning: _hasEnhancedCleaning(property),
                     hasSecurityCamera: _hasSecurityCamera(property),
@@ -439,7 +453,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               ),
             ),
           ),
-          _buildBottomBar(price, state.property, state.availability),
+          _buildBottomBar(price, state.property),
         ],
       );
     }
@@ -696,6 +710,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     int reviewCount,
     String location,
     int bedrooms,
+    int beds,
     int bathrooms,
     int maxGuests,
     String area,
@@ -798,7 +813,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               ],
             ],
           ),
-          if (bedrooms > 0 || bathrooms > 0 || maxGuests > 0)
+          if (bedrooms > 0 || beds > 0 || bathrooms > 0 || maxGuests > 0)
             Padding(
               padding: const EdgeInsets.only(top: 16),
               child: SingleChildScrollView(
@@ -807,8 +822,15 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   children: [
                     if (bedrooms > 0) ...[
                       _QuickStat(
+                          icon: Icons.meeting_room_outlined,
+                          label:
+                              '$bedrooms Bedroom${bedrooms > 1 ? 's' : ''}'),
+                      const _StatDot(),
+                    ],
+                    if (beds > 0) ...[
+                      _QuickStat(
                           icon: Icons.bed_outlined,
-                          label: '$bedrooms Bed${bedrooms > 1 ? 's' : ''}'),
+                          label: '$beds Bed${beds > 1 ? 's' : ''}'),
                       const _StatDot(),
                     ],
                     if (bathrooms > 0) ...[
@@ -895,7 +917,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   }
 
   Widget _buildPropertyDetailsSection(
-      int bedrooms, int bathrooms, int maxGuests, String area) {
+      int bedrooms, int beds, int bathrooms, int maxGuests, String area) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -910,8 +932,11 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
           ),
           const SizedBox(height: 14),
           if (bedrooms > 0)
-            _buildDetailRow(Icons.bed_outlined,
+            _buildDetailRow(Icons.meeting_room_outlined,
                 '$bedrooms Bedroom${bedrooms > 1 ? 's' : ''}'),
+          if (beds > 0)
+            _buildDetailRow(
+                Icons.bed_outlined, '$beds Bed${beds > 1 ? 's' : ''}'),
           if (bathrooms > 0)
             _buildDetailRow(Icons.bathtub_outlined,
                 '$bathrooms Bathroom${bathrooms > 1 ? 's' : ''}'),
@@ -1389,16 +1414,12 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     );
   }
 
-  Widget _buildBottomBar(double price, PropertyModel property, Map<String, dynamic>? availability) {
-    final isAvailable = availability?['isAvailable'] ?? true;
+  Widget _buildBottomBar(double price, PropertyModel property) {
     final isInstant = property.instantBook ?? false;
-    
-    String buttonText = context.tr('propertyDetails.reserve');
-    if (!isAvailable) {
-      buttonText = context.tr('propertyDetails.notAvailable');
-    } else if (!isInstant) {
-      buttonText = context.tr('propertyDetails.requestToBook');
-    }
+
+    final String buttonText = isInstant
+        ? context.tr('propertyDetails.reserve')
+        : context.tr('propertyDetails.requestToBook');
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -1420,60 +1441,71 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       ),
       child: Row(
         children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                price > 0
-                    ? '${price.toStringAsFixed(0)} ${property.currency ?? 'EGP'}'
-                    : '--',
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.charcoal,
-                ),
-              ),
-              Text(
-                context.tr('propertyDetails.perNight'),
-                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                isAvailable
-                  ? (isInstant
-                      ? context.tr('propertyDetails.instantBooking')
-                      : context.tr('propertyDetails.requiresConfirmation'))
-                  : context.tr('propertyDetails.unavailable'),
-                style: TextStyle(
-                  fontSize: 11, 
-                  fontWeight: FontWeight.w600,
-                  color: isAvailable 
-                    ? (isInstant ? Colors.green : Colors.orange)
-                    : Colors.red
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          SizedBox(
-            width: 160,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: isAvailable ? () => _onReserve(property) : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.bioYellow,
-                foregroundColor: AppColors.charcoal,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25)),
-              ),
-              child: Text(
-                buttonText,
-                style: const TextStyle(
-                    fontSize: 16,
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  price > 0
+                      ? '${price.toStringAsFixed(0)} ${property.currency ?? 'EGP'}'
+                      : '--',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.charcoal),
+                    color: AppColors.charcoal,
+                  ),
+                ),
+                Text(
+                  context.tr('propertyDetails.perNight'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isInstant
+                      ? context.tr('propertyDetails.instantBooking')
+                      : context.tr('propertyDetails.requiresConfirmation'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isInstant ? Colors.green : Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 120, maxWidth: 170),
+            child: SizedBox(
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () => _onReserve(property),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.bioYellow,
+                  foregroundColor: AppColors.charcoal,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25)),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    buttonText,
+                    maxLines: 1,
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.charcoal),
+                  ),
+                ),
               ),
             ),
           ),

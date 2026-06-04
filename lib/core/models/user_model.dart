@@ -15,6 +15,7 @@ class UserModel extends Equatable {
   final List<AddressModel>? addresses;
   final String? dateOfBirth;
   final String? gender;
+  final int? genderId;
   final String? nationality;
 
   const UserModel({
@@ -32,6 +33,7 @@ class UserModel extends Equatable {
     this.addresses,
     this.dateOfBirth,
     this.gender,
+    this.genderId,
     this.nationality,
   });
 
@@ -58,9 +60,38 @@ class UserModel extends Equatable {
           ?.map((a) => AddressModel.fromJson(a as Map<String, dynamic>))
           .toList(),
       dateOfBirth: json['dateOfBirth']?.toString(),
-      gender: json['gender'] as String?,
+      gender: _parseGenderName(json['gender']),
+      genderId: _parseGenderId(json),
       nationality: json['nationality'] as String?,
     );
+  }
+
+  /// The backend may return `gender` as a plain string or as an object
+  /// `{ id, name }` (the web treats it as `{ id, name }`). Handle both safely
+  /// so loading the profile never throws a type error.
+  static String? _parseGenderName(dynamic value) {
+    if (value is String) return value;
+    if (value is Map) return value['name']?.toString();
+    return null;
+  }
+
+  /// Resolves the integer gender id from either a top-level `genderId` field or
+  /// a nested `gender.id`. Returns null when unset.
+  static int? _parseGenderId(Map<String, dynamic> json) {
+    final direct = json['genderId'];
+    if (direct is int) return direct;
+    if (direct is num) return direct.toInt();
+    final parsedDirect = int.tryParse(direct?.toString() ?? '');
+    if (parsedDirect != null) return parsedDirect;
+
+    final gender = json['gender'];
+    if (gender is Map) {
+      final id = gender['id'];
+      if (id is int) return id;
+      if (id is num) return id.toInt();
+      return int.tryParse(id?.toString() ?? '');
+    }
+    return null;
   }
 
   Map<String, dynamic> toJson() => {
@@ -78,6 +109,7 @@ class UserModel extends Equatable {
         'addresses': addresses?.map((a) => a.toJson()).toList(),
         'dateOfBirth': dateOfBirth,
         'gender': gender,
+        'genderId': genderId,
         'nationality': nationality,
       };
 

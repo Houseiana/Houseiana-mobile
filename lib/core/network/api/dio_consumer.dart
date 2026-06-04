@@ -140,8 +140,7 @@ class DioConsumer implements ApiConsumer {
         throw ServerException(
           exceptionModel: ExceptionModel(
             statusCode: e.response?.statusCode ?? 0,
-            message: e.response?.data?['message']?.toString() ??
-                'Server error occurred',
+            message: _messageFromResponse(e),
           ),
         );
       case DioExceptionType.cancel:
@@ -159,5 +158,33 @@ class DioConsumer implements ApiConsumer {
           ),
         );
     }
+  }
+
+  /// Safely derives a human-readable message from an error response.
+  ///
+  /// The backend can return a JSON object, an empty body (e.g. on 401), or a
+  /// plain string. The previous implementation did `data['message']`
+  /// unconditionally, which threw `type 'String' is not a subtype of type
+  /// 'int' of 'index'` whenever [data] was not a Map — masking the real error.
+  String _messageFromResponse(DioException e) {
+    final status = e.response?.statusCode ?? 0;
+    final data = e.response?.data;
+
+    if (data is Map) {
+      final msg = data['message'] ?? data['error'] ?? data['title'];
+      if (msg != null && msg.toString().trim().isNotEmpty) {
+        return msg.toString();
+      }
+    } else if (data is String && data.trim().isNotEmpty) {
+      return data.trim();
+    }
+
+    if (status == 401) {
+      return 'Your session has expired. Please sign in again.';
+    }
+    if (status == 403) {
+      return 'You are not allowed to perform this action.';
+    }
+    return 'Server error occurred';
   }
 }

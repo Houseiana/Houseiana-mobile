@@ -6,6 +6,7 @@ import 'package:houseiana_mobile_app/core/theme/app_icons.dart';
 import 'package:houseiana_mobile_app/core/theme/app_radius.dart';
 import 'package:houseiana_mobile_app/core/theme/app_shadows.dart';
 import 'package:houseiana_mobile_app/core/theme/app_spacing.dart';
+import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 /// Enhanced property card with modern design
 class EnhancedPropertyCard extends StatefulWidget {
@@ -343,7 +344,7 @@ class _EnhancedPropertyCardState extends State<EnhancedPropertyCard>
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Superhost',
+                    context.tr('propertyDetails.superhostBadge'),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,

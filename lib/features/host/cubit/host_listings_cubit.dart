@@ -7,11 +7,57 @@ import 'package:houseiana_mobile_app/features/host/cubit/host_listings_state.dar
 class HostListingsCubit extends Cubit<HostListingsState> {
   final _hostService = sl<HostService>();
   final _session = sl<UserSession>();
-  
+
   int _currentPage = 1;
   static const int _limit = 20;
 
   HostListingsCubit() : super(HostListingsInitial());
+
+  // Maps known status names (any locale) to a canonical English key, mirroring
+  // the web project. Used to resolve a selected status to its lookup id.
+  static const Map<String, String> _canonicalStatusKey = {
+    'active': 'active',
+    'pending': 'pending',
+    'draft': 'draft',
+    'inactive': 'inactive',
+    'paused': 'paused',
+    'actionrequired': 'actionrequired',
+    'rejected': 'rejected',
+    'suspended': 'suspended',
+    // Arabic
+    'نشط': 'active',
+    'معلق': 'pending',
+    'مسودة': 'draft',
+    'غيرنشط': 'inactive',
+    'متوقف': 'paused',
+    'إجراءمطلوب': 'actionrequired',
+    'مرفوض': 'rejected',
+  };
+
+  String _canonical(String raw) {
+    final norm = raw.toLowerCase().replaceAll(RegExp(r'\s'), '');
+    return _canonicalStatusKey[norm] ?? norm;
+  }
+
+  /// Resolves a selected status (display name) to its lookup status id, matching
+  /// the web behaviour which filters by numeric id rather than by name.
+  /// Returns null for "all"/empty/unresolved so the backend returns everything.
+  String? _statusIdFor(
+    List<Map<String, dynamic>> statusOptions,
+    String? status,
+  ) {
+    if (status == null || status.isEmpty || status.toLowerCase() == 'all') {
+      return null;
+    }
+    final target = _canonical(status);
+    for (final opt in statusOptions) {
+      final name = (opt['name'] ?? opt['label'] ?? '').toString();
+      if (_canonical(name) == target) {
+        return opt['id']?.toString();
+      }
+    }
+    return null;
+  }
 
   Future<void> loadInitialData() async {
     if (!_session.isLoggedIn) {
@@ -71,7 +117,7 @@ class HostListingsCubit extends Cubit<HostListingsState> {
         _session.userId!,
         page: _currentPage,
         limit: _limit,
-        status: newStatus == 'All' ? null : newStatus,
+        status: _statusIdFor(currentState.statusOptions, newStatus),
         sortBy: newSort,
         searchQuery: newQuery.isEmpty ? null : newQuery,
       );
@@ -106,7 +152,7 @@ class HostListingsCubit extends Cubit<HostListingsState> {
         _session.userId!,
         page: _currentPage,
         limit: _limit,
-        status: currentState.selectedStatus,
+        status: _statusIdFor(currentState.statusOptions, currentState.selectedStatus),
         sortBy: currentState.selectedSort,
         searchQuery: currentState.searchQuery.isEmpty ? null : currentState.searchQuery,
       );

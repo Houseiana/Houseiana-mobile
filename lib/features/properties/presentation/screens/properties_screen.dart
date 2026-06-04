@@ -36,10 +36,9 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   double? _minPrice;
   double? _maxPrice;
   int? _minBedrooms;
+  int? _beds;
   int? _minBathrooms;
-  String? _propertyType;
   List<String>? _amenities;
-  double? _minRating;
 
   @override
   void initState() {
@@ -79,10 +78,9 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
         minPrice: _minPrice,
         maxPrice: _maxPrice,
         minBedrooms: _minBedrooms,
+        beds: _beds,
         minBathrooms: _minBathrooms,
-        propertyType: _propertyType,
         amenities: _amenities,
-        minRating: _minRating,
         page: 1,
         limit: _pageLimit,
       ),
@@ -120,10 +118,9 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
         minPrice: _minPrice,
         maxPrice: _maxPrice,
         minBedrooms: _minBedrooms,
+        beds: _beds,
         minBathrooms: _minBathrooms,
-        propertyType: _propertyType,
         amenities: _amenities,
-        minRating: _minRating,
         page: nextPage,
         limit: _pageLimit,
       ),
@@ -303,15 +300,14 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       }
       final bedrooms = result['bedrooms'];
       _minBedrooms = bedrooms is int && bedrooms > 0 ? bedrooms : null;
+      final beds = result['beds'];
+      _beds = beds is int && beds > 0 ? beds : null;
       final bathrooms = result['bathrooms'];
       _minBathrooms = bathrooms is int && bathrooms > 0 ? bathrooms : null;
-      _propertyType = result['propertyType']?.toString();
       final amenities = result['amenities'];
       _amenities = amenities is List
           ? amenities.map((item) => item.toString()).toList()
           : null;
-      final rating = result['minRating'];
-      _minRating = rating is num && rating > 0 ? rating.toDouble() : null;
     });
     await _loadData(location: _filterLocation);
   }
@@ -322,10 +318,9 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       _minPrice = null;
       _maxPrice = null;
       _minBedrooms = null;
+      _beds = null;
       _minBathrooms = null;
-      _propertyType = null;
       _amenities = null;
-      _minRating = null;
     });
     await _loadData(location: null);
   }

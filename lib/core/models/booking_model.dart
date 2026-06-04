@@ -34,6 +34,9 @@ class BookingModel extends Equatable {
   final String? message;
   final PropertySummary? property;
   final String? propertyTitle;
+  final String? propertyCoverPhoto;
+  final String? currency;
+  final String? confirmationCode;
   final DateTime? createdAt;
 
   const BookingModel({
@@ -49,6 +52,9 @@ class BookingModel extends Equatable {
     this.message,
     this.property,
     this.propertyTitle,
+    this.propertyCoverPhoto,
+    this.currency,
+    this.confirmationCode,
     this.createdAt,
   });
 
@@ -73,12 +79,16 @@ class BookingModel extends Equatable {
           DateTime.now().toIso8601String()),
       guests: json['guests'] as int? ?? json['numberOfGuests'] as int? ?? 1,
       numberOfGuests: json['numberOfGuests'] as int?,
-      totalPrice: _toDouble(json['totalPrice'] ?? json['total'] ?? 0),
+      totalPrice:
+          _toDouble(json['totalPrice'] ?? json['total'] ?? json['price'] ?? 0),
       status: json['status']?.toString().toUpperCase() ?? 'PENDING',
       message: json['message'] as String?,
       property: propertySummary,
       propertyTitle:
           propertySummary?.displayTitle ?? json['propertyTitle'] as String?,
+      propertyCoverPhoto: json['propertyCoverPhoto'] as String?,
+      currency: json['currency'] as String?,
+      confirmationCode: json['confirmationCode'] as String?,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString())
           : null,
@@ -101,6 +111,21 @@ class BookingModel extends Equatable {
 
   int get nights => checkOut.difference(checkIn).inDays;
   BookingStatus get bookingStatus => BookingStatus.fromString(status);
+
+  /// Currency code shown next to the total (web defaults to EGP).
+  String get currencyLabel =>
+      (currency != null && currency!.isNotEmpty) ? currency! : 'EGP';
+
+  /// Short, human-friendly booking reference shown instead of the raw id.
+  /// Mirrors the web host reservations card (`R-XXXX`) while preferring the
+  /// real confirmation code when the backend provides one.
+  String get bookingCodeFormatted {
+    if (confirmationCode != null && confirmationCode!.isNotEmpty) {
+      return confirmationCode!;
+    }
+    if (id.isEmpty) return '';
+    return 'R-${id.substring(0, id.length.clamp(0, 4)).toUpperCase()}';
+  }
 
   @override
   List<Object?> get props => [id, propertyId, checkIn, checkOut, status];

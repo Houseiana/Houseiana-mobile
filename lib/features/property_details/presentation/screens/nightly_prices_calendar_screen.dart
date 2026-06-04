@@ -5,6 +5,7 @@ import 'package:houseiana_mobile_app/core/models/nightly_price_model.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/nightly_prices_cubit.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/nightly_prices_state.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/month_calendar_widget.dart';
+import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:intl/intl.dart';
 
 class NightlyPricesCalendarScreen extends StatefulWidget {
@@ -41,9 +42,9 @@ class _NightlyPricesCalendarScreenState
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Select dates',
-          style: TextStyle(
+        title: Text(
+          context.tr('propertyDetails.calendarSelectDates'),
+          style: const TextStyle(
             color: AppColors.charcoal,
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -84,9 +85,9 @@ class _NightlyPricesCalendarScreenState
           const Icon(Icons.error_outline,
               color: AppColors.error, size: 48),
           const SizedBox(height: 16),
-          const Text(
-            "Couldn't load prices",
-            style: TextStyle(
+          Text(
+            context.tr('propertyDetails.calendarLoadError'),
+            style: const TextStyle(
               fontSize: 16,
               color: AppColors.charcoal,
               fontWeight: FontWeight.w600,
@@ -100,7 +101,7 @@ class _NightlyPricesCalendarScreenState
             ),
             onPressed: () =>
                 context.read<NightlyPricesCubit>().open(currency: widget.currency),
-            child: const Text('Retry'),
+            child: Text(context.tr('common.retry')),
           ),
         ],
       ),
@@ -243,13 +244,16 @@ class _NightlyPricesCalendarScreenState
 
     String summary;
     if (state.checkIn == null) {
-      summary = 'Select check-in date';
+      summary = context.tr('propertyDetails.calendarSelectCheckIn');
     } else if (state.checkOut == null) {
-      summary = '${dateFmt.format(state.checkIn!)} – Select check-out';
+      summary =
+          '${dateFmt.format(state.checkIn!)} – ${context.tr('propertyDetails.calendarSelectCheckOut')}';
     } else {
       final nights = state.checkOut!.difference(state.checkIn!).inDays;
+      final nightStay =
+          context.tr('propertyDetails.calendarNightStay', args: {'n': nights});
       summary =
-          '${dateFmt.format(state.checkIn!)} – ${dateFmt.format(state.checkOut!)} ($nights-night stay)';
+          '${dateFmt.format(state.checkIn!)} – ${dateFmt.format(state.checkOut!)} ($nightStay)';
     }
 
     return Container(
@@ -268,7 +272,8 @@ class _NightlyPricesCalendarScreenState
           children: [
             Center(
               child: Text(
-                'Approximate prices in ${state.currency} for a 1-night stay',
+                context.tr('propertyDetails.calendarApproxPrices',
+                    args: {'currency': state.currency}),
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.neutral500,
@@ -302,7 +307,7 @@ class _NightlyPricesCalendarScreenState
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('Clear'),
+                    child: Text(context.tr('common.clear')),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -326,9 +331,9 @@ class _NightlyPricesCalendarScreenState
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'Apply',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                    child: Text(
+                      context.tr('common.apply'),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),

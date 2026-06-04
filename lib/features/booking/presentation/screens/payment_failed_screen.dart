@@ -191,26 +191,6 @@ class PaymentFailedScreen extends StatelessWidget {
                         OutlinedButton(
                           onPressed: () => Navigator.pushNamed(
                             context,
-                            Routes.paymentMethods,
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.charcoal,
-                            side:
-                                const BorderSide(color: Color(0xFFE5E7EB)),
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            context.tr('booking.changePaymentMethod'),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        OutlinedButton(
-                          onPressed: () => Navigator.pushNamed(
-                            context,
                             Routes.contactSupport,
                           ),
                           style: OutlinedButton.styleFrom(

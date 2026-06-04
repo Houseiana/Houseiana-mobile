@@ -79,3 +79,6 @@ windows/build/
 
 # Temporary upload files (if any)
 **/uploads/
+
+# Accidental nested copy of the web project — it lives in its own sibling repo
+Houseiana-Holidays-Homes-main/

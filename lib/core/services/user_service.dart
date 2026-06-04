@@ -1,4 +1,6 @@
 import 'package:houseiana_mobile_app/core/models/booking_model.dart';
+import 'package:houseiana_mobile_app/core/models/gender_option.dart';
+import 'package:houseiana_mobile_app/core/models/public_profile_model.dart';
 import 'package:houseiana_mobile_app/core/models/trip_model.dart';
 import 'package:houseiana_mobile_app/core/models/user_model.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
@@ -25,6 +27,18 @@ class UserService {
         ? item['user'] as Map<String, dynamic>
         : item;
     return UserModel.fromJson(userJson);
+  }
+
+  /// GET /users/{id} — FULL wrapper for the public/owner profile screen.
+  /// Unlike [getUser], this preserves rating / properties / bookings /
+  /// hostRatings. The whole response is passed to the model (which unwraps
+  /// `data` and `user` itself) so sibling keys like `rating` survive.
+  Future<PublicProfileModel?> getPublicProfile(String userId) async {
+    final response = await _api.get(EndPoints.userById(userId));
+    if (response is Map<String, dynamic>) {
+      return PublicProfileModel.fromJson(response);
+    }
+    return null;
   }
 
   // ── Favorites ────────────────────────────────────────────────────────────
@@ -58,11 +72,28 @@ class UserService {
 
   // ── Trips / Bookings ─────────────────────────────────────────────────────
 
+  /// GET /api/Lookups/BookingStatus → `[{ id, name }]`
+  /// Drives the guest Trips tabs (Upcoming / Past / Cancelled / Need To Pay /
+  /// Awaiting Approval). Falls back to a static list if the lookup fails.
+  Future<List<TripFilterTab>> getTripFilterTabs() async {
+    try {
+      final response = await _api.get(EndPoints.bookingStatusLookup);
+      final tabs = _list(response)
+          .map(TripFilterTab.fromJson)
+          .where((t) => t.label.isNotEmpty)
+          .toList();
+      return tabs.isEmpty ? TripFilterTab.fallback : tabs;
+    } catch (_) {
+      return TripFilterTab.fallback;
+    }
+  }
+
   /// GET /users/{userId}/user-trips?status={status}
-  /// [status] values from backend: UPCOMING, PAST, CANCELLED (optional)
+  /// [status] is the `BookingStatus` lookup id (int) — matching the web — or a
+  /// legacy status string (UPCOMING / PAST / CANCELLED). Omitted when null.
   Future<List<TripModel>> getTrips(
     String userId, {
-    String? status,
+    Object? status,
   }) async {
     final response = await _api.get(
       EndPoints.userTrips(userId),
@@ -90,8 +121,54 @@ class UserService {
   // ── Profile Update ────────────────────────────────────────────────────────
 
   /// POST /users/{id}/profile
+  ///
+  /// The backend binds these fields from `multipart/form-data` (`[FromForm]`),
+  /// exactly like the web's `FormData` upload — sending JSON is silently
+  /// ignored and nothing persists. So this MUST go out as form-data.
+  /// [body] keys mirror the web payload: firstName, lastName, email, phone,
+  /// genderId, dateOfBirth (`yyyy-MM-dd`), address, nationality, ...
   Future<bool> updateProfile(String userId, Map<String, dynamic> body) async {
-    await _api.post(EndPoints.updateUserProfile(userId), body: body);
+    await _api.post(
+      EndPoints.updateUserProfile(userId),
+      body: body,
+      formDataIsEnabled: true,
+    );
+    return true;
+  }
+
+  /// GET /api/Lookups/Gender → `[{ id, name }]`
+  /// Drives the personal-info gender dropdown and provides the `genderId` the
+  /// profile-update endpoint expects. Falls back to a static list on failure.
+  Future<List<GenderOption>> getGenders() async {
+    try {
+      final response = await _api.get(EndPoints.genderLookup);
+      final options = _list(response)
+          .map(GenderOption.fromJson)
+          .where((g) => g.name.isNotEmpty)
+          .toList();
+      return options.isEmpty ? GenderOption.fallback : options;
+    } catch (_) {
+      return GenderOption.fallback;
+    }
+  }
+
+  /// POST /users/update — generic profile update.
+  /// Mirrors the web `BackendAPI.User.update`. Used by the request-to-book
+  /// "Confirm your details" flow to persist the guest's name + phone before a
+  /// PENDING booking is created.
+  /// Body: { userId, firstName, lastName, phone }
+  Future<bool> updateUser({
+    required String userId,
+    String? firstName,
+    String? lastName,
+    String? phone,
+  }) async {
+    await _api.post(EndPoints.usersUpdate, body: {
+      'userId': userId,
+      if (firstName != null) 'firstName': firstName,
+      if (lastName != null) 'lastName': lastName,
+      if (phone != null) 'phone': phone,
+    });
     return true;
   }
 

@@ -42,6 +42,9 @@ class EndPoints {
   // GET  /users/{userId}/emergency-contact
   static String userById(String id) => '/users/$id';
   static String updateUserProfile(String id) => '/users/$id/profile';
+  // POST /users/update                 → generic profile update
+  //   body: { userId, firstName, lastName, phone }
+  static const String usersUpdate = '/users/update';
   // POST /users/delete-account         → permanently delete account (body: { userId })
   static const String deleteAccount = '/users/delete-account';
   static const String favorites = '/users/favorites';
@@ -75,6 +78,8 @@ class EndPoints {
   static String bookingById(String id) => '/booking-manager/$id';
   static const String listBookings = '/api/bookings/list';
   static const String bookingDisplayStatusLookup = '/api/Lookups/BookingDisplayStatus';
+  // GET /api/Lookups/BookingStatus → [{ id, name }] — drives the guest Trips tabs.
+  static const String bookingStatusLookup = '/api/Lookups/BookingStatus';
   static String cancelBooking(String id) => '/booking-manager/$id/cancel';
   static String approveBooking(String id) => '/booking-manager/$id/approve';
 
@@ -103,7 +108,26 @@ class EndPoints {
   static String statesLookup(int countryId) => '/api/lookups/states?countryId=$countryId';
   static String citiesLookup(int stateId) => '/api/lookups/cities?stateId=$stateId';
   static String villagesLookup(int cityId) => '/api/lookups/villages?cityId=$cityId';
+  // GET /api/Lookups/Gender → [{ id, name }] — drives the personal-info gender dropdown
+  // and supplies the genderId expected by POST /users/{id}/profile.
+  static const String genderLookup = '/api/Lookups/Gender';
   static const String propertyHighlightsLookup = '/api/Lookups/PropertyHighlight';
   static const String propertyAdminStatusLookup = '/api/Lookups/PropertyAdminStatus';
   static const String propertySortingLookup = '/api/Lookups/PropertySorting';
+  // GET /api/Lookups/ReasonBlockProperty → [{ id, name }] used for calendar blocking.
+  static const String reasonBlockPropertyLookup =
+      '/api/Lookups/ReasonBlockProperty';
+
+  // ── Host Calendar (management) ───────────────────────────────────────────
+  // GET  /api/properties/by-host?hostId=&limit=        → host listings (dropdown)
+  // GET  /api/property-calendar?propertyId=&userId=&page=&date=  → month daily slots
+  // POST /api/properties/special-price                          → set special price (host)
+  // POST /api/properties/calendar/update-status                  → block / unblock
+  // POST /booking-manager/minimum-days                           → set min nights (no /api)
+  static const String propertiesByHost = '/api/properties/by-host';
+  static const String propertyCalendar = '/api/property-calendar';
+  static const String specialPrice = '/api/properties/special-price';
+  static const String calendarUpdateStatus =
+      '/api/properties/calendar/update-status';
+  static const String minimumDays = '/booking-manager/minimum-days';
 }

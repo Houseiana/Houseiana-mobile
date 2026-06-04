@@ -23,6 +23,7 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
   double? _minPrice;
   double? _maxPrice;
   int? _minBedrooms;
+  int? _beds;
   int? _minBathrooms;
   String? _propertyType;
   List<String>? _amenities;
@@ -76,6 +77,7 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
           minPrice: _minPrice,
           maxPrice: _maxPrice,
           minBedrooms: _minBedrooms,
+          beds: _beds,
           minBathrooms: _minBathrooms,
           propertyType: _propertyType,
           amenities: _amenities,
@@ -267,14 +269,15 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
                 final priceRange = result['priceRange'] as RangeValues?;
                 _minPrice = priceRange?.start;
                 _maxPrice = priceRange?.end;
-                _minBedrooms = result['bedrooms'] as int?;
-                _propertyType = result['propertyType'] as String?;
+                final bedrooms = result['bedrooms'];
+                _minBedrooms =
+                    bedrooms is int && bedrooms > 0 ? bedrooms : null;
+                final beds = result['beds'];
+                _beds = beds is int && beds > 0 ? beds : null;
+                final bathrooms = result['bathrooms'];
+                _minBathrooms =
+                    bathrooms is int && bathrooms > 0 ? bathrooms : null;
                 _amenities = (result['amenities'] as List?)?.cast<String>();
-                if (result['minRating'] != null) {
-                  _minRating = (result['minRating'] as num).toDouble();
-                } else {
-                  _minRating = null;
-                }
                 _doSearch();
               }
             },
