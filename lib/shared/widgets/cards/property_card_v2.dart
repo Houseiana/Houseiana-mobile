@@ -413,7 +413,15 @@ class CompactPropertyCard extends StatelessWidget {
   final double price;
   final double rating;
   final String currency;
+  final int? bedrooms;
+  final int? beds;
+  final int? bathrooms;
   final VoidCallback? onTap;
+  final bool isFavorite;
+
+  /// When provided, a favorite (heart) button is shown over the image.
+  /// Leave null to hide the button entirely.
+  final VoidCallback? onFavoriteToggle;
 
   const CompactPropertyCard({
     super.key,
@@ -423,7 +431,12 @@ class CompactPropertyCard extends StatelessWidget {
     required this.price,
     required this.rating,
     this.currency = 'EGP',
+    this.bedrooms,
+    this.beds,
+    this.bathrooms,
     this.onTap,
+    this.isFavorite = false,
+    this.onFavoriteToggle,
   });
 
   @override
@@ -448,25 +461,59 @@ class CompactPropertyCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                height: 120,
-                width: 200,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  height: 120,
-                  color: AppColors.neutral200,
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12),
+                  ),
+                  child: CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    height: 120,
+                    width: 200,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      height: 120,
+                      color: AppColors.neutral200,
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      height: 120,
+                      color: AppColors.neutral200,
+                      child: const Icon(Icons.image_not_supported_outlined),
+                    ),
+                  ),
                 ),
-                errorWidget: (context, url, error) => Container(
-                  height: 120,
-                  color: AppColors.neutral200,
-                  child: const Icon(Icons.image_not_supported_outlined),
-                ),
-              ),
+                if (onFavoriteToggle != null)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: onFavoriteToggle,
+                      child: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          size: 16,
+                          color: isFavorite
+                              ? const Color(0xFFEF4444)
+                              : const Color(0xFF9CA3AF),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
 
             // Content
@@ -538,11 +585,47 @@ class CompactPropertyCard extends StatelessWidget {
                       ),
                     ],
                   ),
+
+                  // Bedrooms / beds / bathrooms (mirrors the web listing card:
+                  // icon + count only, hidden when the value is 0/missing).
+                  if ((bedrooms ?? 0) > 0 ||
+                      (beds ?? 0) > 0 ||
+                      (bathrooms ?? 0) > 0) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        if ((bedrooms ?? 0) > 0)
+                          _buildDetailItem(
+                              Icons.door_front_door_outlined, bedrooms!),
+                        if ((beds ?? 0) > 0)
+                          _buildDetailItem(Icons.bed_outlined, beds!),
+                        if ((bathrooms ?? 0) > 0)
+                          _buildDetailItem(Icons.bathtub_outlined, bathrooms!),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDetailItem(IconData icon, int value) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: AppColors.neutral600),
+          const SizedBox(width: 3),
+          Text(
+            '$value',
+            style: const TextStyle(fontSize: 11, color: AppColors.neutral600),
+          ),
+        ],
       ),
     );
   }

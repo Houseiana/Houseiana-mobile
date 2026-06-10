@@ -227,7 +227,8 @@ class _TripsScreenState extends State<TripsScreen>
       );
       if (confirm != true) return;
       try {
-        await _userService.cancelBooking(trip.id);
+        await _userService.cancelBooking(trip.id,
+            userId: _session.userId ?? '');
         // The booking moved between statuses — invalidate every cached tab and
         // reload the active one.
         final controller = _tabController;

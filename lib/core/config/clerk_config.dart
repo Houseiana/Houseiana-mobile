@@ -30,7 +30,6 @@ class ClerkConfig {
     'CLERK_SECRET_KEY',
     defaultValue: '',
   );
-
   static String getBackendSecretKey() => secretKey;
   static bool get hasBackendSecretKey => secretKey.isNotEmpty;
 

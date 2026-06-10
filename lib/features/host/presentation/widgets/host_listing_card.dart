@@ -4,17 +4,42 @@ import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/models/property_model.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
+/// Actions exposed by the card's "..." overflow menu (active/paused/inactive
+/// listings only), mirroring the web ListingCard menu.
+enum HostListingMenuAction { toggleStatus, blockDates, delete }
+
 class HostListingCard extends StatelessWidget {
   final PropertyModel property;
-  final VoidCallback? onDelete;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onCalendar;
+  final VoidCallback? onView;
+  final VoidCallback? onToggleStatus;
+  final VoidCallback? onBlockDates;
+  final VoidCallback? onDelete;
 
   const HostListingCard({
     super.key,
     required this.property,
-    this.onDelete,
     this.onTap,
+    this.onEdit,
+    this.onCalendar,
+    this.onView,
+    this.onToggleStatus,
+    this.onBlockDates,
+    this.onDelete,
   });
+
+  /// Normalised status used to decide which controls to show, matching the web:
+  /// draft/pending/actionRequired get only a delete button (edit via card tap);
+  /// active/paused/inactive get the Edit/Calendar buttons + "..." menu.
+  String get _status =>
+      (property.status ?? '').toLowerCase().replaceAll(' ', '');
+  bool get _isActive => _status == 'active' || _status == 'published';
+  bool get _isDraftLike =>
+      _status == 'draft' ||
+      _status == 'pending' ||
+      _status == 'actionrequired';
 
   @override
   Widget build(BuildContext context) {
@@ -196,21 +221,7 @@ class HostListingCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              GestureDetector(
-                onTap: onDelete,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.neutral200),
-                  ),
-                  child: const Icon(
-                    Icons.delete_outline,
-                    color: AppColors.error,
-                    size: 20,
-                  ),
-                ),
-              ),
+              _buildTitleTrailing(context),
             ],
           ),
           const SizedBox(height: 12),
@@ -283,8 +294,171 @@ class HostListingCard extends StatelessWidget {
               ),
             ],
           ),
+          // Action buttons (Edit / Calendar / View) — hidden for drafts,
+          // matching the web card.
+          if (!_isDraftLike) ...[
+            const SizedBox(height: 16),
+            _buildActionButtons(context),
+          ],
         ],
       ),
+    );
+  }
+
+  /// Title-row trailing control: a lone delete button for draft-like listings,
+  /// otherwise the "..." overflow menu (Deactivate/Activate, Block dates,
+  /// Delete).
+  Widget _buildTitleTrailing(BuildContext context) {
+    if (_isDraftLike) {
+      return _circleIconButton(
+        icon: Icons.delete_outline,
+        color: AppColors.error,
+        onTap: onDelete,
+      );
+    }
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.neutral200),
+      ),
+      child: PopupMenuButton<HostListingMenuAction>(
+        icon: const Icon(Icons.more_horiz, color: AppColors.neutral600, size: 20),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        onSelected: (action) {
+          switch (action) {
+            case HostListingMenuAction.toggleStatus:
+              onToggleStatus?.call();
+              break;
+            case HostListingMenuAction.blockDates:
+              onBlockDates?.call();
+              break;
+            case HostListingMenuAction.delete:
+              onDelete?.call();
+              break;
+          }
+        },
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            value: HostListingMenuAction.toggleStatus,
+            child: _menuRow(
+              Icons.power_settings_new,
+              _isActive
+                  ? context.tr('host.cardDeactivate')
+                  : context.tr('host.cardActivate'),
+            ),
+          ),
+          PopupMenuItem(
+            value: HostListingMenuAction.blockDates,
+            child: _menuRow(Icons.block, context.tr('host.cardBlockDates')),
+          ),
+          PopupMenuItem(
+            value: HostListingMenuAction.delete,
+            child: _menuRow(
+              Icons.delete_outline,
+              context.tr('host.cardDelete'),
+              color: AppColors.error,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _menuRow(IconData icon, String label, {Color? color}) {
+    final c = color ?? AppColors.charcoal;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 18, color: c),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: c),
+        ),
+      ],
+    );
+  }
+
+  Widget _circleIconButton({
+    required IconData icon,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.neutral200),
+        ),
+        child: Icon(icon, color: color, size: 20),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    return Row(
+      children: [
+        // Edit — dark filled
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined, size: 16),
+            label: Text(context.tr('host.cardEdit')),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.charcoal,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              textStyle:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Calendar — outlined
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: onCalendar,
+            icon: const Icon(Icons.calendar_today_outlined, size: 16),
+            label: Text(context.tr('host.cardCalendar')),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.charcoal,
+              side: const BorderSide(color: AppColors.neutral200),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              textStyle:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        // View — icon only, outlined
+        SizedBox(
+          width: 44,
+          height: 40,
+          child: OutlinedButton(
+            onPressed: onView,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.neutral600,
+              side: const BorderSide(color: AppColors.neutral200),
+              padding: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+            child: const Icon(Icons.visibility_outlined, size: 18),
+          ),
+        ),
+      ],
     );
   }
 

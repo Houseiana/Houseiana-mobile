@@ -55,11 +55,13 @@ class SearchCubit extends Cubit<SearchState> {
         amenities: currentState.params.amenities,
         propertyType: currentState.params.propertyType,
         minBedrooms: currentState.params.minBedrooms,
+        beds: currentState.params.beds,
         minBathrooms: currentState.params.minBathrooms,
         minRating: currentState.params.minRating,
         page: nextPage,
         limit: currentState.params.limit,
         isSorted: currentState.params.isSorted,
+        sortBy: currentState.params.sortBy,
         regionId: currentState.params.regionId,
       );
 

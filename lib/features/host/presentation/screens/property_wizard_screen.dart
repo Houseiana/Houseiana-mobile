@@ -20,19 +20,30 @@ import 'package:houseiana_mobile_app/features/host/presentation/screens/wizard/s
 import 'package:houseiana_mobile_app/features/host/presentation/screens/wizard/step_11_pricing_screen.dart';
 
 class PropertyWizardScreen extends StatelessWidget {
-  const PropertyWizardScreen({super.key});
+  /// When provided, the wizard opens in EDIT mode: it prefills from the
+  /// existing property and saves through the same draft endpoint with this id.
+  final String? editPropertyId;
+
+  const PropertyWizardScreen({super.key, this.editPropertyId});
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = editPropertyId != null && editPropertyId!.isNotEmpty;
     return BlocProvider(
-      create: (_) => ListingWizardCubit(),
-      child: const _PropertyWizardView(),
+      create: (_) {
+        final cubit = ListingWizardCubit();
+        if (isEditing) cubit.loadForEdit(editPropertyId!);
+        return cubit;
+      },
+      child: _PropertyWizardView(isEditing: isEditing),
     );
   }
 }
 
 class _PropertyWizardView extends StatefulWidget {
-  const _PropertyWizardView();
+  final bool isEditing;
+
+  const _PropertyWizardView({this.isEditing = false});
 
   @override
   State<_PropertyWizardView> createState() => _PropertyWizardViewState();
@@ -40,6 +51,8 @@ class _PropertyWizardView extends StatefulWidget {
 
 class _PropertyWizardViewState extends State<_PropertyWizardView> {
   late PageController _pageController;
+  // In edit mode, jump the PageView to the hydrated step exactly once.
+  bool _editStepApplied = false;
 
   String _stepTitle(BuildContext context, int index) {
     return context.tr('wizard.stepTitle${index + 1}');
@@ -72,9 +85,28 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
             ),
           );
         }
+        // Edit mode: once prefill finishes, move the PageView to the saved step.
+        if (widget.isEditing && !state.isHydrating && !_editStepApplied) {
+          _editStepApplied = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || !_pageController.hasClients) return;
+            if (_pageController.page?.round() != state.currentStep) {
+              _pageController.jumpToPage(state.currentStep);
+            }
+          });
+        }
       },
       builder: (context, state) {
         final cubit = context.read<ListingWizardCubit>();
+
+        if (state.isHydrating) {
+          return const Scaffold(
+            backgroundColor: Colors.white,
+            body: Center(
+              child: CircularProgressIndicator(color: AppColors.primaryColor),
+            ),
+          );
+        }
 
         return Scaffold(
           backgroundColor: Colors.white,

@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/models/host_listings_response_model.dart';
+import 'package:houseiana_mobile_app/core/models/property_model.dart';
 import 'package:houseiana_mobile_app/core/services/host_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/host_listings_state.dart';
@@ -53,6 +55,22 @@ class HostListingsCubit extends Cubit<HostListingsState> {
     for (final opt in statusOptions) {
       final name = (opt['name'] ?? opt['label'] ?? '').toString();
       if (_canonical(name) == target) {
+        return opt['id']?.toString();
+      }
+    }
+    return null;
+  }
+
+  /// Resolves a selected sort (display name) to its lookup sort id, matching the
+  /// web behaviour which sends the numeric id rather than the display name.
+  /// The backend rejects an unknown sort name with a 400 ("The value '...' is
+  /// not valid."), so passing the raw name silently leaves the list unsorted.
+  /// Returns null for empty/unresolved so the backend applies its default order.
+  String? _sortIdFor(List<Map<String, dynamic>> sortOptions, String? sort) {
+    if (sort == null || sort.isEmpty) return null;
+    for (final opt in sortOptions) {
+      final name = (opt['name'] ?? opt['label'] ?? '').toString();
+      if (name == sort) {
         return opt['id']?.toString();
       }
     }
@@ -118,7 +136,7 @@ class HostListingsCubit extends Cubit<HostListingsState> {
         page: _currentPage,
         limit: _limit,
         status: _statusIdFor(currentState.statusOptions, newStatus),
-        sortBy: newSort,
+        sortBy: _sortIdFor(currentState.sortOptions, newSort),
         searchQuery: newQuery.isEmpty ? null : newQuery,
       );
 
@@ -138,6 +156,73 @@ class HostListingsCubit extends Cubit<HostListingsState> {
     }
   }
 
+  /// Deletes a listing via the backend, then removes it from the current list
+  /// and decrements the matching status counts so the UI stays consistent
+  /// without a full reload. Rethrows on failure so the caller can surface it.
+  Future<void> deleteListing(String propertyId) async {
+    final currentState = state;
+    if (currentState is! HostListingsLoaded) return;
+
+    await _hostService.deleteListing(propertyId);
+
+    final removed =
+        currentState.properties.where((p) => p.id == propertyId).toList();
+    final removedStatus = removed.isNotEmpty ? removed.first.status : null;
+    final remaining =
+        currentState.properties.where((p) => p.id != propertyId).toList();
+
+    emit(currentState.copyWith(
+      properties: remaining,
+      statusCounts:
+          _decrementForStatus(currentState.statusCounts, removedStatus),
+    ));
+  }
+
+  /// Activates or deactivates a listing based on its current status, mirroring
+  /// the web `...` menu toggle. Active/published → deactivate; anything else →
+  /// reactivate. After the call the list is refreshed so the property moves to
+  /// the correct status tab and the counts stay accurate (the web does a full
+  /// page reload here). Rethrows on failure so the caller can surface it.
+  Future<void> toggleListingStatus(PropertyModel property) async {
+    final userId = _session.userId;
+    if (userId == null) throw Exception('Not logged in');
+
+    final status = (property.status ?? '').toLowerCase();
+    final isActive = status == 'active' || status == 'published';
+
+    if (isActive) {
+      await _hostService.deactivateListing(
+        propertyId: property.id,
+        userId: userId,
+      );
+    } else {
+      await _hostService.reactivateListing(
+        propertyId: property.id,
+        hostId: userId,
+      );
+    }
+
+    // Refresh the current view (preserves filters/search) so status tabs and
+    // counts reflect the change without a jarring full-screen reload.
+    await applyFilters();
+  }
+
+  StatusCounts _decrementForStatus(StatusCounts c, String? status) {
+    final key = status == null ? '' : _canonical(status);
+    int dec(int v) => v > 0 ? v - 1 : 0;
+    return StatusCounts(
+      allCount: dec(c.allCount),
+      activeCount: key == 'active' ? dec(c.activeCount) : c.activeCount,
+      pendingCount: key == 'pending' ? dec(c.pendingCount) : c.pendingCount,
+      draftCount: key == 'draft' ? dec(c.draftCount) : c.draftCount,
+      inactiveCount: key == 'inactive' ? dec(c.inactiveCount) : c.inactiveCount,
+      actionRequiredCount: key == 'actionrequired'
+          ? dec(c.actionRequiredCount)
+          : c.actionRequiredCount,
+      rejectedCount: key == 'rejected' ? dec(c.rejectedCount) : c.rejectedCount,
+    );
+  }
+
   Future<void> loadMore() async {
     final currentState = state;
     if (currentState is! HostListingsLoaded || !currentState.hasMore || currentState.isLoadingMore) {
@@ -153,7 +238,7 @@ class HostListingsCubit extends Cubit<HostListingsState> {
         page: _currentPage,
         limit: _limit,
         status: _statusIdFor(currentState.statusOptions, currentState.selectedStatus),
-        sortBy: currentState.selectedSort,
+        sortBy: _sortIdFor(currentState.sortOptions, currentState.selectedSort),
         searchQuery: currentState.searchQuery.isEmpty ? null : currentState.searchQuery,
       );
 

@@ -14,6 +14,9 @@ class DioConsumer implements ApiConsumer {
     client.options
       ..baseUrl = EndPoints.baseUrl
       ..responseType = ResponseType.json
+      // Serialize list query params as repeated keys (e.g. amenities=1&amenities=2)
+      // to match the web backend contract (PropertyAPI.publicSearchFilter).
+      ..listFormat = ListFormat.multi
       ..sendTimeout = const Duration(seconds: 30)
       ..receiveTimeout = const Duration(seconds: 30)
       ..connectTimeout = const Duration(seconds: 30);

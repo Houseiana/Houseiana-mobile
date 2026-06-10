@@ -361,7 +361,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
               child: _channelButton(
                 icon: Icons.call_outlined,
                 label: context.tr('support.channelCall'),
-                onTap: () => _launch('tel:+97430424433'),
+                onTap: () => _launch('tel:+201036425474'),
               ),
             ),
             const SizedBox(width: 10),
@@ -377,7 +377,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
               child: _channelButton(
                 icon: Icons.chat_outlined,
                 label: context.tr('support.channelWhatsApp'),
-                onTap: () => _launch('https://wa.me/97430424433'),
+                onTap: () => _launch('https://wa.me/201036425474'),
               ),
             ),
           ],

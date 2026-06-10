@@ -306,6 +306,37 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
     emit(ListingWizardState.initial());
   }
 
+  /// Loads an existing property into the wizard for EDITING, mirroring the web
+  /// edit flow: prefill from GET /api/properties/{id}, then save through the
+  /// same POST /api/properties/draft (it upserts when a propertyId is present).
+  /// Seeds [draftId] so every subsequent saveDraft/publish targets this
+  /// property, and lands on the saved step (or the review step if unknown).
+  Future<void> loadForEdit(String propertyId) async {
+    emit(state.copyWith(isHydrating: true, draftId: propertyId, clearError: true));
+    try {
+      final raw = await _hostService.getPropertyForEdit(propertyId);
+      final data = WizardData.fromApiJson(raw, base: state.data);
+
+      // Backend step is 1-based (1..13); the UI is 0-based (0..12).
+      final stepDraft = (raw['stepDraft'] as num?)?.toInt();
+      final initialStep = (stepDraft != null && stepDraft > 0)
+          ? (stepDraft - 1).clamp(0, state.totalSteps - 1)
+          : state.totalSteps - 1; // jump to Review when the step is unknown
+
+      emit(state.copyWith(
+        data: data,
+        draftId: propertyId,
+        currentStep: initialStep,
+        isHydrating: false,
+      ));
+    } catch (e) {
+      // ignore: avoid_print
+      print('[ListingWizardCubit.loadForEdit] error: $e');
+      emit(state.copyWith(isHydrating: false));
+      setError('Failed to load property for editing: $e');
+    }
+  }
+
   /// Auto-recovery: If we somehow lost the draftId (e.g., hot reload or caching),
   /// this creates a fresh draft silently to get a valid ID before proceeding.
   Future<String> _ensureDraftId(String hostId) async {

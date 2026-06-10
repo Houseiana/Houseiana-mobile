@@ -13,8 +13,8 @@ import 'package:houseiana_mobile_app/features/property_details/presentation/cubi
 import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/property_details_state.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/screens/amenities_screen.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/screens/location_map_screen.dart';
+import 'package:houseiana_mobile_app/features/property_details/presentation/screens/photo_gallery_screen.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/screens/reviews_screen.dart';
-import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/property_highlights_widget.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/hosted_by_widget.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/things_to_know_widget.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
@@ -288,12 +288,6 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   bool _hasEnhancedCleaning(Map<String, dynamic> p) =>
       (p['hasEnhancedCleaning'] ?? p['enhancedCleaning'] ?? true) as bool;
 
-  bool _hasSelfCheckIn(Map<String, dynamic> p) =>
-      (p['hasSelfCheckIn'] ?? p['selfCheckIn'] ?? true) as bool;
-
-  bool _isEntirePlace(Map<String, dynamic> p) =>
-      (p['isEntirePlace'] ?? p['entirePlace'] ?? true) as bool;
-
   bool _allowSmoking(Map<String, dynamic> p) =>
       (p['allowSmoking'] ?? p['smokingAllowed'] ?? false) as bool;
 
@@ -387,14 +381,6 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   _buildPropertyInfo(propertyType, title, rating, reviewCount,
                       location, bedrooms, beds, bathrooms, maxGuests, area),
                   const _SectionDivider(),
-                  PropertyHighlightsWidget(
-                    hostName: hostName,
-                    isSuperhost: _isSuperhost(property),
-                    hasEnhancedCleaning: _hasEnhancedCleaning(property),
-                    hasSelfCheckIn: _hasSelfCheckIn(property),
-                    isEntirePlace: _isEntirePlace(property),
-                  ),
-                  const _SectionDivider(),
                   if (hostId.isNotEmpty) ...[
                     HostedByWidget(
                       hostName: hostName,
@@ -472,21 +458,24 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   physics: const ClampingScrollPhysics(),
                   itemCount: photos.length,
                   onPageChanged: (i) => setState(() => _currentPage = i),
-                  itemBuilder: (_, i) => CachedNetworkImage(
-                    imageUrl: photos[i],
-                    width: double.infinity,
-                    height: 300,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(
-                      color: AppColors.neutral100,
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.bioYellow,
-                          strokeWidth: 2,
+                  itemBuilder: (_, i) => GestureDetector(
+                    onTap: () => _openGallery(photos, i),
+                    child: CachedNetworkImage(
+                      imageUrl: photos[i],
+                      width: double.infinity,
+                      height: 300,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(
+                        color: AppColors.neutral100,
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.bioYellow,
+                            strokeWidth: 2,
+                          ),
                         ),
                       ),
+                      errorWidget: (_, __, ___) => _photoPlaceholder(),
                     ),
-                    errorWidget: (_, __, ___) => _photoPlaceholder(),
                   ),
                 )
               : _photoPlaceholder(),
@@ -823,26 +812,25 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     if (bedrooms > 0) ...[
                       _QuickStat(
                           icon: Icons.meeting_room_outlined,
-                          label:
-                              '$bedrooms Bedroom${bedrooms > 1 ? 's' : ''}'),
+                          label: _bedroomsLabel(bedrooms)),
                       const _StatDot(),
                     ],
                     if (beds > 0) ...[
                       _QuickStat(
                           icon: Icons.bed_outlined,
-                          label: '$beds Bed${beds > 1 ? 's' : ''}'),
+                          label: _bedsLabel(beds)),
                       const _StatDot(),
                     ],
                     if (bathrooms > 0) ...[
                       _QuickStat(
                           icon: Icons.bathtub_outlined,
-                          label: '$bathrooms Bath${bathrooms > 1 ? 's' : ''}'),
+                          label: _bathroomsLabel(bathrooms)),
                       const _StatDot(),
                     ],
                     if (maxGuests > 0) ...[
                       _QuickStat(
                           icon: Icons.people_outline,
-                          label: '$maxGuests Guest${maxGuests > 1 ? 's' : ''}'),
+                          label: _guestsLabel(maxGuests)),
                       if (area.isNotEmpty) const _StatDot(),
                     ],
                     if (area.isNotEmpty)
@@ -916,6 +904,31 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     );
   }
 
+  String _bedroomsLabel(int n) => context.tr(
+      n == 1 ? 'propertyDetails.bedroomSingular' : 'propertyDetails.bedrooms',
+      args: {'n': n});
+
+  String _bedsLabel(int n) => context.tr(
+      n == 1 ? 'propertyDetails.bedSingular' : 'propertyDetails.beds',
+      args: {'n': n});
+
+  String _bathroomsLabel(int n) => context.tr(
+      n == 1 ? 'propertyDetails.bathroomSingular' : 'propertyDetails.bathrooms',
+      args: {'n': n});
+
+  String _guestsLabel(int n) => context.tr(
+      n == 1 ? 'propertyDetails.guestSingular' : 'propertyDetails.guests',
+      args: {'n': n});
+
+  String _guestsUpToLabel(int n) => context.tr(
+      n == 1
+          ? 'propertyDetails.guestUpToSingular'
+          : 'propertyDetails.guestsUpTo',
+      args: {'n': n});
+
+  String _areaLabel(String value) =>
+      context.tr('propertyDetails.areaLabel', args: {'value': value});
+
   Widget _buildPropertyDetailsSection(
       int bedrooms, int beds, int bathrooms, int maxGuests, String area) {
     return Padding(
@@ -932,19 +945,18 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
           ),
           const SizedBox(height: 14),
           if (bedrooms > 0)
-            _buildDetailRow(Icons.meeting_room_outlined,
-                '$bedrooms Bedroom${bedrooms > 1 ? 's' : ''}'),
-          if (beds > 0)
             _buildDetailRow(
-                Icons.bed_outlined, '$beds Bed${beds > 1 ? 's' : ''}'),
+                Icons.meeting_room_outlined, _bedroomsLabel(bedrooms)),
+          if (beds > 0)
+            _buildDetailRow(Icons.bed_outlined, _bedsLabel(beds)),
           if (bathrooms > 0)
-            _buildDetailRow(Icons.bathtub_outlined,
-                '$bathrooms Bathroom${bathrooms > 1 ? 's' : ''}'),
+            _buildDetailRow(
+                Icons.bathtub_outlined, _bathroomsLabel(bathrooms)),
           if (maxGuests > 0)
-            _buildDetailRow(Icons.people_outline,
-                'Up to $maxGuests guest${maxGuests > 1 ? 's' : ''}'),
+            _buildDetailRow(
+                Icons.people_outline, _guestsUpToLabel(maxGuests)),
           if (area.isNotEmpty)
-            _buildDetailRow(Icons.square_foot, 'Area: $area'),
+            _buildDetailRow(Icons.square_foot, _areaLabel(area)),
         ],
       ),
     );
@@ -1661,6 +1673,20 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _openGallery(List<String> photos, int initialIndex) {
+    if (photos.isEmpty) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => PhotoGalleryScreen(
+          photos: photos,
+          initialIndex: initialIndex,
         ),
       ),
     );

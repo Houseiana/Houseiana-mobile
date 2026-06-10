@@ -182,11 +182,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildSectionTitle(context.tr('profile.hosting')),
               _buildMenuGroup(context, [
                 _MenuItem(
-                  icon: Icons.home_work_outlined,
-                  label: context.tr('profile.becomeHost'),
-                  onTap: () => Navigator.pushNamed(context, Routes.becomeHost),
-                ),
-                _MenuItem(
                   icon: Icons.dashboard_outlined,
                   label: context.tr('profile.hostDashboard'),
                   onTap: () => Navigator.pushNamed(context, Routes.hostDashboard),
@@ -244,21 +239,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   icon: Icons.language_outlined,
                   label: context.tr('profile.language'),
                   onTap: () => Navigator.pushNamed(context, Routes.languageSettings),
-                ),
-                _MenuItem(
-                  icon: Icons.payment_outlined,
-                  label: context.tr('profile.paymentMethods'),
-                  onTap: () => Navigator.pushNamed(context, Routes.paymentMethods),
-                ),
-                _MenuItem(
-                  icon: Icons.receipt_long_outlined,
-                  label: context.tr('profile.paymentHistory'),
-                  onTap: () => Navigator.pushNamed(context, Routes.paymentHistory),
-                ),
-                _MenuItem(
-                  icon: Icons.location_on_outlined,
-                  label: context.tr('profile.savedAddresses'),
-                  onTap: () => Navigator.pushNamed(context, Routes.savedAddresses),
                 ),
               ]),
 

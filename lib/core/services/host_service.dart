@@ -287,7 +287,56 @@ class HostService {
 
   Future<void> deleteListing(String listingId) async {
     try {
-      await _dio.delete('/api/properties/$listingId');
+      // Backend expects POST /api/properties/{id}/delete (not HTTP DELETE),
+      // matching the web project's delete endpoint.
+      await _dio.post('/api/properties/$listingId/delete');
+    } on DioException catch (e) {
+      throw _mapDioException(e);
+    }
+  }
+
+  /// Deactivates an active listing. Mirrors the web project's
+  /// POST /api/properties/deactivate with body { propertyId, userId }.
+  Future<void> deactivateListing({
+    required String propertyId,
+    required String userId,
+  }) async {
+    try {
+      await _dio.post(
+        EndPoints.propertiesDeactivate,
+        data: {'propertyId': propertyId, 'userId': userId},
+      );
+    } on DioException catch (e) {
+      throw _mapDioException(e);
+    }
+  }
+
+  /// Reactivates an inactive listing. Mirrors the web project's
+  /// POST /api/properties/reactivate. NOTE: the endpoint is `reactivate`
+  /// (not `activate`) and the user id is sent under the key `hostId`
+  /// (asymmetric with deactivate's `userId`) — both carry the current user id.
+  Future<void> reactivateListing({
+    required String propertyId,
+    required String hostId,
+  }) async {
+    try {
+      await _dio.post(
+        EndPoints.propertiesReactivate,
+        data: {'propertyId': propertyId, 'hostId': hostId},
+      );
+    } on DioException catch (e) {
+      throw _mapDioException(e);
+    }
+  }
+
+  /// Fetches a single property in the editable shape used to pre-fill the
+  /// listing wizard, mirroring the web edit screen which loads it via
+  /// GET /api/properties/{id} (NOT the guest-facing /api/property-search/{id}).
+  /// Unwraps a single `data` envelope if present.
+  Future<Map<String, dynamic>> getPropertyForEdit(String propertyId) async {
+    try {
+      final response = await _dio.get(EndPoints.propertyById(propertyId));
+      return _map(response.data);
     } on DioException catch (e) {
       throw _mapDioException(e);
     }

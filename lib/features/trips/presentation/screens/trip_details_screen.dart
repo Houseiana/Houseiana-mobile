@@ -4,6 +4,7 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/models/booking_model.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
+import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -104,7 +105,8 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
 
     setState(() => _isCancelling = true);
     try {
-      await sl<UserService>().cancelBooking(_bookingId);
+      await sl<UserService>()
+          .cancelBooking(_bookingId, userId: sl<UserSession>().userId ?? '');
     } catch (_) {
       if (!mounted) return;
       setState(() => _isCancelling = false);

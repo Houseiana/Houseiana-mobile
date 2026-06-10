@@ -49,7 +49,36 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
   @override
   void initState() {
     super.initState();
-    _loadCountries();
+    // Seed text fields from existing wizard data so values persist across
+    // back/forward navigation and are shown when editing an existing listing.
+    final data = context.read<ListingWizardCubit>().state.data;
+    _addressController.text = data.address ?? '';
+    _areaController.text = data.district ?? '';
+    _buildingController.text = data.buildingNumber ?? '';
+    _floorController.text = data.floorNumber ?? '';
+    _unitController.text = data.unitNumber ?? '';
+    _postalController.text = data.postalCode ?? '';
+    _selectedCountryId = data.country;
+    _selectedStateId = data.stateProvince;
+    _selectedCityId = data.city;
+    _selectedVillageId = data.village;
+    _preloadLocation();
+  }
+
+  /// Loads the country list and, when editing an existing listing, cascades
+  /// through the saved state/city/village so their dropdowns appear
+  /// pre-selected. In create mode (no saved ids) this just loads countries.
+  Future<void> _preloadLocation() async {
+    await _loadCountries();
+    final country = _selectedCountryId;
+    if (country == null || country.isEmpty) return;
+    await _loadStates(country);
+    final state = _selectedStateId;
+    if (state == null || state.isEmpty) return;
+    await _loadCities(state);
+    final city = _selectedCityId;
+    if (city == null || city.isEmpty) return;
+    await _loadVillages(city);
   }
 
   @override

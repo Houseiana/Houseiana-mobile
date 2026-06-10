@@ -58,13 +58,18 @@ class EndPoints {
 
   // ── Properties (Host) ───────────────────────────────────────────────────────
   // POST /api/properties                → create listing
-  // POST /api/properties/draft          → save draft
+  // POST /api/properties/draft          → save draft (also UPDATES when propertyId is sent)
   // GET  /api/properties/by-host        → host listings
+  // GET  /api/properties/{id}           → property (edit prefill — same shape the web edit screen loads)
   // PUT  /api/properties/{id}           → update listing
-  // DELETE /api/properties/{id}         → delete listing
+  // POST /api/properties/{id}/delete    → delete listing
+  // POST /api/properties/deactivate     → deactivate listing (body: { propertyId, userId })
+  // POST /api/properties/reactivate     → reactivate listing (body: { propertyId, hostId })
   static const String properties = '/api/properties';
   static const String propertiesDraft = '/api/properties/draft';
   static String propertyById(String id) => '/api/properties/$id';
+  static const String propertiesDeactivate = '/api/properties/deactivate';
+  static const String propertiesReactivate = '/api/properties/reactivate';
 
   // ── Host Dashboard ──────────────────────────────────────────────────────────
   static String hostDashboard(String userId) => '/users/$userId/host-dashboard';
@@ -111,9 +116,16 @@ class EndPoints {
   // GET /api/Lookups/Gender → [{ id, name }] — drives the personal-info gender dropdown
   // and supplies the genderId expected by POST /users/{id}/profile.
   static const String genderLookup = '/api/Lookups/Gender';
+  // GET /api/Lookups/PayoutMethod → [{ id, name }] — drives the host payout
+  // method picker; the chosen id is sent as `payoutMethodId`.
+  static const String payoutMethodLookup = '/api/Lookups/PayoutMethod';
   static const String propertyHighlightsLookup = '/api/Lookups/PropertyHighlight';
   static const String propertyAdminStatusLookup = '/api/Lookups/PropertyAdminStatus';
   static const String propertySortingLookup = '/api/Lookups/PropertySorting';
+  // GET /api/Lookups/RegionCategory → [{ id, name, propertyCount, photo }]
+  // Home destination categories. The chosen id is sent to /api/property-search
+  // as the `villageId` query param to filter listings to that region.
+  static const String regionCategoryLookup = '/api/Lookups/RegionCategory';
   // GET /api/Lookups/ReasonBlockProperty → [{ id, name }] used for calendar blocking.
   static const String reasonBlockPropertyLookup =
       '/api/Lookups/ReasonBlockProperty';

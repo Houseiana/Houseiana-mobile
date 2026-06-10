@@ -63,6 +63,177 @@ class _HostListingsViewState extends State<_HostListingsView> {
     });
   }
 
+  Future<void> _confirmAndDelete(
+    BuildContext context,
+    PropertyModel property,
+  ) async {
+    final cubit = context.read<HostListingsCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final title = property.displayTitle.isNotEmpty
+        ? property.displayTitle
+        : context.tr('host.untitledProperty');
+    // Resolve messages before the async gap; the card's context may be
+    // disposed once the item is removed from the list.
+    final successMsg = context.tr('host.listingDeleted');
+    final failMsg = context.tr('host.deleteFailed');
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.tr('host.deleteListingTitle')),
+        content: Text(
+          dialogContext.tr('host.deleteListingConfirm', args: {'title': title}),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(dialogContext.tr('common.cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: Text(dialogContext.tr('common.delete')),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await cubit.deleteListing(property.id);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(successMsg),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(failMsg),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  String _normalizedStatus(PropertyModel property) =>
+      (property.status ?? '').toLowerCase().replaceAll(' ', '');
+
+  /// Card/image tap behaviour, mirroring the web `handleImageClick`:
+  /// draft/actionRequired → confirm then open the editor; pending → info only;
+  /// everything else → open the public details page.
+  Future<void> _handleCardTap(
+    BuildContext context,
+    PropertyModel property,
+  ) async {
+    final status = _normalizedStatus(property);
+
+    if (status == 'draft' || status == 'actionrequired') {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(dialogContext.tr('host.completeListingTitle')),
+          content: Text(dialogContext.tr('host.completeListingText')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(dialogContext.tr('common.cancel')),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(dialogContext.tr('host.continueCreating')),
+            ),
+          ],
+        ),
+      );
+      if (confirmed == true && context.mounted) {
+        _openEditor(context, property);
+      }
+      return;
+    }
+
+    if (status == 'pending') {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(dialogContext.tr('host.pendingApprovalTitle')),
+          content: Text(dialogContext.tr('host.pendingApprovalText')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(dialogContext.tr('common.ok')),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    _openDetails(context, property);
+  }
+
+  void _openEditor(BuildContext context, PropertyModel property) {
+    Navigator.pushNamed(
+      context,
+      Routes.propertyWizard,
+      arguments: {'propertyId': property.id},
+    );
+  }
+
+  void _openCalendar(BuildContext context, PropertyModel property) {
+    Navigator.pushNamed(
+      context,
+      Routes.hostCalendar,
+      arguments: {'propertyId': property.id},
+    );
+  }
+
+  void _openDetails(BuildContext context, PropertyModel property) {
+    Navigator.pushNamed(
+      context,
+      Routes.propertyDetails,
+      arguments: {'propertyId': property.id},
+    );
+  }
+
+  /// Activates/deactivates a listing via the cubit (which reloads the list so
+  /// the property moves to the right status tab), then reports the outcome.
+  Future<void> _toggleStatus(
+    BuildContext context,
+    PropertyModel property,
+  ) async {
+    final cubit = context.read<HostListingsCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final status = _normalizedStatus(property);
+    final isActive = status == 'active' || status == 'published';
+    // Resolve messages before the async gap.
+    final successMsg = isActive
+        ? context.tr('host.listingDeactivated')
+        : context.tr('host.listingActivated');
+    final failMsg = context.tr('host.statusUpdateFailed');
+
+    try {
+      await cubit.toggleListingStatus(property);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(successMsg),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(failMsg),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -483,25 +654,33 @@ class _HostListingsViewState extends State<_HostListingsView> {
                 property: property,
                 onTap: () {
                   if (state.isReloadingList) return;
-                  // Only active listings open the public details page.
-                  if ((property.status ?? '').toLowerCase() != 'active') {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(context.tr('host.onlyActiveCanBeViewed')),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                    return;
-                  }
-                  Navigator.pushNamed(
-                    context,
-                    Routes.propertyDetails,
-                    arguments: {'propertyId': property.id},
-                  );
+                  _handleCardTap(context, property);
+                },
+                onEdit: () {
+                  if (state.isReloadingList) return;
+                  _openEditor(context, property);
+                },
+                onCalendar: () {
+                  if (state.isReloadingList) return;
+                  _openCalendar(context, property);
+                },
+                // "Block dates" navigates to the calendar screen (web parity);
+                // the actual block happens there after date selection.
+                onBlockDates: () {
+                  if (state.isReloadingList) return;
+                  _openCalendar(context, property);
+                },
+                onView: () {
+                  if (state.isReloadingList) return;
+                  _openDetails(context, property);
+                },
+                onToggleStatus: () {
+                  if (state.isReloadingList) return;
+                  _toggleStatus(context, property);
                 },
                 onDelete: () {
                   if (state.isReloadingList) return;
-                  // Implement delete logic here or trigger a dialog
+                  _confirmAndDelete(context, property);
                 },
               ),
             );

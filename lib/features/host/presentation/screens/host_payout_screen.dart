@@ -67,7 +67,7 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
     if (userId == null || userId.isEmpty) return;
 
     try {
-      await _userService.deletePayoutMethod(userId, payoutId);
+      await _userService.deletePayoutMethod(payoutId);
       await _loadPayoutMethods();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -98,149 +98,24 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
       return;
     }
 
-    final bankNameController = TextEditingController();
-    final accountHolderController = TextEditingController();
-    final accountNumberController = TextEditingController();
-    final routingController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-    bool isSubmitting = false;
-
-    await showDialog<void>(
+    final added = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            Future<void> submit() async {
-              if (isSubmitting || !(formKey.currentState?.validate() ?? false)) {
-                return;
-              }
-
-              setDialogState(() => isSubmitting = true);
-              try {
-                await _userService.addPayoutMethod(userId, {
-                  'type': 'bank_account',
-                  'bankName': bankNameController.text.trim(),
-                  'accountHolder': accountHolderController.text.trim(),
-                  'accountNumber': accountNumberController.text.trim(),
-                  'routingNumber': routingController.text.trim(),
-                });
-
-                if (!mounted) return;
-                Navigator.pop(dialogContext);
-                await _loadPayoutMethods();
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(context.tr('host.payoutMethodAdded')),
-                    backgroundColor: AppColors.success,
-                  ),
-                );
-              } catch (e) {
-                if (!mounted) return;
-                setDialogState(() => isSubmitting = false);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(e.toString()),
-                    backgroundColor: AppColors.error,
-                  ),
-                );
-              }
-            }
-
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              title: Text(context.tr('host.addBankAccount')),
-              content: Form(
-                key: formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _DialogTextField(
-                        controller: bankNameController,
-                        labelText: context.tr('host.bankName'),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return context.tr('host.enterBankName');
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      _DialogTextField(
-                        controller: accountHolderController,
-                        labelText: context.tr('host.accountHolderName'),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return context.tr('host.enterAccountHolderName');
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      _DialogTextField(
-                        controller: accountNumberController,
-                        labelText: context.tr('host.accountNumber'),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          final text = value?.trim() ?? '';
-                          if (text.isEmpty) {
-                            return context.tr('host.enterAccountNumber');
-                          }
-                          if (text.length < 6) {
-                            return context.tr('host.accountNumberShort');
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      _DialogTextField(
-                        controller: routingController,
-                        labelText: context.tr('host.routingNumber'),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          final text = value?.trim() ?? '';
-                          if (text.isEmpty) {
-                            return context.tr('host.enterRoutingNumber');
-                          }
-                          if (text.length < 5) {
-                            return context.tr('host.routingNumberShort');
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed:
-                      isSubmitting ? null : () => Navigator.pop(dialogContext),
-                  child: Text(context.tr('common.cancel')),
-                ),
-                ElevatedButton(
-                  onPressed: isSubmitting ? null : submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
-                    foregroundColor: AppColors.charcoal,
-                  ),
-                  child: isSubmitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(context.tr('host.add')),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (_) => _AddPayoutDialog(
+        userService: _userService,
+        userId: userId,
+      ),
     );
+
+    if (added == true) {
+      await _loadPayoutMethods();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr('host.payoutMethodAdded')),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
   }
 
   @override
@@ -312,7 +187,7 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
         iconColor: AppColors.primaryColor,
         title: context.tr('host.noPayoutMethodAdded'),
         message: context.tr('host.addPayoutDesc'),
-        primaryActionLabel: context.tr('host.addBankAccountButton'),
+        primaryActionLabel: context.tr('host.addPayoutMethodTitle'),
         onPrimaryAction: _showAddPayoutDialog,
       );
     }
@@ -358,18 +233,26 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
     final payoutId = method['id']?.toString() ?? method['_id']?.toString();
 
     final icon = switch (type) {
-      'bank_account' || 'bank' => Icons.account_balance,
       'paypal' => Icons.account_balance_wallet_outlined,
-      _ => Icons.payments_outlined,
+      _ => Icons.account_balance,
     };
 
-    final title = method['displayName']?.toString() ??
-        method['bankName']?.toString() ??
-        method['accountHolder']?.toString() ??
-        context.tr('host.bankAccountFallback');
-    final subtitle = method['displayDetails']?.toString() ??
-        method['maskedAccount']?.toString() ??
-        _buildMaskedAccount(method);
+    // Mirrors the web `PayoutMethodItem`: title = accountName (or the account id
+    // as a fallback), subtitle = the account id / IBAN.
+    final accountName = method['accountName']?.toString().trim();
+    final accountId = method['accountId']?.toString().trim();
+    final title = (accountName != null && accountName.isNotEmpty)
+        ? accountName
+        : (accountId != null && accountId.isNotEmpty)
+            ? accountId
+            : method['displayName']?.toString() ??
+                method['bankName']?.toString() ??
+                context.tr('host.bankAccountFallback');
+    final subtitle = (accountId != null && accountId.isNotEmpty)
+        ? accountId
+        : method['displayDetails']?.toString() ??
+            method['maskedAccount']?.toString() ??
+            _buildMaskedAccount(method);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -494,13 +377,13 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
 class _DialogTextField extends StatelessWidget {
   final TextEditingController controller;
   final String labelText;
-  final TextInputType? keyboardType;
+  final String? hintText;
   final String? Function(String?)? validator;
 
   const _DialogTextField({
     required this.controller,
     required this.labelText,
-    this.keyboardType,
+    this.hintText,
     this.validator,
   });
 
@@ -508,12 +391,246 @@ class _DialogTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
-      keyboardType: keyboardType,
       validator: validator,
+      textInputAction: TextInputAction.next,
       decoration: InputDecoration(
         labelText: labelText,
+        hintText: hintText,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
+    );
+  }
+}
+
+/// "Add payout method" dialog — web parity with `AddPayoutModal`.
+/// Collects a payout-method choice (from `GET /api/Lookups/PayoutMethod`),
+/// an account name and an account id / IBAN, then posts
+/// `{ payoutMethodId, accountId, accountName }` to the backend.
+/// Pops `true` on success so the screen can refresh and confirm.
+class _AddPayoutDialog extends StatefulWidget {
+  final UserService userService;
+  final String userId;
+
+  const _AddPayoutDialog({
+    required this.userService,
+    required this.userId,
+  });
+
+  @override
+  State<_AddPayoutDialog> createState() => _AddPayoutDialogState();
+}
+
+class _AddPayoutDialogState extends State<_AddPayoutDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _accountNameController = TextEditingController();
+  final _accountIdController = TextEditingController();
+
+  List<Map<String, dynamic>> _methods = [];
+  int? _selectedMethodId;
+  bool _loadingMethods = true;
+  bool _submitting = false;
+  String? _submitError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMethods();
+  }
+
+  @override
+  void dispose() {
+    _accountNameController.dispose();
+    _accountIdController.dispose();
+    super.dispose();
+  }
+
+  static int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '');
+  }
+
+  Future<void> _loadMethods() async {
+    setState(() {
+      _loadingMethods = true;
+      _submitError = null;
+    });
+    final methods = await widget.userService.getPayoutMethodOptions();
+    if (!mounted) return;
+    setState(() {
+      _methods = methods;
+      _selectedMethodId =
+          methods.isNotEmpty ? _asInt(methods.first['id']) : null;
+      _loadingMethods = false;
+    });
+  }
+
+  Future<void> _submit() async {
+    if (_submitting) return;
+    final formValid = _formKey.currentState?.validate() ?? false;
+    if (_selectedMethodId == null) {
+      setState(() => _submitError = context.tr('host.selectPayoutMethod'));
+      return;
+    }
+    if (!formValid) return;
+
+    setState(() {
+      _submitting = true;
+      _submitError = null;
+    });
+    try {
+      await widget.userService.addPayoutMethod(widget.userId, {
+        'payoutMethodId': _selectedMethodId,
+        'accountId': _accountIdController.text.trim(),
+        'accountName': _accountNameController.text.trim(),
+      });
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _submitError = e.toString();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(context.tr('host.addPayoutMethodTitle')),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_submitError != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _submitError!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.error,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              _buildMethodPicker(context),
+              const SizedBox(height: 12),
+              _DialogTextField(
+                controller: _accountNameController,
+                labelText: context.tr('host.accountHolderName'),
+                hintText: context.tr('host.accountNameHint'),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return context.tr('host.enterAccountHolderName');
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              _DialogTextField(
+                controller: _accountIdController,
+                labelText: context.tr('host.accountId'),
+                hintText: context.tr('host.accountIdHint'),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return context.tr('host.enterAccountId');
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _submitting ? null : () => Navigator.pop(context, false),
+          child: Text(context.tr('common.cancel')),
+        ),
+        ElevatedButton(
+          onPressed: _submitting ? null : _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryColor,
+            foregroundColor: AppColors.charcoal,
+          ),
+          child: _submitting
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(context.tr('host.add')),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMethodPicker(BuildContext context) {
+    if (_loadingMethods) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    if (_methods.isEmpty) {
+      return Row(
+        children: [
+          Expanded(
+            child: Text(
+              context.tr('host.noPayoutMethodsAvailable'),
+              style: const TextStyle(fontSize: 13, color: AppColors.neutral600),
+            ),
+          ),
+          TextButton(
+            onPressed: _loadMethods,
+            child: Text(context.tr('common.tryAgain')),
+          ),
+        ],
+      );
+    }
+
+    return DropdownButtonFormField<int>(
+      initialValue: _selectedMethodId,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: context.tr('host.payoutMethod'),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      items: _methods
+          .map(
+            (m) => DropdownMenuItem<int>(
+              value: _asInt(m['id']),
+              child: Text(m['name']?.toString() ?? ''),
+            ),
+          )
+          .toList(),
+      validator: (value) =>
+          value == null ? context.tr('host.selectPayoutMethod') : null,
+      onChanged: (value) => setState(() {
+        _selectedMethodId = value;
+        _submitError = null;
+      }),
     );
   }
 }

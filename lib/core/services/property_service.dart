@@ -1,6 +1,7 @@
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/models/nightly_price_model.dart';
 import 'package:houseiana_mobile_app/core/models/property_model.dart';
+import 'package:houseiana_mobile_app/core/models/region_category_model.dart';
 import 'package:houseiana_mobile_app/core/models/review_model.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/end_points.dart';
@@ -21,7 +22,17 @@ class PropertySearchParams {
   final int page;
   final int limit;
   final bool? isSorted;
+
+  /// Sort option id (as a string) from `/api/Lookups/PropertySorting`, e.g.
+  /// '3' = Price High→Low. Sent to the backend as the `sortBy` query param,
+  /// matching the web contract. Null/empty means no explicit sort.
+  final String? sortBy;
   final dynamic regionId;
+
+  /// Region category id from `/api/Lookups/RegionCategory`. Sent to the search
+  /// endpoint as the `villageId` query param to scope the home listings to a
+  /// destination. Null means no region-category filter (All).
+  final int? villageId;
 
   PropertySearchParams({
     this.location,
@@ -39,7 +50,9 @@ class PropertySearchParams {
     this.page = 1,
     this.limit = 20,
     this.isSorted,
+    this.sortBy,
     this.regionId,
+    this.villageId,
   });
 
   Map<String, dynamic> toQueryParams() => {
@@ -49,17 +62,31 @@ class PropertySearchParams {
         if (guests != null) 'guests': guests,
         if (minPrice != null) 'minPrice': minPrice,
         if (maxPrice != null) 'maxPrice': maxPrice,
-        if (amenities?.isNotEmpty == true) 'amenities': amenities!.join(','),
+        // Sent as repeated keys (amenities=1&amenities=2) via Dio's ListFormat.multi,
+        // matching the web contract. Values are amenity IDs from /api/lookups/Amenities.
+        if (amenities?.isNotEmpty == true) 'amenities': amenities,
         if (propertyType != null) 'type': propertyType,
         if (minBedrooms != null) 'minBedrooms': minBedrooms,
         if (beds != null) 'beds': beds,
         if (minBathrooms != null) 'minBathrooms': minBathrooms,
         if (minRating != null) 'minRating': minRating,
         if (isSorted == true) 'isSorted': 'true',
+        if (sortBy != null && sortBy!.isNotEmpty) 'sortBy': sortBy,
         if (regionId != null) 'regionId': regionId,
+        if (villageId != null) 'villageId': villageId,
         'page': page,
         'limit': limit,
       };
+}
+
+/// A sort choice from `/api/Lookups/PropertySorting`. [id] is sent to the
+/// search API as the `sortBy` query param; [name] is the backend-provided
+/// label (the UI may localize known ids and fall back to this name).
+class SortOption {
+  final String id;
+  final String name;
+
+  const SortOption({required this.id, required this.name});
 }
 
 class CityPropertyGroup {
@@ -263,6 +290,42 @@ class PropertyService {
       );
       final item = _parseItem(response);
       return item != null ? PropertyModel.fromJson(item) : null;
+    } catch (e) {
+      throw ServerException.msg(e.toString());
+    }
+  }
+
+  /// Loads the available sort options from `/api/Lookups/PropertySorting`.
+  /// The backend returns `[{ id, name }, ...]`; each id is what the search
+  /// endpoint expects as the `sortBy` filter.
+  Future<List<SortOption>> getSortingOptions() async {
+    try {
+      final response = await _api.get(EndPoints.propertySortingLookup);
+      return _extractList(response)
+          .map((m) {
+            final id = (m['id'] ?? m['value'] ?? '').toString().trim();
+            final name =
+                (m['name'] ?? m['title'] ?? m['label'] ?? '').toString().trim();
+            return SortOption(id: id, name: name);
+          })
+          .where((o) => o.id.isNotEmpty && o.name.isNotEmpty)
+          .toList();
+    } catch (e) {
+      throw ServerException.msg(e.toString());
+    }
+  }
+
+  /// Loads the home destination categories from `/api/Lookups/RegionCategory`.
+  /// The backend returns `{ success, data: [{ id, name, propertyCount, photo }] }`
+  /// with names already localized via the `lang` request header. Each id is sent
+  /// back to the search endpoint as the `villageId` filter.
+  Future<List<RegionCategory>> getRegionCategories() async {
+    try {
+      final response = await _api.get(EndPoints.regionCategoryLookup);
+      return _extractList(response)
+          .map(RegionCategory.fromJson)
+          .where((c) => c.id > 0 && c.name.isNotEmpty)
+          .toList();
     } catch (e) {
       throw ServerException.msg(e.toString());
     }

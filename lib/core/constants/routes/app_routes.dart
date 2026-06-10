@@ -243,7 +243,14 @@ class AppRoutes {
       case Routes.becomeHost:
         return _buildRoute(const BecomeHostScreen(), settings);
       case Routes.listProperty:
-        return _buildRoute(const PropertyWizardScreen(), settings);
+        {
+          final args = settings.arguments as Map<String, dynamic>?;
+          final editId = args?['propertyId']?.toString();
+          return _buildRoute(
+            PropertyWizardScreen(editPropertyId: editId),
+            settings,
+          );
+        }
       case Routes.propertySetup:
         return _buildRoute(const PropertySetupScreen(), settings);
       case Routes.pricingSetup:
@@ -280,7 +287,14 @@ class AppRoutes {
       case Routes.hostReviews:
         return _buildRoute(const HostReviewsScreen(), settings);
       case Routes.propertyWizard:
-        return _buildRoute(const PropertyWizardScreen(), settings);
+        {
+          final args = settings.arguments as Map<String, dynamic>?;
+          final editId = args?['propertyId']?.toString();
+          return _buildRoute(
+            PropertyWizardScreen(editPropertyId: editId),
+            settings,
+          );
+        }
 
       // ==================== Support ====================
       case Routes.helpCenter:

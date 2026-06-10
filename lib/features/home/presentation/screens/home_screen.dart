@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/models/region_category_model.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
@@ -19,8 +20,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _selectedCategory = 'All';
+  /// Selected region category id from `/api/Lookups/RegionCategory`, sent to
+  /// the search endpoint as `villageId`. Null means "All" (no filter).
+  int? _selectedVillageId;
   Set<String> _favoriteProperties = {};
+
+  List<RegionCategory> _regionCategories = [];
+  bool _categoriesLoading = true;
 
   List<Map<String, dynamic>> _properties = [];
   List<CityPropertyGroup> _cityGroups = [];
@@ -46,7 +52,22 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _loadCategories();
     _loadData();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final cats = await _propertyService.getRegionCategories();
+      if (mounted) {
+        setState(() {
+          _regionCategories = cats;
+          _categoriesLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _categoriesLoading = false);
+    }
   }
 
   @override
@@ -65,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadData({String? propertyType}) async {
+  Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
       _currentPage = 1;
@@ -75,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final params = PropertySearchParams(
       page: 1,
       limit: _pageLimit,
-      propertyType: propertyType == 'All' ? null : propertyType,
+      villageId: _selectedVillageId,
       isSorted: true,
     );
 
@@ -112,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final params = PropertySearchParams(
       page: nextPage,
       limit: _pageLimit,
-      propertyType: _selectedCategory == 'All' ? null : _selectedCategory,
+      villageId: _selectedVillageId,
       isSorted: true,
     );
     final page = await _propertyService.searchPropertiesGrouped(
@@ -246,32 +267,36 @@ class _HomeScreenState extends State<HomeScreen> {
           child: SingleChildScrollView(
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 16),
-                  _buildHeroSection(),
-                  const SizedBox(height: 16),
-                  _buildSearchBar(),
-                  const SizedBox(height: 20),
-                  _buildCategoryFilters(),
-                  const SizedBox(height: 20),
-                  _buildPropertyList(),
-                  if (_isLoadingMore)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Center(
-                        child: CircularProgressIndicator(color: AppColors.primaryColor),
-                      ),
-                    ),
-                  const SizedBox(height: 32),
-                  _buildTrustBadges(),
-                  const SizedBox(height: 20),
-                ],
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(),
+                      const SizedBox(height: 16),
+                      _buildHeroSection(),
+                      const SizedBox(height: 16),
+                      _buildSearchBar(),
+                      const SizedBox(height: 20),
+                      _buildCategoryFilters(),
+                      const SizedBox(height: 20),
+                      _buildPropertyList(),
+                      if (_isLoadingMore)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: CircularProgressIndicator(color: AppColors.primaryColor),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+                _buildTrustBadges(),
+              ],
             ),
           ),
         ),
@@ -565,10 +590,10 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.only(left: 16),
+                padding: const EdgeInsetsDirectional.only(start: 16),
                 decoration: const BoxDecoration(
-                  border: Border(
-                    right: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+                  border: BorderDirectional(
+                    end: BorderSide(color: Color(0xFFE5E7EB), width: 1),
                   ),
                 ),
                 child: Column(
@@ -592,8 +617,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: const BoxDecoration(
-                  border: Border(
-                    right: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+                  border: BorderDirectional(
+                    end: BorderSide(color: Color(0xFFE5E7EB), width: 1),
                   ),
                 ),
                 child: Column(
@@ -617,8 +642,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: const BoxDecoration(
-                  border: Border(
-                    right: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+                  border: BorderDirectional(
+                    end: BorderSide(color: Color(0xFFE5E7EB), width: 1),
                   ),
                 ),
                 child: Column(
@@ -640,7 +665,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.only(left: 10, right: 4),
+                padding: const EdgeInsetsDirectional.only(start: 10, end: 4),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -683,80 +708,117 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryFilters() {
-    final categories = [
-      {'id': '', 'labelKey': 'home.categories.all', 'icon': Icons.apps_rounded},
-      {'id': '1', 'labelKey': 'home.categories.apartmentCondo', 'icon': Icons.apartment},
-      {'id': '2', 'labelKey': 'home.categories.house', 'icon': Icons.house},
-      {'id': '3', 'labelKey': 'home.categories.villa', 'icon': Icons.villa},
-      {'id': '4', 'labelKey': 'home.categories.studioLoft', 'icon': Icons.meeting_room},
-      {'id': '5', 'labelKey': 'home.categories.townhouse', 'icon': Icons.home_work},
-      {'id': '6', 'labelKey': 'home.categories.guesthouseAnnex', 'icon': Icons.house_siding},
-      {'id': '7', 'labelKey': 'home.categories.servicedApartment', 'icon': Icons.room_service},
-      {'id': '8', 'labelKey': 'home.categories.aparthotel', 'icon': Icons.hotel},
-      {'id': '9', 'labelKey': 'home.categories.cabinChalet', 'icon': Icons.cabin},
-      {'id': '10', 'labelKey': 'home.categories.farmStay', 'icon': Icons.agriculture},
-      {'id': '11', 'labelKey': 'home.categories.houseboat', 'icon': Icons.sailing},
-      {'id': '12', 'labelKey': 'home.categories.casa', 'icon': Icons.holiday_village},
-      {'id': '13', 'labelKey': 'home.categories.other', 'icon': Icons.category},
-    ];
+    if (_categoriesLoading) {
+      return const SizedBox(
+        height: 92,
+        child: Center(
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.primaryColor,
+            ),
+          ),
+        ),
+      );
+    }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: categories.map((category) {
-          final labelKey = category['labelKey'] as String;
-          final icon = category['icon'] as IconData;
-          final id = category['id'] as String;
-          final isSelected = _selectedCategory == (id.isEmpty ? 'All' : id);
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
-              onTap: () {
-                final newSelected = id.isEmpty ? 'All' : id;
-                setState(() {
-                  _selectedCategory = newSelected;
-                });
-                _loadData(propertyType: newSelected);
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFFFEF9E7) : Colors.white,
-                  border: Border.all(
-                    color: isSelected ? AppColors.primaryColor : const Color(0xFFE5E7EB),
-                    width: 1,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      icon,
-                      size: 16,
-                      color: isSelected
-                          ? const Color(0xFF000000)
-                          : const Color(0xFF6B7280),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      context.tr(labelKey),
-                      style: TextStyle(
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w400,
-                        fontSize: 13,
-                        height: 1.23,
-                        color: isSelected
-                            ? const Color(0xFF000000)
-                            : const Color(0xFF6B7280),
-                      ),
-                    ),
-                  ],
+    if (_regionCategories.isEmpty) return const SizedBox.shrink();
+
+    return SizedBox(
+      height: 92,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        itemCount: _regionCategories.length + 1,
+        separatorBuilder: (_, __) => const SizedBox(width: 16),
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return _buildCategoryChip(
+              id: null,
+              label: context.tr('home.categories.all'),
+              photoUrl: null,
+            );
+          }
+          final category = _regionCategories[index - 1];
+          return _buildCategoryChip(
+            id: category.id,
+            label: category.name,
+            photoUrl: category.photo,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCategoryChip({
+    required int? id,
+    required String label,
+    String? photoUrl,
+  }) {
+    final isSelected = _selectedVillageId == id;
+    return GestureDetector(
+      onTap: () {
+        if (_selectedVillageId == id) return;
+        setState(() => _selectedVillageId = id);
+        _loadData();
+      },
+      child: SizedBox(
+        width: 72,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFF3F4F6),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primaryColor
+                      : const Color(0xFFE5E7EB),
+                  width: isSelected ? 2.5 : 1,
                 ),
               ),
+              child: ClipOval(
+                child: (photoUrl != null && photoUrl.isNotEmpty)
+                    ? Image.network(
+                        photoUrl,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.place_outlined,
+                          size: 24,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                      )
+                    : const Icon(
+                        Icons.apps_rounded,
+                        size: 26,
+                        color: Color(0xFF6B7280),
+                      ),
+              ),
             ),
-          );
-        }).toList(),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                fontSize: 11,
+                height: 1.2,
+                color: isSelected
+                    ? const Color(0xFF1D242B)
+                    : const Color(0xFF6B7280),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -852,7 +914,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   arguments: {
                     'location': displayName,
                     'regionId': group.regionId,
-                    'propertyType': _selectedCategory == 'All' ? null : _selectedCategory,
                   },
                 ),
                 child: Container(
@@ -888,6 +949,8 @@ class _HomeScreenState extends State<HomeScreen> {
             separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (context, i) {
               final p = group.properties[i];
+              final cid =
+                  (p['id'] ?? p['_id'] ?? p['propertyId'] ?? '').toString();
               return SizedBox(
                 width: 200,
                 child: CompactPropertyCard(
@@ -897,6 +960,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   price: (double.tryParse(_extractPrice(p)) ?? 0),
                   rating: (p['averageRating'] ?? p['rating'] ?? 0.0).toDouble(),
                   currency: (p['currency'] ?? 'EGP').toString(),
+                  bedrooms: _asInt(p['bedrooms']),
+                  beds: _asInt(p['beds']),
+                  bathrooms: _asInt(p['bathrooms']),
+                  isFavorite: _favoriteProperties.contains(cid),
+                  onFavoriteToggle: () => _toggleFavorite(cid),
                   onTap: () {
                     Navigator.pushNamed(
                       context,
@@ -972,6 +1040,13 @@ class _HomeScreenState extends State<HomeScreen> {
   String _extractPrice(Map<String, dynamic> p) {
     final price = p['pricePerNight'] ?? p['price'] ?? p['basePrice'] ?? p['nightlyPrice'] ?? 0;
     return price.toString();
+  }
+
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
   }
 
   String _extractImage(Map<String, dynamic> p) {
@@ -1251,10 +1326,10 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9F9FA),
-        borderRadius: BorderRadius.circular(16),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF9F9FA),
       ),
       child: Column(
         children: [

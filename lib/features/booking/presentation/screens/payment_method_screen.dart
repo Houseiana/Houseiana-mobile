@@ -39,6 +39,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       icon: Icons.credit_card,
       nameKey: 'booking.paymob',
       descKey: 'booking.creditDebitCardDesc',
+      apiId: 3,
     ),
     'paypal': _MethodMeta(
       id: 'paypal',
@@ -93,9 +94,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       final mapped = <PaymentMethod>[];
       for (final entry in list) {
         if (entry is! Map) continue;
-        final name = entry['name']?.toString() ?? '';
-        final meta = _methodCatalog[name.toLowerCase()];
+        final meta = _resolveMethodMeta(entry);
         if (meta == null) continue;
+        // The lookup may return the same method twice; keep one card per method.
+        if (mapped.any((m) => m.id == meta.id)) continue;
         mapped.add(PaymentMethod(
           id: meta.id,
           name: context.tr(meta.nameKey),
@@ -114,6 +116,29 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         _methodsLoading = false;
       });
     }
+  }
+
+  /// Resolves a `/api/Lookups/payment-method` entry (`{ id, name }`) to its
+  /// catalog meta.
+  ///
+  /// Matches on the stable lookup **id** first — language-independent, the same
+  /// contract every other lookup in the app relies on. The backend localizes
+  /// lookup `name` values for Arabic users (e.g. Gender returns "ذكر"/"أنثى"),
+  /// so the previous name-only match silently dropped every method and left the
+  /// screen blank in Arabic (the "payment screen stuck empty" bug). The display
+  /// name is kept only as a best-effort fallback.
+  _MethodMeta? _resolveMethodMeta(Map entry) {
+    final rawId = entry['id'];
+    final id =
+        rawId is num ? rawId.toInt() : int.tryParse(rawId?.toString() ?? '');
+    if (id != null) {
+      for (final meta in _methodCatalog.values) {
+        if (meta.apiId == id) return meta;
+      }
+    }
+    final name = entry['name']?.toString().trim().toLowerCase() ?? '';
+    if (name.isEmpty) return null;
+    return _methodCatalog[name];
   }
 
   Future<void> _processPayment() async {
@@ -418,6 +443,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   )
                 else if (_methodsError != null)
                   _buildMethodsErrorState()
+                else if (_availableMethods.isEmpty)
+                  _buildMethodsEmptyState()
                 else
                   ..._availableMethods
                       .map((method) => _buildPaymentMethodCard(method)),
@@ -608,6 +635,36 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 foregroundColor: AppColors.charcoal,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMethodsEmptyState() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.ghostWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.payments_outlined,
+              color: AppColors.neutral400, size: 36),
+          const SizedBox(height: 12),
+          Text(
+            context.tr('booking.paymentMethodsEmpty'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+          ),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: _loadPaymentMethods,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: Text(context.tr('common.retry')),
+            style: TextButton.styleFrom(foregroundColor: AppColors.charcoal),
           ),
         ],
       ),
@@ -883,10 +940,16 @@ class _MethodMeta {
   final String nameKey;
   final String descKey;
 
+  /// The id of this method in the `/api/Lookups/payment-method` lookup. Used to
+  /// match the backend response by a stable, language-independent key instead
+  /// of the (localized) display name. Null when the lookup id is unknown.
+  final int? apiId;
+
   const _MethodMeta({
     required this.id,
     required this.icon,
     required this.nameKey,
     required this.descKey,
+    this.apiId,
   });
 }

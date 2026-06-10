@@ -198,8 +198,18 @@ class UserService {
   // ── Cancel Booking ────────────────────────────────────────────────────────
 
   /// POST /booking-manager/{id}/cancel
-  Future<bool> cancelBooking(String bookingId) async {
-    await _api.post(EndPoints.cancelBooking(bookingId), body: {});
+  /// Body matches the web (`BookingService.cancel`): `{ userId, reason? }`.
+  /// The backend authorizes the guest cancel by `userId`, so it must be sent —
+  /// an empty body fails with "failed to cancel".
+  Future<bool> cancelBooking(
+    String bookingId, {
+    required String userId,
+    String? reason,
+  }) async {
+    await _api.post(EndPoints.cancelBooking(bookingId), body: {
+      'userId': userId,
+      if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+    });
     return true;
   }
 
@@ -306,6 +316,28 @@ class UserService {
   }
 
   // ── Payout Methods ───────────────────────────────────────────────────────
+  // Contract mirrors the web `AccountService` (auth.service.ts):
+  //   list   → GET  /users/{userId}/payout-methods        ({ data: { data: [...] } })
+  //   add    → POST /users/{userId}/payout-method          { payoutMethodId, accountId, accountName }
+  //   delete → POST /users/delete-payout-method/{id}
+  // The picker options come from GET /api/Lookups/PayoutMethod.
+
+  /// GET /api/Lookups/PayoutMethod → `[{ id, name }]`.
+  /// Drives the "Add payout method" picker. Falls back to an empty list.
+  Future<List<Map<String, dynamic>>> getPayoutMethodOptions() async {
+    try {
+      final response = await _api.get(EndPoints.payoutMethodLookup);
+      return _list(response)
+          .map((e) => {
+                'id': e['id'],
+                'name': e['name']?.toString() ?? '',
+              })
+          .where((m) => m['id'] != null && (m['name'] as String).isNotEmpty)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
 
   /// GET /users/{userId}/payout-methods
   Future<List<Map<String, dynamic>>> getPayoutMethods(String userId) async {
@@ -313,19 +345,20 @@ class UserService {
     return _list(response);
   }
 
-  /// POST /users/{userId}/payout-methods
+  /// POST /users/{userId}/payout-method (singular).
+  /// Body: { payoutMethodId, accountId, accountName } — matches the web.
   Future<Map<String, dynamic>?> addPayoutMethod(
     String userId,
     Map<String, dynamic> body,
   ) async {
     final response =
-        await _api.post('/users/$userId/payout-methods', body: body);
+        await _api.post('/users/$userId/payout-method', body: body);
     return _item(response);
   }
 
-  /// DELETE /users/{userId}/payout-methods/{id}
-  Future<bool> deletePayoutMethod(String userId, String payoutId) async {
-    await _api.delete('/users/$userId/payout-methods/$payoutId');
+  /// POST /users/delete-payout-method/{id}
+  Future<bool> deletePayoutMethod(String payoutId) async {
+    await _api.post('/users/delete-payout-method/$payoutId');
     return true;
   }
 

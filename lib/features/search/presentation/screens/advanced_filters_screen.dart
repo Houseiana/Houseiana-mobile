@@ -25,42 +25,19 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
   int _bedrooms = 0;
   int _beds = 0;
   int _bathrooms = 0;
-  final List<String> _selectedAmenities = [];
+
+  /// Selected amenity IDs (as strings) — these are what the backend
+  /// `amenities` filter expects, matching the web project's contract.
+  final Set<String> _selectedAmenityIds = <String>{};
   bool _lookupsLoading = true;
   bool _lookupsFailed = false;
 
   String _formatPrice(double value) =>
       'EGP ${_priceFormatter.format(value.toInt())}';
 
-  List<String> _amenities = [
-    'WiFi',
-    'Kitchen',
-    'Washer',
-    'Dryer',
-    'Air Conditioning',
-    'Heating',
-    'Workspace',
-    'TV',
-    'Free Parking',
-    'Pool',
-    'Gym',
-    'Hot Tub',
-    'Security',
-    'BBQ Grill',
-    'Jacuzzi',
-    'Private Garden',
-    'RoofTop',
-    'Swing',
-    'Iron',
-    'Hair Dryer',
-    'Coffee Maker',
-    'Microwave',
-    'Dishwasher',
-    'Elevator',
-    'Balcony',
-    'Fireplace',
-    'Security System',
-  ];
+  /// Amenities loaded from `/api/lookups/Amenities`. Each carries the `id`
+  /// sent to the search API and the `name` shown to the user.
+  List<_AmenityOption> _amenities = const [];
 
   @override
   void initState() {
@@ -72,12 +49,15 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
     try {
       final api = sl<ApiConsumer>();
       final response = await api.get(EndPoints.amenitiesLookup);
-      final amenities = _extractLookupNames(response);
+      final amenities = _extractAmenities(response);
       if (!mounted) return;
       setState(() {
-        if (amenities.isNotEmpty) _amenities = amenities;
+        _amenities = amenities;
         _lookupsLoading = false;
-        _lookupsFailed = false;
+        _lookupsFailed = amenities.isEmpty;
+        // Drop any selection that is no longer offered by the lookup.
+        _selectedAmenityIds
+            .removeWhere((id) => !amenities.any((a) => a.id == id));
       });
     } catch (_) {
       if (!mounted) return;
@@ -88,7 +68,10 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
     }
   }
 
-  List<String> _extractLookupNames(dynamic response) {
+  /// Parses the amenities lookup into `{id, name}` options. The backend
+  /// returns `[{ "id": 1, "name": "WiFi" }, ...]`; we keep the `id` because
+  /// the search API filters by amenity ID, not by name.
+  List<_AmenityOption> _extractAmenities(dynamic response) {
     dynamic raw = response;
     if (raw is Map) raw = raw['data'] ?? raw['items'] ?? raw['result'] ?? raw;
     if (raw is Map) {
@@ -99,26 +82,32 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
             orElse: () => [],
           );
     }
-    if (raw is! List) return [];
-    return raw
-        .map((item) {
-          if (item is String) return item;
-          if (item is Map) {
-            return (item['name'] ??
-                    item['title'] ??
-                    item['label'] ??
-                    item['value'] ??
-                    item['amenityName'] ??
-                    item['type'] ??
-                    '')
-                .toString();
-          }
-          return '';
-        })
-        .where((name) => name.trim().isNotEmpty)
-        .map((name) => name.trim())
-        .toSet()
-        .toList();
+    if (raw is! List) return const [];
+
+    final options = <_AmenityOption>[];
+    final seenIds = <String>{};
+    for (final item in raw) {
+      if (item is! Map) continue;
+      final id = (item['id'] ??
+              item['amenityId'] ??
+              item['value'] ??
+              item['key'] ??
+              '')
+          .toString()
+          .trim();
+      final name = (item['name'] ??
+              item['title'] ??
+              item['label'] ??
+              item['amenityName'] ??
+              item['type'] ??
+              '')
+          .toString()
+          .trim();
+      if (id.isEmpty || name.isEmpty) continue;
+      if (!seenIds.add(id)) continue;
+      options.add(_AmenityOption(id: id, name: name));
+    }
+    return options;
   }
 
   @override
@@ -149,7 +138,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                 _bedrooms = 0;
                 _beds = 0;
                 _bathrooms = 0;
-                _selectedAmenities.clear();
+                _selectedAmenityIds.clear();
               });
             },
             child: Text(
@@ -287,16 +276,17 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: _amenities.map((amenity) {
-                    final isSelected = _selectedAmenities.contains(amenity);
+                    final isSelected =
+                        _selectedAmenityIds.contains(amenity.id);
                     return FilterChip(
-                      label: Text(amenity),
+                      label: Text(amenity.name),
                       selected: isSelected,
                       onSelected: (selected) {
                         setState(() {
                           if (selected) {
-                            _selectedAmenities.add(amenity);
+                            _selectedAmenityIds.add(amenity.id);
                           } else {
-                            _selectedAmenities.remove(amenity);
+                            _selectedAmenityIds.remove(amenity.id);
                           }
                         });
                       },
@@ -338,7 +328,8 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                     'bedrooms': _bedrooms,
                     'beds': _beds,
                     'bathrooms': _bathrooms,
-                    'amenities': _selectedAmenities,
+                    // Amenity IDs — consumed as the search API `amenities` filter.
+                    'amenities': _selectedAmenityIds.toList(),
                   });
                 },
                 style: ElevatedButton.styleFrom(
@@ -422,4 +413,13 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
       ),
     );
   }
+}
+
+/// A selectable amenity from `/api/lookups/Amenities`: [id] is sent to the
+/// search API, [name] is shown to the user.
+class _AmenityOption {
+  final String id;
+  final String name;
+
+  const _AmenityOption({required this.id, required this.name});
 }
