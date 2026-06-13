@@ -63,6 +63,8 @@ class SearchCubit extends Cubit<SearchState> {
         isSorted: currentState.params.isSorted,
         sortBy: currentState.params.sortBy,
         regionId: currentState.params.regionId,
+        villageId: currentState.params.villageId,
+        featuredRegionId: currentState.params.featuredRegionId,
       );
 
       final results = await _propertyService.searchProperties(

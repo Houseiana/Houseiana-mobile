@@ -30,6 +30,11 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
   List<String>? _amenities;
   double? _minRating;
   dynamic _regionId;
+
+  /// Region category id from `/api/Lookups/RegionCategory`, sent to the search
+  /// API as `villageId` when this screen is opened by drilling into a region
+  /// (e.g. the home "See All").
+  dynamic _villageId;
   bool _mapView = false;
 
   /// Selected sort option id (the `sortBy` value sent to the search API), or
@@ -104,14 +109,17 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
         _minRating = (args['minRating'] as num).toDouble();
       }
       _regionId = args['regionId'];
+      _villageId = args['villageId'];
     }
     _doSearch();
   }
 
   void _doSearch() {
-    // When opened from "See All" we already have a regionId — don't also send
-    // `location` so the backend filters strictly by region.
-    final locationParam = _regionId != null ? null : _location;
+    // When opened from "See All" we already have a region scope (regionId or
+    // villageId) — don't also send `location` so the backend filters strictly
+    // by region.
+    final hasRegionScope = _regionId != null || _villageId != null;
+    final locationParam = hasRegionScope ? null : _location;
     context.read<SearchCubit>().search(PropertySearchParams(
           location: locationParam,
           checkIn: _checkIn,
@@ -128,6 +136,9 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
           isSorted: false,
           sortBy: _sortBy,
           regionId: _regionId,
+          villageId: _villageId is int
+              ? _villageId as int
+              : int.tryParse(_villageId?.toString() ?? ''),
         ));
   }
 

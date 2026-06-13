@@ -21,8 +21,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   /// Selected region category id from `/api/Lookups/RegionCategory`, sent to
-  /// the search endpoint as `villageId`. Null means "All" (no filter).
-  int? _selectedVillageId;
+  /// the search endpoint as `featuredRegionId` to filter the home in place.
+  /// Null means "All" (no filter). Drilling into a region (See All) uses
+  /// `villageId` instead — see [_buildCityGroupSection].
+  int? _selectedFeaturedRegionId;
   Set<String> _favoriteProperties = {};
 
   List<RegionCategory> _regionCategories = [];
@@ -96,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final params = PropertySearchParams(
       page: 1,
       limit: _pageLimit,
-      villageId: _selectedVillageId,
+      featuredRegionId: _selectedFeaturedRegionId,
       isSorted: true,
     );
 
@@ -133,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final params = PropertySearchParams(
       page: nextPage,
       limit: _pageLimit,
-      villageId: _selectedVillageId,
+      featuredRegionId: _selectedFeaturedRegionId,
       isSorted: true,
     );
     final page = await _propertyService.searchPropertiesGrouped(
@@ -757,11 +759,11 @@ class _HomeScreenState extends State<HomeScreen> {
     required String label,
     String? photoUrl,
   }) {
-    final isSelected = _selectedVillageId == id;
+    final isSelected = _selectedFeaturedRegionId == id;
     return GestureDetector(
       onTap: () {
-        if (_selectedVillageId == id) return;
-        setState(() => _selectedVillageId = id);
+        if (_selectedFeaturedRegionId == id) return;
+        setState(() => _selectedFeaturedRegionId = id);
         _loadData();
       },
       child: SizedBox(
@@ -913,7 +915,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Routes.searchProperties,
                   arguments: {
                     'location': displayName,
-                    'regionId': group.regionId,
+                    'villageId': group.regionId,
                   },
                 ),
                 child: Container(

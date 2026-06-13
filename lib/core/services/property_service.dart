@@ -29,10 +29,17 @@ class PropertySearchParams {
   final String? sortBy;
   final dynamic regionId;
 
-  /// Region category id from `/api/Lookups/RegionCategory`. Sent to the search
-  /// endpoint as the `villageId` query param to scope the home listings to a
-  /// destination. Null means no region-category filter (All).
+  /// Region category id from `/api/Lookups/RegionCategory`, sent to the search
+  /// endpoint as the `villageId` query param. Used when drilling INTO a region's
+  /// full listing (e.g. the home "See All" → search screen). Null means no
+  /// village filter.
   final int? villageId;
+
+  /// Region category id from `/api/Lookups/RegionCategory`, sent to the search
+  /// endpoint as the `featuredRegionId` query param. Used to scope the HOME
+  /// featured listings to a destination via the in-place chip filter. Distinct
+  /// from [villageId], which is the deep-listing equivalent. Null means All.
+  final int? featuredRegionId;
 
   PropertySearchParams({
     this.location,
@@ -53,6 +60,7 @@ class PropertySearchParams {
     this.sortBy,
     this.regionId,
     this.villageId,
+    this.featuredRegionId,
   });
 
   Map<String, dynamic> toQueryParams() => {
@@ -74,6 +82,7 @@ class PropertySearchParams {
         if (sortBy != null && sortBy!.isNotEmpty) 'sortBy': sortBy,
         if (regionId != null) 'regionId': regionId,
         if (villageId != null) 'villageId': villageId,
+        if (featuredRegionId != null) 'featuredRegionId': featuredRegionId,
         'page': page,
         'limit': limit,
       };
@@ -317,8 +326,9 @@ class PropertyService {
 
   /// Loads the home destination categories from `/api/Lookups/RegionCategory`.
   /// The backend returns `{ success, data: [{ id, name, propertyCount, photo }] }`
-  /// with names already localized via the `lang` request header. Each id is sent
-  /// back to the search endpoint as the `villageId` filter.
+  /// with names already localized via the `lang` request header. On the home,
+  /// the chosen id is sent to the search endpoint as `featuredRegionId` (in-place
+  /// filter); when drilling into a region it is sent as `villageId`.
   Future<List<RegionCategory>> getRegionCategories() async {
     try {
       final response = await _api.get(EndPoints.regionCategoryLookup);

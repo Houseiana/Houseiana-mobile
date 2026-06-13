@@ -124,7 +124,8 @@ class EndPoints {
   static const String propertySortingLookup = '/api/Lookups/PropertySorting';
   // GET /api/Lookups/RegionCategory → [{ id, name, propertyCount, photo }]
   // Home destination categories. The chosen id is sent to /api/property-search
-  // as the `villageId` query param to filter listings to that region.
+  // as `featuredRegionId` for the in-place home filter, or as `villageId` when
+  // drilling into a region's full listing.
   static const String regionCategoryLookup = '/api/Lookups/RegionCategory';
   // GET /api/Lookups/ReasonBlockProperty → [{ id, name }] used for calendar blocking.
   static const String reasonBlockPropertyLookup =
