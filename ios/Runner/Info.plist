@@ -30,7 +30,7 @@
 		<string>https</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-    <string>We use the camera to allow users to capture and upload photos.</string>
+    <string>Houseiana uses the camera so you can take photos to upload directly in the app — for example, capturing your ID document during identity verification, photographing a property you are listing as a host, or taking a profile picture.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>We use your location to provide location-based features and improve your experience.</string>
 	<key>LSRequiresIPhoneOS</key>
