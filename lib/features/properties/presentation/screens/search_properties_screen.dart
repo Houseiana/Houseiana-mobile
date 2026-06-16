@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
-import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/features/properties/cubit/search_cubit.dart';
 import 'package:houseiana_mobile_app/features/properties/cubit/search_state.dart';
 import 'package:houseiana_mobile_app/features/properties/presentation/widgets/property_map_view.dart';
+import 'package:houseiana_mobile_app/features/properties/presentation/widgets/property_sort_control.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/cards/property_list_card.dart';
 
 class SearchPropertiesScreen extends StatefulWidget {
   const SearchPropertiesScreen({super.key});
@@ -38,54 +39,17 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
   bool _mapView = false;
 
   /// Selected sort option id (the `sortBy` value sent to the search API), or
-  /// null for the default ordering.
+  /// null for the default ordering. The pill + sheet live in
+  /// [PropertySortControl]; this screen only owns the value and re-searches.
   String? _sortBy;
-
-  /// Sort options shown in the sheet. Seeded with the known backend values so
-  /// the control works immediately, then refreshed from
-  /// `/api/Lookups/PropertySorting` (web parity).
-  List<SortOption> _sortOptions = _fallbackSortOptions;
-
-  /// Known PropertySorting lookup values — used as an offline/error fallback
-  /// and to seed the control before the live lookup resolves.
-  static const List<SortOption> _fallbackSortOptions = [
-    SortOption(id: '1', name: 'Newest First'),
-    SortOption(id: '2', name: 'Oldest First'),
-    SortOption(id: '3', name: 'Price: High to Low'),
-    SortOption(id: '4', name: 'Price: Low to High'),
-    SortOption(id: '5', name: 'Highest Rated'),
-    SortOption(id: '6', name: 'Most Booked'),
-  ];
-
-  /// Maps stable PropertySorting ids to localized labels; unknown ids fall
-  /// back to the backend-provided name (see [_sortDisplayName]).
-  static const Map<String, String> _sortLabelKeys = {
-    '1': 'filters.sortNewest',
-    '2': 'filters.sortOldest',
-    '3': 'filters.sortPriceHighLow',
-    '4': 'filters.sortPriceLowHigh',
-    '5': 'filters.sortHighestRated',
-    '6': 'filters.sortMostBooked',
-  };
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    _loadSortOptions();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _readArgumentsAndSearch();
     });
-  }
-
-  Future<void> _loadSortOptions() async {
-    try {
-      final options = await sl<PropertyService>().getSortingOptions();
-      if (!mounted || options.isEmpty) return;
-      setState(() => _sortOptions = options);
-    } catch (_) {
-      // Keep the fallback options on failure.
-    }
   }
 
   void _readArgumentsAndSearch() {
@@ -321,9 +285,12 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
                 Routes.advancedFilters,
               );
               if (result is Map) {
-                final priceRange = result['priceRange'] as RangeValues?;
-                _minPrice = priceRange?.start;
-                _maxPrice = priceRange?.end;
+                // Null = "no price filter" (slider at floor/ceiling), per the
+                // web contract — the filters screen already applies that rule.
+                final minPrice = result['minPrice'];
+                _minPrice = minPrice is num ? minPrice.toDouble() : null;
+                final maxPrice = result['maxPrice'];
+                _maxPrice = maxPrice is num ? maxPrice.toDouble() : null;
                 final bedrooms = result['bedrooms'];
                 _minBedrooms =
                     bedrooms is int && bedrooms > 0 ? bedrooms : null;
@@ -408,150 +375,15 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          _buildSortButton(),
+          PropertySortControl(
+            selectedId: _sortBy,
+            onChanged: (id) {
+              setState(() => _sortBy = id);
+              _doSearch();
+            },
+          ),
         ],
       ),
-    );
-  }
-
-  /// Localized label for a sort option: a translated label for known backend
-  /// ids, falling back to the backend-provided name otherwise.
-  String _sortDisplayName(SortOption option) {
-    final key = _sortLabelKeys[option.id];
-    return key != null ? context.tr(key) : option.name;
-  }
-
-  /// The compact "Sort by" pill shown in the results header (web parity).
-  /// Highlights when a sort is active and shows the selected option's label.
-  Widget _buildSortButton() {
-    SortOption? selected;
-    for (final option in _sortOptions) {
-      if (option.id == _sortBy) {
-        selected = option;
-        break;
-      }
-    }
-    final isActive = _sortBy != null;
-    final label = selected != null
-        ? _sortDisplayName(selected)
-        : context.tr('filters.sortBy');
-
-    return GestureDetector(
-      onTap: _openSortSheet,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFFCC519) : const Color(0xFFF9F9FA),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.swap_vert, size: 16, color: Color(0xFF1D242B)),
-            const SizedBox(width: 6),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 110),
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1D242B),
-                ),
-              ),
-            ),
-            const Icon(Icons.keyboard_arrow_down,
-                size: 16, color: Color(0xFF6B7280)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Bottom sheet listing the sort options plus a "default" entry that clears
-  /// any active sort. Selecting an option re-runs the search with `sortBy`.
-  void _openSortSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
-                child: Row(
-                  children: [
-                    Text(
-                      context.tr('filters.sortBy'),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1D242B),
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () => Navigator.pop(sheetContext),
-                      icon: const Icon(Icons.close,
-                          size: 20, color: Color(0xFF6B7280)),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1, color: Color(0xFFE5E7EB)),
-              _buildSortTile(
-                sheetContext,
-                id: null,
-                label: context.tr('filters.sortDefault'),
-              ),
-              ..._sortOptions.map(
-                (option) => _buildSortTile(
-                  sheetContext,
-                  id: option.id,
-                  label: _sortDisplayName(option),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSortTile(
-    BuildContext sheetContext, {
-    required String? id,
-    required String label,
-  }) {
-    final selected = _sortBy == id;
-    return ListTile(
-      title: Text(
-        label,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          color: const Color(0xFF1D242B),
-        ),
-      ),
-      trailing: selected
-          ? const Icon(Icons.check, size: 20, color: Color(0xFFFCC519))
-          : null,
-      onTap: () {
-        Navigator.pop(sheetContext);
-        if (_sortBy != id) {
-          setState(() => _sortBy = id);
-          _doSearch();
-        }
-      },
     );
   }
 
@@ -595,190 +427,34 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
 
   Widget _buildPropertyCard(Map<String, dynamic> p) {
     final propertyId = (p['id'] ?? p['_id'] ?? p['propertyId'] ?? '').toString();
-    final title = (p['title'] ?? p['name'] ?? context.tr('property.untitled')).toString();
-    final location = _extractLocation(p);
-    final price = _extractPrice(p);
-    final currency = _extractCurrency(p);
     final rating = (p['rating'] ?? p['averageRating'] ?? 0.0);
     final reviewCount = (p['reviewsCount'] ?? p['reviewCount'] ?? 0);
-    final imageUrl = _extractImage(p);
-    final bedrooms =
-        _extractCount(p, const ['bedrooms', 'bedroomsCount', 'bedroomCount']);
-    final beds = _extractCount(p, const ['beds', 'bedsCount', 'bedCount']);
-    final bathrooms = _extractCount(p, const ['bathrooms', 'bathroomCount']);
     final isGuestFavorite =
         (p['isGuestFavorite'] ?? p['guestFavorite'] ?? false) == true;
     final isFav = (p['guestFavorite'] ?? p['isGuestFavorite'] ?? false) == true;
 
-    return GestureDetector(
+    return PropertyListCard(
+      imageUrl: _extractImage(p),
+      title: (p['title'] ?? p['name'] ?? context.tr('property.untitled'))
+          .toString(),
+      location: _extractLocation(p),
+      priceText: (double.tryParse(_extractPrice(p)) ?? 0).toStringAsFixed(0),
+      currency: _extractCurrency(p),
+      rating: rating is num ? rating.toDouble() : 0,
+      reviewCount: reviewCount is num ? reviewCount.toInt() : 0,
+      bedrooms:
+          _extractCount(p, const ['bedrooms', 'bedroomsCount', 'bedroomCount']),
+      beds: _extractCount(p, const ['beds', 'bedsCount', 'bedCount']),
+      bathrooms: _extractCount(p, const ['bathrooms', 'bathroomCount']),
+      isGuestFavorite: isGuestFavorite,
+      isFavorite: isFav,
       onTap: () => Navigator.pushNamed(
         context,
         Routes.propertyDetails,
         arguments: {'propertyId': propertyId, 'property': p},
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
-              child: Stack(
-                children: [
-                  imageUrl.isNotEmpty
-                      ? Image.network(
-                          imageUrl,
-                          height: 180,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _imagePlaceholder(),
-                        )
-                      : _imagePlaceholder(),
-                  if (isGuestFavorite)
-                    Positioned(
-                      top: 12,
-                      left: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1D242B),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          context.tr('home.guestFavorite'),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: GestureDetector(
-                      onTap: () => context
-                          .read<SearchCubit>()
-                          .toggleFavorite(propertyId),
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(
-                            color: Colors.white, shape: BoxShape.circle),
-                        child: Icon(
-                          isFav ? Icons.favorite : Icons.favorite_border,
-                          size: 16,
-                          color: isFav
-                              ? const Color(0xFFEF4444)
-                              : const Color(0xFF9CA3AF),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.star,
-                          size: 13, color: Color(0xFFFCC519)),
-                      const SizedBox(width: 3),
-                      Text(
-                        rating is num && rating > 0
-                            ? rating.toStringAsFixed(2)
-                            : context.tr('property.newRating'),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1D242B),
-                        ),
-                      ),
-                      if (reviewCount is num && reviewCount > 0) ...[
-                        const SizedBox(width: 4),
-                        Text(
-                          '($reviewCount)',
-                          style: const TextStyle(
-                              fontSize: 11, color: Color(0xFF6B7280)),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1D242B),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (location.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      location,
-                      style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF6B7280)),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                  // Unit specs (bedrooms · beds · bathrooms), mirroring the web
-                  // listing card: icon + count only, each hidden when 0.
-                  if (bedrooms > 0 || bathrooms > 0) ...[
-                    const SizedBox(height: 6),
-                    _buildUnitSpecs(bedrooms, beds, bathrooms),
-                  ],
-                  const SizedBox(height: 8),
-                  RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1D242B)),
-                      children: [
-                        TextSpan(
-                          text: currency.isNotEmpty
-                              ? '$price $currency '
-                              : '$price ',
-                        ),
-                        TextSpan(
-                          text: context.tr('home.perNight'),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: Color(0xFF6B7280),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+      onFavoriteToggle: () =>
+          context.read<SearchCubit>().toggleFavorite(propertyId),
     );
   }
 
@@ -794,46 +470,6 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
       }
     }
     return 0;
-  }
-
-  /// Compact bedrooms · beds · bathrooms row used on the search result card,
-  /// matching the web listing card (icon + count, no labels).
-  Widget _buildUnitSpecs(int bedrooms, int beds, int bathrooms) {
-    return Row(
-      children: [
-        if (bedrooms > 0) _specItem(Icons.meeting_room_outlined, bedrooms),
-        if (beds > 0) _specItem(Icons.bed_outlined, beds),
-        if (bathrooms > 0) _specItem(Icons.bathtub_outlined, bathrooms),
-      ],
-    );
-  }
-
-  Widget _specItem(IconData icon, int value) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(end: 12),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: const Color(0xFF1D242B)),
-          const SizedBox(width: 3),
-          Text(
-            '$value',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF1D242B)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _imagePlaceholder() {
-    return Container(
-      height: 180,
-      color: const Color(0xFFF3F4F6),
-      child: const Center(
-        child:
-            Icon(Icons.home_work_outlined, size: 40, color: Color(0xFFD1D5DB)),
-      ),
-    );
   }
 
   Widget _buildEmptyState() {

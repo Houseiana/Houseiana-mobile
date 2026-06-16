@@ -43,6 +43,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLoggedIn = sl<UserSession>().isLoggedIn;
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FA),
       body: SafeArea(
@@ -63,178 +64,111 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF1D242B)),
-                      onPressed: () => Navigator.pushNamed(context, Routes.notifications),
-                    ),
+                    if (isLoggedIn)
+                      IconButton(
+                        icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF1D242B)),
+                        onPressed: () => Navigator.pushNamed(context, Routes.notifications),
+                      ),
                   ],
                 ),
               ),
 
               const SizedBox(height: 8),
 
-              GestureDetector(
-                onTap: () => Navigator.pushNamed(context, Routes.personalInformation),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: AppColors.bioYellow.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(32),
-                        ),
-                        child: const Icon(
-                          Icons.person,
-                          size: 36,
-                          color: AppColors.charcoal,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Builder(builder: (context) {
-                          final session = sl<UserSession>();
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                session.fullName,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1D242B),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                session.email ?? '',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF6B7280),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                context.tr('profile.editProfileArrow'),
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.bioYellow,
-                                ),
-                              ),
-                            ],
-                          );
-                        }),
-                      ),
-                      Icon(
-                        context.isRtl ? Icons.chevron_left : Icons.chevron_right,
-                        color: const Color(0xFF9CA3AF),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              if (isLoggedIn)
+                _buildProfileCard(context)
+              else
+                _buildGuestCard(context),
 
               const SizedBox(height: 20),
 
-              // Account Section
-              _buildSectionTitle(context.tr('profile.account')),
-              _buildMenuGroup(context, [
-                _MenuItem(
-                  icon: Icons.person_outline,
-                  label: context.tr('profile.personalInfo'),
-                  onTap: () => Navigator.pushNamed(context, Routes.personalInformation),
-                ),
-                _MenuItem(
-                  icon: Icons.settings_outlined,
-                  label: context.tr('profile.accountSettings'),
-                  onTap: () => Navigator.pushNamed(context, Routes.accountSettings),
-                ),
-                _MenuItem(
-                  icon: Icons.lock_outline,
-                  label: context.tr('profile.changePassword'),
-                  onTap: () => Navigator.pushNamed(context, Routes.changePassword),
-                ),
-                _MenuItem(
-                  icon: Icons.verified_user_outlined,
-                  label: context.tr('profile.kycVerification'),
-                  onTap: () => Navigator.pushNamed(context, Routes.kycVerification),
-                ),
-              ]),
+              if (isLoggedIn) ...[
+                // Account Section
+                _buildSectionTitle(context.tr('profile.account')),
+                _buildMenuGroup(context, [
+                  _MenuItem(
+                    icon: Icons.person_outline,
+                    label: context.tr('profile.personalInfo'),
+                    onTap: () => Navigator.pushNamed(context, Routes.personalInformation),
+                  ),
+                  _MenuItem(
+                    icon: Icons.settings_outlined,
+                    label: context.tr('profile.accountSettings'),
+                    onTap: () => Navigator.pushNamed(context, Routes.accountSettings),
+                  ),
+                  _MenuItem(
+                    icon: Icons.lock_outline,
+                    label: context.tr('profile.changePassword'),
+                    onTap: () => Navigator.pushNamed(context, Routes.changePassword),
+                  ),
+                  _MenuItem(
+                    icon: Icons.verified_user_outlined,
+                    label: context.tr('profile.kycVerification'),
+                    onTap: () => Navigator.pushNamed(context, Routes.kycVerification),
+                  ),
+                ]),
 
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-              // Hosting Section
-              _buildSectionTitle(context.tr('profile.hosting')),
-              _buildMenuGroup(context, [
-                _MenuItem(
-                  icon: Icons.dashboard_outlined,
-                  label: context.tr('profile.hostDashboard'),
-                  onTap: () => Navigator.pushNamed(context, Routes.hostDashboard),
-                ),
-                _MenuItem(
-                  icon: Icons.add_home_outlined,
-                  label: context.tr('profile.listProperty'),
-                  onTap: () => Navigator.pushNamed(context, Routes.listProperty),
-                ),
-                _MenuItem(
-                  icon: Icons.account_balance,
-                  label: context.tr('profile.payoutMethods'),
-                  onTap: () => Navigator.pushNamed(context, Routes.hostPayout),
-                ),
-              ]),
+                // Hosting Section
+                _buildSectionTitle(context.tr('profile.hosting')),
+                _buildMenuGroup(context, [
+                  _MenuItem(
+                    icon: Icons.dashboard_outlined,
+                    label: context.tr('profile.hostDashboard'),
+                    onTap: () => Navigator.pushNamed(context, Routes.hostDashboard),
+                  ),
+                  _MenuItem(
+                    icon: Icons.add_home_outlined,
+                    label: context.tr('profile.listProperty'),
+                    onTap: () => Navigator.pushNamed(context, Routes.listProperty),
+                  ),
+                  _MenuItem(
+                    icon: Icons.account_balance,
+                    label: context.tr('profile.payoutMethods'),
+                    onTap: () => Navigator.pushNamed(context, Routes.hostPayout),
+                  ),
+                ]),
 
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-              // Activity Section
-              _buildSectionTitle(context.tr('profile.activity')),
-              _buildMenuGroup(context, [
-                _MenuItem(
-                  icon: Icons.luggage_outlined,
-                  label: context.tr('profile.myTrips'),
-                  onTap: () => Navigator.pushNamed(context, Routes.trips),
-                ),
-                _MenuItem(
-                  icon: Icons.favorite_border,
-                  label: context.tr('profile.wishlists'),
-                  onTap: () => Navigator.pushNamed(context, Routes.wishlists),
-                ),
-                _MenuItem(
-                  icon: Icons.message_outlined,
-                  label: context.tr('messages.title'),
-                  onTap: () => Navigator.pushNamed(context, Routes.conversations),
-                ),
-                _MenuItem(
-                  icon: Icons.notifications_outlined,
-                  label: context.tr('notifications.title'),
-                  onTap: () => Navigator.pushNamed(context, Routes.notifications),
-                ),
-              ]),
+                // Activity Section
+                _buildSectionTitle(context.tr('profile.activity')),
+                _buildMenuGroup(context, [
+                  _MenuItem(
+                    icon: Icons.luggage_outlined,
+                    label: context.tr('profile.myTrips'),
+                    onTap: () => Navigator.pushNamed(context, Routes.trips),
+                  ),
+                  _MenuItem(
+                    icon: Icons.favorite_border,
+                    label: context.tr('profile.wishlists'),
+                    onTap: () => Navigator.pushNamed(context, Routes.wishlists),
+                  ),
+                  _MenuItem(
+                    icon: Icons.message_outlined,
+                    label: context.tr('messages.title'),
+                    onTap: () => Navigator.pushNamed(context, Routes.conversations),
+                  ),
+                  _MenuItem(
+                    icon: Icons.notifications_outlined,
+                    label: context.tr('notifications.title'),
+                    onTap: () => Navigator.pushNamed(context, Routes.notifications),
+                  ),
+                ]),
 
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
+              ],
 
               // Preferences Section
               _buildSectionTitle(context.tr('profile.preferences')),
               _buildMenuGroup(context, [
-                _MenuItem(
-                  icon: Icons.notifications_active_outlined,
-                  label: context.tr('profile.notificationSettings'),
-                  onTap: () => Navigator.pushNamed(context, Routes.notificationSettings),
-                ),
+                if (isLoggedIn)
+                  _MenuItem(
+                    icon: Icons.notifications_active_outlined,
+                    label: context.tr('profile.notificationSettings'),
+                    onTap: () => Navigator.pushNamed(context, Routes.notificationSettings),
+                  ),
                 _MenuItem(
                   icon: Icons.language_outlined,
                   label: context.tr('profile.language'),
@@ -284,7 +218,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 12),
 
               // Logout
-              Container(
+              if (isLoggedIn)
+                Container(
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -404,6 +339,181 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// Header card for a signed-in user: avatar, name/email, edit shortcut.
+  Widget _buildProfileCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, Routes.personalInformation),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.bioYellow.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: const Icon(
+                Icons.person,
+                size: 36,
+                color: AppColors.charcoal,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Builder(builder: (context) {
+                final session = sl<UserSession>();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      session.fullName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1D242B),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      session.email ?? '',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      context.tr('profile.editProfileArrow'),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.bioYellow,
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
+            Icon(
+              context.isRtl ? Icons.chevron_left : Icons.chevron_right,
+              color: const Color(0xFF9CA3AF),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Header card for a guest: invites sign-in / account creation. Lets logged
+  /// out users still reach language, legal and support without an account.
+  Widget _buildGuestCard(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFF9E6),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.person_outline,
+              size: 34,
+              color: AppColors.primaryColor,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            context.tr('bottomNav.signInToViewProfile'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1D242B),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            context.tr('bottomNav.signInDescription'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF6B7280),
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pushNamed(context, Routes.login),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: const Color(0xFF1D242B),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: Text(
+                context.tr('auth.signIn'),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton(
+              onPressed: () => Navigator.pushNamed(context, Routes.signUp),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF1D242B),
+                side: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: Text(
+                context.tr('bottomNav.createAccountAction'),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -14,6 +14,16 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyB-j9eljyNW0HUccE15yxhgt70aiHNuC-k" />
 
+        <!-- Default notification icon + tint for FCM (background/terminated).
+             Android only uses the icon's alpha channel, so it must be a white
+             silhouette; the color tints it with the brand yellow. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_color" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

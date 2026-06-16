@@ -117,9 +117,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         const SizedBox(height: 24),
                         // Logo
                         Image.asset(
-                          'assets/images/logo_icon.png',
-                          width: 48,
-                          height: 68,
+                          'assets/icons/full_logo.png',
+                          width: 170,
                           fit: BoxFit.contain,
                         ),
                         const SizedBox(height: 12),

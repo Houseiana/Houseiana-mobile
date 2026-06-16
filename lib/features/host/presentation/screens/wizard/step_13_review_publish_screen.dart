@@ -12,27 +12,16 @@ class Step13ReviewPublishScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // This step owns the SUCCESS path only (errors are shown once by the
+    // wizard shell's listener). Fire on the null→set transition so the dialog
+    // shows exactly once.
     return BlocListener<ListingWizardCubit, ListingWizardState>(
       listenWhen: (prev, curr) =>
-          curr.publishedListingId != null || (curr.error != null && prev.error == null),
-      listener: (context, state) {
-        if (state.publishedListingId != null) {
-          // Success! Show success dialog or go to dashboard
-          _showSuccessDialog(context);
-        } else if (state.error != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.error!),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      },
+          curr.publishedListingId != null && prev.publishedListingId == null,
+      listener: (context, state) => _showSuccessDialog(context),
       child: BlocBuilder<ListingWizardCubit, ListingWizardState>(
         builder: (context, state) {
           final data = state.data;
-          final isPublishing = state.isPublishing;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -140,29 +129,10 @@ class Step13ReviewPublishScreen extends StatelessWidget {
                 const SizedBox(height: 16),
 
                 _buildNextSteps(context),
-                
-                const SizedBox(height: 40),
-                
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: isPublishing ? null : () => context.read<ListingWizardCubit>().publishListing(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      foregroundColor: const Color(0xFF1D242B),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
-                    ),
-                    child: isPublishing
-                        ? const CircularProgressIndicator(color: Color(0xFF1D242B))
-                        : Text(
-                            context.tr('wizard.createList'),
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                          ),
-                  ),
-                ),
-                
+
+                // The publish/finalize action lives in the wizard's bottom
+                // navigation bar (web parity) — alongside the Back button — so
+                // there is no duplicate in-page button here.
                 const SizedBox(height: 24),
               ],
             ),

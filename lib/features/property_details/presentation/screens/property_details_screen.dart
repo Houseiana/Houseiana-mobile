@@ -182,16 +182,42 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
 
   Future<void> _shareProperty(Map<String, dynamic> property) async {
     final title = _getTitle(property);
-    final location = _getLocation(property);
     final propertyId =
         (property['id'] ?? property['_id'] ?? property['propertyId'] ?? '')
             .toString();
-    final details = [
-      title,
-      if (location.isNotEmpty) location,
-      if (propertyId.isNotEmpty) 'Property ID: $propertyId',
-    ].join('\n');
-    await Share.share(details, subject: title);
+    // Share the public website link — same URL the web shares
+    // (https://houseiana.com/property/{id}) so recipients land on the listing.
+    final url = propertyId.isNotEmpty
+        ? 'https://houseiana.com/property/$propertyId'
+        : 'https://houseiana.com';
+    final message =
+        AppLocalizations.of(context).tr('property.shareMessage');
+    final shareText = '$title\n\n$message\n\n$url';
+
+    // Origin rect for the share popover on iPad/macOS (ignored on iPhone/Android,
+    // but required there to avoid the sheet failing to present).
+    final box = context.findRenderObject() as RenderBox?;
+    final origin =
+        box != null ? box.localToGlobal(Offset.zero) & box.size : null;
+
+    try {
+      await Share.share(
+        shareText,
+        subject: title,
+        sharePositionOrigin: origin,
+      );
+    } catch (_) {
+      // Fallback mirrors the web: copy the link to the clipboard.
+      await Clipboard.setData(ClipboardData(text: url));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content:
+              Text(AppLocalizations.of(context).tr('property.linkCopied')),
+          duration: const Duration(milliseconds: 1500),
+        ));
+    }
   }
 
   int _getBedrooms(Map<String, dynamic> p) =>

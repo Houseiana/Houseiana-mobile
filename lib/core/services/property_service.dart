@@ -41,6 +41,15 @@ class PropertySearchParams {
   /// from [villageId], which is the deep-listing equivalent. Null means All.
   final int? featuredRegionId;
 
+  /// Geo-radius filter sent to `/api/property-search` as `lat`, `lng` and
+  /// `radiusKm`. Populated from the search map's visible region (center +
+  /// half-diagonal distance in km) so panning/zooming the map re-queries that
+  /// area. Mirrors the web "discover" map contract (use-discover →
+  /// publicSearchFilter). All three are set together; null means no geo filter.
+  final double? lat;
+  final double? lng;
+  final double? radiusKm;
+
   PropertySearchParams({
     this.location,
     this.checkIn,
@@ -61,6 +70,9 @@ class PropertySearchParams {
     this.regionId,
     this.villageId,
     this.featuredRegionId,
+    this.lat,
+    this.lng,
+    this.radiusKm,
   });
 
   Map<String, dynamic> toQueryParams() => {
@@ -74,15 +86,23 @@ class PropertySearchParams {
         // matching the web contract. Values are amenity IDs from /api/lookups/Amenities.
         if (amenities?.isNotEmpty == true) 'amenities': amenities,
         if (propertyType != null) 'type': propertyType,
-        if (minBedrooms != null) 'minBedrooms': minBedrooms,
+        // Backend/web contract uses `bedrooms`/`bathrooms` (treated as a minimum),
+        // NOT `minBedrooms`/`minBathrooms` — the latter are silently ignored, which
+        // made these two filters do nothing. Field names stay min* internally.
+        if (minBedrooms != null) 'bedrooms': minBedrooms,
         if (beds != null) 'beds': beds,
-        if (minBathrooms != null) 'minBathrooms': minBathrooms,
+        if (minBathrooms != null) 'bathrooms': minBathrooms,
         if (minRating != null) 'minRating': minRating,
         if (isSorted == true) 'isSorted': 'true',
         if (sortBy != null && sortBy!.isNotEmpty) 'sortBy': sortBy,
         if (regionId != null) 'regionId': regionId,
         if (villageId != null) 'villageId': villageId,
         if (featuredRegionId != null) 'featuredRegionId': featuredRegionId,
+        // Map viewport → center + radius geo filter. radiusKm is rounded up to a
+        // whole km to mirror the web's `Math.ceil` (which sends an integer).
+        if (lat != null) 'lat': lat,
+        if (lng != null) 'lng': lng,
+        if (radiusKm != null) 'radiusKm': radiusKm!.ceil(),
         'page': page,
         'limit': limit,
       };

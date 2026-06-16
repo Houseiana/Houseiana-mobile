@@ -14,7 +14,6 @@ import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/host_service.dart';
 import 'package:houseiana_mobile_app/core/services/clerk_service.dart';
 import 'package:houseiana_mobile_app/core/services/support_service.dart';
-import 'package:houseiana_mobile_app/core/services/earnings_service.dart';
 
 Future<void> initCore() async {
   // SharedPreferences (needed first for UserSession)
@@ -59,5 +58,4 @@ Future<void> initCore() async {
   sl.registerLazySingleton(() => UserService(sl()));
   sl.registerLazySingleton(() => HostService(dio: sl()));
   sl.registerLazySingleton(() => SupportService(dio: sl()));
-  sl.registerLazySingleton(() => EarningsService(dio: sl()));
 }

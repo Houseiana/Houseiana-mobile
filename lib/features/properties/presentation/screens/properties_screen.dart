@@ -5,7 +5,10 @@ import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/features/properties/presentation/widgets/property_map_view.dart';
+import 'package:houseiana_mobile_app/features/properties/presentation/widgets/property_sort_control.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/cards/property_list_card.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart' show ListSkeletonLoader;
 
 class PropertiesScreen extends StatefulWidget {
@@ -39,6 +42,30 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   int? _beds;
   int? _minBathrooms;
   List<String>? _amenities;
+
+  /// Selected sort option id (the `sortBy` value sent to the search API), or
+  /// null for the default ordering. The pill + sheet live in
+  /// [PropertySortControl]; this screen owns the value and re-queries.
+  String? _sortBy;
+
+  // Map viewport geo-filter (center + radius). Set when the user pans/zooms the
+  // map; sent to the search API as `lat`/`lng`/`radiusKm`. Null = no geo scope.
+  double? _lat;
+  double? _lng;
+  double? _radiusKm;
+
+  /// True while a pan/zoom-triggered "search this area" request is in flight.
+  /// Drives a lightweight pill on the map instead of the full-screen skeleton,
+  /// so the map (and the user's camera position) is never torn down mid-search.
+  bool _isAreaSearching = false;
+
+  /// Monotonic stamp so a slow area search can't overwrite a newer one
+  /// (rapid panning fires several; last-requested wins).
+  int _areaSearchSeq = 0;
+
+  /// True while a marker's preview card is shown on the map. Used to lift the
+  /// bottom "List" toggle so it doesn't collide with the (taller) preview card.
+  bool _hasMapSelection = false;
 
   @override
   void initState() {
@@ -81,6 +108,10 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
         beds: _beds,
         minBathrooms: _minBathrooms,
         amenities: _amenities,
+        sortBy: _sortBy,
+        lat: _lat,
+        lng: _lng,
+        radiusKm: _radiusKm,
         page: 1,
         limit: _pageLimit,
       ),
@@ -121,6 +152,10 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
         beds: _beds,
         minBathrooms: _minBathrooms,
         amenities: _amenities,
+        sortBy: _sortBy,
+        lat: _lat,
+        lng: _lng,
+        radiusKm: _radiusKm,
         page: nextPage,
         limit: _pageLimit,
       ),
@@ -219,10 +254,13 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
             Expanded(
               child: _isLoading
                   ? const ListSkeletonLoader(showSearchBar: false, showCategories: false)
-                  : _properties.isEmpty
-                      ? _buildEmptyState()
-                      : _isMapView
-                          ? _buildMapView()
+                  // Map view wins over the empty state: panning to a region with
+                  // no listings must keep the map on-screen so the user can pan
+                  // back out (the map shows its own "no properties here" hint).
+                  : _isMapView
+                      ? _buildMapView()
+                      : _properties.isEmpty
+                          ? _buildEmptyState()
                           : _buildListView(),
             ),
           ],
@@ -292,12 +330,13 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
     final result = await Navigator.pushNamed(context, Routes.advancedFilters);
     if (!mounted || result is! Map) return;
 
-    final range = result['priceRange'];
     setState(() {
-      if (range is RangeValues) {
-        _minPrice = range.start;
-        _maxPrice = range.end;
-      }
+      // Null = "no price filter" (slider at floor/ceiling), per the web
+      // contract — the filters screen already applies that rule.
+      final minPrice = result['minPrice'];
+      _minPrice = minPrice is num ? minPrice.toDouble() : null;
+      final maxPrice = result['maxPrice'];
+      _maxPrice = maxPrice is num ? maxPrice.toDouble() : null;
       final bedrooms = result['bedrooms'];
       _minBedrooms = bedrooms is int && bedrooms > 0 ? bedrooms : null;
       final beds = result['beds'];
@@ -321,53 +360,148 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       _beds = null;
       _minBathrooms = null;
       _amenities = null;
+      _lat = null;
+      _lng = null;
+      _radiusKm = null;
     });
     await _loadData(location: null);
   }
 
+  /// Called (debounced by [PropertyMapView]) when the user pans/zooms the map.
+  /// Stores the new viewport as a geo-filter and re-queries that area.
+  void _onMapAreaChanged(double lat, double lng, double radiusKm) {
+    _lat = lat;
+    _lng = lng;
+    _radiusKm = radiusKm;
+    _searchThisArea();
+  }
+
+  /// Re-runs the search scoped to the current map viewport. Unlike [_loadData]
+  /// it keeps the map mounted (no full-screen skeleton) and preserves the
+  /// active text/filter selection, so panning only narrows results by area.
+  Future<void> _searchThisArea() async {
+    final seq = ++_areaSearchSeq;
+    setState(() {
+      _isAreaSearching = true;
+      _currentPage = 1;
+      _hasMore = true;
+    });
+    try {
+      final props = await _propertyService.searchProperties(
+        PropertySearchParams(
+          location: _filterLocation,
+          minPrice: _minPrice,
+          maxPrice: _maxPrice,
+          minBedrooms: _minBedrooms,
+          beds: _beds,
+          minBathrooms: _minBathrooms,
+          amenities: _amenities,
+          sortBy: _sortBy,
+          lat: _lat,
+          lng: _lng,
+          radiusKm: _radiusKm,
+          page: 1,
+          limit: _pageLimit,
+        ),
+        userId: _session.userId,
+      );
+      // A newer area search started while this was in flight — drop this result.
+      if (!mounted || seq != _areaSearchSeq) return;
+      final maps = props.map((property) => property.toJson()).toList();
+      setState(() {
+        _properties = maps;
+        _isAreaSearching = false;
+        _hasMore = props.length >= _pageLimit;
+      });
+    } catch (_) {
+      if (!mounted || seq != _areaSearchSeq) return;
+      setState(() => _isAreaSearching = false);
+    }
+  }
+
   Widget _buildMapView() {
-    return Column(
+    return Stack(
       children: [
-        Container(
-          height: 240,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFFE8F4F3), Color(0xFFD4EBE8)],
-            ),
-          ),
-          child: Stack(
-            children: [
-              ..._properties.take(5).toList().asMap().entries.map((entry) {
-                final idx = entry.key;
-                final p = entry.value;
-                final positions = [
-                  const Offset(80, 60),
-                  const Offset(160, 40),
-                  const Offset(200, 120),
-                  const Offset(60, 150),
-                  const Offset(240, 80),
-                ];
-                final pos = positions[idx % positions.length];
-                return _buildMapMarker(
-                  top: pos.dy,
-                  left: pos.dx,
-                  price: _extractPrice(p).toInt(),
-                  isFeatured: _favoriteIds.contains(_extractId(p)),
-                );
-              }),
-              Positioned(
-                bottom: 16,
-                left: 0,
-                right: 0,
-                child: Center(child: _buildToggleButton()),
-              ),
-            ],
+        // Real, interactive map. Panning/zooming reports the viewport via
+        // `onAreaChanged`, which re-queries the search API by `lat`/`lng`/
+        // `radiusKm` — the same contract the web discover map uses.
+        Positioned.fill(
+          child: PropertyMapView(
+            properties: _properties,
+            onAreaChanged: _onMapAreaChanged,
+            onSelectionChanged: (selected) =>
+                setState(() => _hasMapSelection = selected),
           ),
         ),
-        Expanded(child: _buildPropertiesList()),
+        // Results-count / "searching this area" pill, floating at the top.
+        Positioned(
+          top: 12,
+          left: 0,
+          right: 0,
+          child: Center(child: _buildMapStatusPill()),
+        ),
+        // Back-to-list toggle, floating at the bottom. Lifted above the marker
+        // preview card while one is shown so the two don't overlap.
+        Positioned(
+          bottom: _hasMapSelection ? 150 : 16,
+          left: 0,
+          right: 0,
+          child: Center(child: _buildToggleButton()),
+        ),
       ],
+    );
+  }
+
+  /// Floating pill over the map: shows the live result count, or a spinner
+  /// while a pan/zoom-triggered area search is running.
+  Widget _buildMapStatusPill() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_isAreaSearching) ...[
+            const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.primaryColor,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              context.tr('property.searchingArea'),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1D242B),
+              ),
+            ),
+          ] else
+            Text(
+              context.tr('property.propertiesFound', args: {
+                'count': '${_properties.length}${_hasMore ? '+' : ''}'
+              }),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1D242B),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -387,32 +521,48 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                context.tr('property.propertiesFound', args: {'count': '${_properties.length}${_hasMore ? '+' : ''}'}),
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1D242B),
+              Flexible(
+                child: Text(
+                  context.tr('property.propertiesFound', args: {'count': '${_properties.length}${_hasMore ? '+' : ''}'}),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1D242B),
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (!_isMapView)
-                GestureDetector(
-                  onTap: () => setState(() => _isMapView = true),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.map_outlined, size: 14, color: AppColors.neutral600),
-                      const SizedBox(width: 4),
-                      Text(
-                        context.tr('property.map'),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.neutral600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+              const SizedBox(width: 12),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  PropertySortControl(
+                    selectedId: _sortBy,
+                    onChanged: (id) {
+                      setState(() => _sortBy = id);
+                      _loadData(location: _filterLocation);
+                    },
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => setState(() => _isMapView = true),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.map_outlined, size: 14, color: AppColors.neutral600),
+                        const SizedBox(width: 4),
+                        Text(
+                          context.tr('property.map'),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.neutral600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -421,7 +571,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
             controller: _isMapView ? null : _scrollController,
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             itemCount: _properties.length + (_isLoadingMore ? 1 : 0),
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (_, __) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
               if (index == _properties.length) {
                 return const Padding(
@@ -442,195 +592,51 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   }
 
   Widget _buildPropertyCard(Map<String, dynamic> p, String id) {
-    final isFav = _favoriteIds.contains(id);
-    final imageUrl = _extractImage(p);
-    final title = _extractTitle(p);
-    final location = _extractLocation(p);
-    final price = _extractPrice(p);
-    final currency = _extractCurrency(p);
-    final rating = _extractRating(p);
-
-    return GestureDetector(
+    return PropertyListCard(
+      imageUrl: _extractImage(p),
+      title: _extractTitle(p),
+      location: _extractLocation(p),
+      priceText: _extractPrice(p).toStringAsFixed(0),
+      currency: _extractCurrency(p),
+      rating: _extractRating(p),
+      reviewCount: _extractCount(p, const ['reviewsCount', 'reviewCount']),
+      bedrooms:
+          _extractCount(p, const ['bedrooms', 'bedroomsCount', 'bedroomCount']),
+      beds: _extractCount(p, const ['beds', 'bedsCount', 'bedCount']),
+      bathrooms: _extractCount(p, const ['bathrooms', 'bathroomCount']),
+      isGuestFavorite:
+          (p['isGuestFavorite'] ?? p['guestFavorite'] ?? false) == true,
+      isFavorite: _favoriteIds.contains(id),
       onTap: () => Navigator.pushNamed(
         context,
         Routes.propertyDetails,
         arguments: {'propertyId': id, 'property': p},
       ),
-      child: Container(
-        height: 110,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: imageUrl.isNotEmpty
-                  ? Image.network(
-                      imageUrl,
-                      width: 86,
-                      height: 86,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _imagePlaceholder(),
-                    )
-                  : _imagePlaceholder(),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (isFav)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      margin: const EdgeInsets.only(bottom: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1D242B),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        context.tr('home.guestFavorite'),
-                        style: const TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1D242B),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (location.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        location,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.neutral600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.star_rounded, size: 13, color: Color(0xFFFCC519)),
-                      const SizedBox(width: 3),
-                      Text(
-                        rating > 0 ? rating.toStringAsFixed(2) : context.tr('property.newRating'),
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF1D242B)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  RichText(
-                    text: TextSpan(
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1D242B)),
-                      children: [
-                        TextSpan(
-                          text: currency.isNotEmpty
-                              ? '${price.toStringAsFixed(0)} $currency '
-                              : '${price.toStringAsFixed(0)} ',
-                        ),
-                        TextSpan(
-                          text: context.tr('home.perNight'),
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: AppColors.neutral600),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            GestureDetector(
-              onTap: () => _toggleFavorite(id),
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Icon(
-                  isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                  color: isFav ? Colors.red : AppColors.neutral400,
-                  size: 22,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      onFavoriteToggle: () => _toggleFavorite(id),
     );
   }
 
-  Widget _imagePlaceholder() {
-    return Container(
-      width: 86,
-      height: 86,
-      decoration: BoxDecoration(
-        color: AppColors.ghostWhite,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Icon(Icons.home_work_outlined, color: AppColors.neutral400, size: 30),
-    );
-  }
-
-  Widget _buildMapMarker({
-    required double top,
-    required double left,
-    required int price,
-    bool isFeatured = false,
-  }) {
-    return Positioned(
-      top: top,
-      left: left,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: isFeatured ? const Color(0xFF1D242B) : AppColors.primaryColor,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Text(
-              '\$$price',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: isFeatured ? Colors.white : const Color(0xFF1D242B),
-              ),
-            ),
-          ),
-          CustomPaint(
-            size: const Size(8, 8),
-            painter: _TrianglePainter(
-              color: isFeatured ? const Color(0xFF1D242B) : AppColors.primaryColor,
-            ),
-          ),
-        ],
-      ),
-    );
+  /// Reads the first non-empty count among [keys] (handles num and numeric
+  /// strings), returning 0 when none are present.
+  int _extractCount(Map<String, dynamic> p, List<String> keys) {
+    for (final key in keys) {
+      final value = p[key];
+      if (value is num) return value.toInt();
+      if (value is String) {
+        final parsed = int.tryParse(value);
+        if (parsed != null) return parsed;
+      }
+    }
+    return 0;
   }
 
   Widget _buildToggleButton() {
     return GestureDetector(
-      onTap: () => setState(() => _isMapView = !_isMapView),
+      onTap: () => setState(() {
+        _isMapView = !_isMapView;
+        // Leaving the map clears any pending preview-card selection state.
+        _hasMapSelection = false;
+      }),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -698,21 +704,3 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   }
 }
 
-class _TrianglePainter extends CustomPainter {
-  final Color color;
-  const _TrianglePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color..style = PaintingStyle.fill;
-    final path = Path()
-      ..moveTo(size.width / 2, size.height)
-      ..lineTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..close();
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

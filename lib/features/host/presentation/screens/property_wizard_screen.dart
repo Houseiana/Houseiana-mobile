@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
-import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
@@ -74,9 +73,9 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
   Widget build(BuildContext context) {
     return BlocConsumer<ListingWizardCubit, ListingWizardState>(
       listener: (context, state) {
-        if (state.publishedListingId != null) {
-          Navigator.pushReplacementNamed(context, Routes.hostDashboard);
-        }
+        // Single error handler for the whole wizard (draft saves + publish).
+        // Success (publishedListingId) is owned by the review step's dialog to
+        // avoid a double-navigation / double-snackbar race.
         if (state.error != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -115,7 +114,10 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.close, color: AppColors.charcoal),
-              onPressed: () => _showExitDialog(context),
+              // Block exiting mid-save/publish to avoid losing an in-flight write.
+              onPressed: (state.isSavingDraft || state.isPublishing)
+                  ? null
+                  : () => _showExitDialog(context),
             ),
             title: Text(
               _stepTitle(context, state.currentStep),
@@ -178,8 +180,7 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
                   ],
                 ),
               ),
-              if (state.currentStep < 12)
-                _buildNavigationButtons(context, state),
+              _buildNavigationButtons(context, state),
             ],
           ),
         );
@@ -232,6 +233,8 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
   Widget _buildNavigationButtons(
       BuildContext context, ListingWizardState state) {
     final cubit = context.read<ListingWizardCubit>();
+    final isLast = state.isLastStep;
+    final busy = state.isSavingDraft || state.isPublishing;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -250,13 +253,15 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
           if (state.canGoBack)
             Expanded(
               child: OutlinedButton(
-                onPressed: () {
-                  cubit.previousStep();
-                  _pageController.previousPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                },
+                onPressed: busy
+                    ? null
+                    : () {
+                        cubit.previousStep();
+                        _pageController.previousPage(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.charcoal,
                   side: const BorderSide(color: AppColors.neutral300),
@@ -272,9 +277,15 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
           Expanded(
             flex: state.canGoBack ? 1 : 2,
             child: ElevatedButton(
-              onPressed: state.isSavingDraft
+              onPressed: busy
                   ? null
                   : () async {
+                      // Last step: finalize/publish (web parity: the footer's
+                      // primary button becomes the submit action on review).
+                      if (isLast) {
+                        await cubit.publishListing();
+                        return;
+                      }
                       final validationError =
                           cubit.validateStepForContinue(state.currentStep);
                       if (validationError != null) {
@@ -315,7 +326,7 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: state.isSavingDraft
+              child: busy
                   ? const SizedBox(
                       width: 20,
                       height: 20,
@@ -325,7 +336,11 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
                       ),
                     )
                   : Text(
-                      context.tr('wizard.wizardContinue'),
+                      isLast
+                          ? context.tr(widget.isEditing
+                              ? 'wizard.editList'
+                              : 'wizard.createList')
+                          : context.tr('wizard.wizardContinue'),
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
             ),
@@ -336,11 +351,18 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
   }
 
   void _showExitDialog(BuildContext context) {
+    // Mode-aware copy: in edit mode the listing already exists (it is NOT a
+    // draft), and this X path does not save — so warn about discarding unsaved
+    // changes rather than falsely claiming a draft was saved.
+    final titleKey =
+        widget.isEditing ? 'wizard.exitEditTitle' : 'wizard.exitWizardTitle';
+    final descKey =
+        widget.isEditing ? 'wizard.exitEditDesc' : 'wizard.exitWizardDesc';
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(context.tr('wizard.exitWizardTitle')),
-        content: Text(context.tr('wizard.exitWizardDesc')),
+        title: Text(context.tr(titleKey)),
+        content: Text(context.tr(descKey)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),

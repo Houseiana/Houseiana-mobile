@@ -65,6 +65,9 @@ class SearchCubit extends Cubit<SearchState> {
         regionId: currentState.params.regionId,
         villageId: currentState.params.villageId,
         featuredRegionId: currentState.params.featuredRegionId,
+        lat: currentState.params.lat,
+        lng: currentState.params.lng,
+        radiusKm: currentState.params.radiusKm,
       );
 
       final results = await _propertyService.searchProperties(

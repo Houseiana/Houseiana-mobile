@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "597487321302",
+    "project_id": "houseiana",
+    "storage_bucket": "houseiana.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:597487321302:android:13fa5d5a3650e9db9e0977",
+        "android_client_info": {
+          "package_name": "com.houseiana.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCPCuQ-AGIHh0tYJVKSTFb02J-mWGFooyg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

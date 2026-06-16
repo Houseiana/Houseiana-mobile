@@ -8,7 +8,6 @@ import 'package:houseiana_mobile_app/features/host/presentation/cubit/host_calen
 import 'package:houseiana_mobile_app/features/notifications/cubit/notifications_cubit.dart';
 import 'package:houseiana_mobile_app/features/properties/cubit/search_cubit.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/property_details_cubit.dart';
-import 'package:houseiana_mobile_app/features/profile/cubit/kyc_cubit.dart';
 import 'package:houseiana_mobile_app/features/profile/cubit/payment_methods_cubit.dart';
 import 'package:houseiana_mobile_app/features/profile/cubit/saved_addresses_cubit.dart';
 
@@ -75,7 +74,7 @@ import 'package:houseiana_mobile_app/features/profile/presentation/screens/perso
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/profile_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/owner_profile_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/cubit/owner_profile_cubit.dart';
-import 'package:houseiana_mobile_app/features/profile/presentation/screens/kyc_verification_screen.dart';
+import 'package:houseiana_mobile_app/features/profile/presentation/screens/identity_verification_screen.dart';
 
 // Host Screens
 import 'package:houseiana_mobile_app/features/host/presentation/screens/become_host_screen.dart';
@@ -84,7 +83,6 @@ import 'package:houseiana_mobile_app/features/host/presentation/screens/pricing_
 import 'package:houseiana_mobile_app/features/host/presentation/screens/availability_calendar_screen.dart';
 import 'package:houseiana_mobile_app/features/host/presentation/screens/host_dashboard_screen.dart';
 import 'package:houseiana_mobile_app/features/host/presentation/screens/host_bookings_screen.dart';
-import 'package:houseiana_mobile_app/features/host/presentation/screens/host_earnings_screen.dart';
 import 'package:houseiana_mobile_app/features/host/presentation/screens/host_payout_screen.dart';
 import 'package:houseiana_mobile_app/features/host/presentation/screens/host_reviews_screen.dart';
 import 'package:houseiana_mobile_app/features/host/presentation/screens/property_wizard_screen.dart';
@@ -211,7 +209,6 @@ class Routes {
   static const String hostDashboard = '/host-dashboard';
   static const String hostListings = '/host-listings';
   static const String hostBookings = '/host-bookings';
-  static const String hostEarnings = '/host-earnings';
   static const String hostPayout = '/host-payout';
   static const String hostReviews = '/host-reviews';
   static const String reviewProperty = '/review-property';

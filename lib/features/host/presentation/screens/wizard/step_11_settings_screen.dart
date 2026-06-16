@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.dart';
@@ -132,6 +133,12 @@ class _Step11SettingsScreenState extends State<Step11SettingsScreen> {
     required TextEditingController controller,
     required ValueChanged<String> onChanged,
   }) {
+    // Egyptian mobile numbers are 10 digits; restrict input to digits only so
+    // the value matches what the backend (and the validation gate) expect.
+    final phoneFormatters = <TextInputFormatter>[
+      FilteringTextInputFormatter.digitsOnly,
+      LengthLimitingTextInputFormatter(10),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -190,6 +197,7 @@ class _Step11SettingsScreenState extends State<Step11SettingsScreen> {
                 child: TextField(
                   controller: controller,
                   keyboardType: TextInputType.phone,
+                  inputFormatters: phoneFormatters,
                   onChanged: onChanged,
                   decoration: InputDecoration(
                     hintText: context.tr('wizard.enterPhone'),

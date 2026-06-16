@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
+import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/features/chat/data/firestore_chat_service.dart';
 import 'package:houseiana_mobile_app/features/support/presentation/cubit/support_cubit.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -135,7 +137,9 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
+                    _buildLiveChatCard(context),
+                    const SizedBox(height: 24),
                     _buildDirectChannels(context),
                     const SizedBox(height: 32),
                     Text(
@@ -338,6 +342,72 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.primaryColor),
+      ),
+    );
+  }
+
+  void _openLiveChat(BuildContext context) {
+    if (!_session.isLoggedIn || _session.userId == null) {
+      Navigator.pushNamed(context, Routes.login);
+      return;
+    }
+    final id = sl<FirestoreChatService>().supportConversationId(_session.userId!);
+    Navigator.pushNamed(
+      context,
+      Routes.chatConversation,
+      arguments: {
+        'id': id,
+        'type': 'SUPPORT',
+        'name': context.tr('messages.supportTitle'),
+      },
+    );
+  }
+
+  Widget _buildLiveChatCard(BuildContext context) {
+    return InkWell(
+      onTap: () => _openLiveChat(context),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.primaryColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            const CircleAvatar(
+              radius: 22,
+              backgroundColor: Colors.white,
+              child: Icon(Icons.support_agent, color: AppColors.charcoal),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.tr('messages.liveChat'),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.charcoal,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    context.tr('messages.liveChatSubtitle'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.charcoal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios,
+                size: 16, color: AppColors.charcoal),
+          ],
+        ),
       ),
     );
   }

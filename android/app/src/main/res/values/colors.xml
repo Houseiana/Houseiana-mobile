@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Brand color used to tint the FCM notification small icon -->
+    <color name="notification_color">#FCC519</color>
 </resources>

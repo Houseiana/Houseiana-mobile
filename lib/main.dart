@@ -7,6 +7,8 @@ import 'package:houseiana_mobile_app/bloc_observer.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart' as di;
 import 'package:houseiana_mobile_app/core/services/fcm_service.dart';
 
+import 'firebase_options.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -24,7 +26,10 @@ void main() async {
 
   // Initialize Firebase (requires google-services.json / GoogleService-Info.plist)
   try {
-    await Firebase.initializeApp();
+    // await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     await FCMService.instance.initialize();
   } catch (e) {
     // Firebase not yet configured — continue without push notifications

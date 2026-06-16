@@ -1,10 +1,88 @@
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
+import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/models/booking_model.dart';
+import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
-class PaymentFailedScreen extends StatelessWidget {
+class PaymentFailedScreen extends StatefulWidget {
   const PaymentFailedScreen({super.key});
+
+  @override
+  State<PaymentFailedScreen> createState() => _PaymentFailedScreenState();
+}
+
+class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
+  final _userService = sl<UserService>();
+
+  BookingModel? _booking;
+  bool _isLoading = true;
+  bool _didInit = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didInit) return;
+    _didInit = true;
+    final raw = ModalRoute.of(context)?.settings.arguments;
+    final bookingId =
+        raw is Map<String, dynamic> ? raw['bookingId']?.toString() : null;
+    if (bookingId != null && bookingId.isNotEmpty) {
+      _loadBooking(bookingId);
+    } else {
+      _isLoading = false;
+    }
+  }
+
+  Future<void> _loadBooking(String bookingId) async {
+    try {
+      final booking = await _userService.getBookingDetails(bookingId);
+      if (mounted) {
+        setState(() {
+          _booking = booking;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Real booking reference shown as the transaction id (confirmation code when
+  /// the backend provides one, otherwise the last 8 chars of the booking id).
+  String get _displayReference {
+    final code = _booking?.confirmationCode;
+    if (code != null && code.isNotEmpty) return code;
+    final id = _booking?.id ?? '';
+    if (id.isEmpty) return '--';
+    final suffix = id.length <= 8 ? id : id.substring(id.length - 8);
+    return '#${suffix.toUpperCase()}';
+  }
+
+  String get _displayAmount {
+    final b = _booking;
+    if (b == null) return '--';
+    return '${b.totalPrice.toStringAsFixed(2)} ${b.currencyLabel}';
+  }
+
+  String get _displayAttempted {
+    final createdAt = _booking?.createdAt;
+    if (createdAt == null) return '--';
+    return _relativeTime(createdAt);
+  }
+
+  String _relativeTime(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return context.tr('common.now');
+    if (diff.inMinutes < 60) {
+      return context.tr('common.minutesAgo', args: {'n': diff.inMinutes});
+    }
+    if (diff.inHours < 24) {
+      return context.tr('common.hoursAgo', args: {'n': diff.inHours});
+    }
+    return context.tr('common.daysAgo', args: {'n': diff.inDays});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,27 +188,42 @@ class PaymentFailedScreen extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              _buildDetailRow(
-                                '${context.tr('booking.transactionId')}:',
-                                '#TXN123456789',
-                              ),
-                              const SizedBox(height: 12),
-                              _buildDetailRow(
-                                '${context.tr('booking.amount')}:',
-                                '\$250.00',
-                              ),
-                              const SizedBox(height: 12),
-                              _buildDetailRow(
-                                '${context.tr('booking.status')}:',
-                                context.tr('common.failed'),
-                                isStatus: true,
-                              ),
-                              const SizedBox(height: 12),
-                              _buildDetailRow(
-                                '${context.tr('booking.attempted')}:',
-                                context.tr('common.minutesAgo',
-                                    args: {'n': 5}),
-                              ),
+                              if (_isLoading)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 12),
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              else ...[
+                                _buildDetailRow(
+                                  '${context.tr('booking.transactionId')}:',
+                                  _displayReference,
+                                ),
+                                const SizedBox(height: 12),
+                                _buildDetailRow(
+                                  '${context.tr('booking.amount')}:',
+                                  _displayAmount,
+                                ),
+                                const SizedBox(height: 12),
+                                _buildDetailRow(
+                                  '${context.tr('booking.status')}:',
+                                  context.tr('common.failed'),
+                                  isStatus: true,
+                                ),
+                                const SizedBox(height: 12),
+                                _buildDetailRow(
+                                  '${context.tr('booking.attempted')}:',
+                                  _displayAttempted,
+                                ),
+                              ],
                             ],
                           ),
                         ),

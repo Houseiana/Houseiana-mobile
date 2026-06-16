@@ -1,4 +1,6 @@
 import 'package:equatable/equatable.dart';
+import 'package:houseiana_mobile_app/features/chat/data/models/chat_message.dart'
+    show parseFirestoreTimestamp;
 
 class NotificationModel extends Equatable {
   final String id;
@@ -22,6 +24,26 @@ class NotificationModel extends Equatable {
     this.createdAt,
     this.readAt,
   });
+
+  /// Builds a model from a Firestore `notifications` document, mirroring the
+  /// shape the web app reads (`src/features/notifications/hooks/useNotifications.ts`):
+  /// `{ userId, title, message, type, isRead, createdAt, link, data }`.
+  factory NotificationModel.fromFirestore(String id, Map<String, dynamic> data) {
+    return NotificationModel(
+      id: id,
+      userId: (data['userId'] ?? data['user_id'] ?? '').toString(),
+      type: (data['type'] ?? 'general').toString(),
+      title: (data['title'] ?? '').toString(),
+      body: (data['body'] ?? data['message'] ?? '').toString(),
+      data: data['link']?.toString() ?? data['data']?.toString(),
+      isRead: data['isRead'] == true || data['read'] == true,
+      createdAt: data['createdAt'] == null
+          ? null
+          : parseFirestoreTimestamp(data['createdAt']),
+      readAt:
+          data['readAt'] == null ? null : parseFirestoreTimestamp(data['readAt']),
+    );
+  }
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(

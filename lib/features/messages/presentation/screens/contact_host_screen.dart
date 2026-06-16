@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
-import 'package:houseiana_mobile_app/core/services/chat_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/features/chat/data/firestore_chat_service.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class ContactHostScreen extends StatefulWidget {
@@ -382,7 +382,6 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
     try {
       final session = sl<UserSession>();
       final guestId = session.userId ?? '';
-      final chatService = sl<ChatService>();
 
       if (guestId.isEmpty) {
         if (!mounted) return;
@@ -398,7 +397,9 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
         return;
       }
 
-      if (_propertyId.isEmpty || _hostId.isEmpty) {
+      // A host is required; the property is optional (e.g. contacting from the
+      // host profile, where no specific listing is in context).
+      if (_hostId.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -410,35 +411,56 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
         return;
       }
 
+      final hostName = widget.hostName ?? _resolvedHostName(context);
+      final propertyName =
+          widget.propertyName ?? _resolvedPropertyName(context);
       final topicLabel = context.tr('messages.$_selectedTopicKey');
       final messageText = '[$topicLabel] ${_messageController.text.trim()}';
 
-      final conversation = await chatService.createConversation(
-        propertyId: _propertyId,
+      final chat = sl<FirestoreChatService>();
+      final conversationId = chat.guestHostConversationId(
         hostId: _hostId,
         guestId: guestId,
-        initialMessage: messageText,
+        propertyId: _propertyId,
+      );
+
+      // Lazily create / refresh the Firestore conversation, then send the first
+      // message — exactly the web flow (Firestore is the chat transport).
+      await chat.ensureGuestHostConversation(
+        conversationId: conversationId,
+        hostId: _hostId,
+        guestId: guestId,
+        hostName: hostName,
+        guestName: session.fullName,
+        propertyId: _propertyId,
+        propertyTitle: _propertyId.isEmpty ? '' : propertyName,
+        propertyImage: _propertyImageUrl,
+      );
+
+      await chat.sendMessage(
+        conversationId: conversationId,
+        type: 'GUEST_HOST',
+        senderId: guestId,
+        senderRole: 'guest',
+        senderName: session.fullName,
+        content: messageText,
       );
 
       if (!mounted) return;
 
-      if (conversation == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.tr('messages.messageFailed')),
-            backgroundColor: Colors.red,
-          ),
-        );
-        setState(() => _isSending = false);
-        return;
-      }
-
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr('messages.messageSent')),
-          backgroundColor: Colors.green,
-        ),
+      // Open the conversation thread directly (web parity — no dead-end snackbar).
+      Navigator.pushReplacementNamed(
+        context,
+        Routes.chatConversation,
+        arguments: {
+          'id': conversationId,
+          'type': 'GUEST_HOST',
+          'hostId': _hostId,
+          'guestId': guestId,
+          'name': hostName,
+          'avatar': '',
+          'property': _propertyId.isEmpty ? '' : propertyName,
+        },
       );
     } catch (_) {
       if (!mounted) return;

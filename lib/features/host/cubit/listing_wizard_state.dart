@@ -514,9 +514,10 @@ class WizardData extends Equatable {
       hasNoiseMonitors: _bool(raw['noiseMonitor']) ??
           _bool(raw['noise_monitor']) ??
           _bool(bs?['noiseDecibelMonitor']),
-      primaryPhone: _str(raw['phoneNumber']) ?? _str(raw['primaryPhone']),
-      emergencyPhone:
-          _str(raw['emergencyPhoneNumber']) ?? _str(raw['emergencyPhone']),
+      primaryPhone: _nationalPhone(
+          _str(raw['phoneNumber']) ?? _str(raw['primaryPhone'])),
+      emergencyPhone: _nationalPhone(
+          _str(raw['emergencyPhoneNumber']) ?? _str(raw['emergencyPhone'])),
 
       // ── Step 12 ── Documents / ownership
       isPropertyOwner:
@@ -752,9 +753,14 @@ class WizardData extends Equatable {
       map['bookingSettings.instantBook'] = instantBook ?? true;
       map['bookingSettings.securitCamera'] = hasSecurityCameras ?? false;
       map['bookingSettings.noiseDecibelMonitor'] = hasNoiseMonitors ?? false;
-      map['phoneNumber'] = primaryPhone ?? '+201000000000';
-      if (emergencyPhone != null && emergencyPhone!.isNotEmpty) {
-        map['emergencyPhoneNumber'] = emergencyPhone;
+      // Web parity: phone is submitted as <dialCode><national> (e.g. +201012345678).
+      // The wizard stores only the national part, so prepend the Egypt dial code.
+      final primaryNational = primaryPhone?.trim() ?? '';
+      map['phoneNumber'] =
+          primaryNational.isNotEmpty ? '+20$primaryNational' : '+201000000000';
+      final emergencyNational = emergencyPhone?.trim() ?? '';
+      if (emergencyNational.isNotEmpty) {
+        map['emergencyPhoneNumber'] = '+20$emergencyNational';
       }
     }
 
@@ -873,6 +879,20 @@ String? _str(dynamic v) {
   if (v == null) return null;
   final s = v.toString().trim();
   return s.isEmpty ? null : s;
+}
+
+/// Normalizes a stored phone number to its national part (no dial code).
+/// Phones are submitted as `<dialCode><national>` (e.g. +201012345678), but the
+/// wizard UI shows only the 10-digit national number beside a fixed "+20"
+/// prefix. Strips non-digits and a leading Egypt country code (+20 / 20) so
+/// that editing a web- or mobile-created listing prefills cleanly.
+String? _nationalPhone(String? v) {
+  if (v == null) return null;
+  var digits = v.replaceAll(RegExp(r'\D'), '');
+  if (digits.startsWith('20') && digits.length > 10) {
+    digits = digits.substring(2);
+  }
+  return digits.isEmpty ? null : digits;
 }
 
 double? _dbl(dynamic v) {

@@ -175,7 +175,6 @@ class _HostDashboardView extends StatelessWidget {
               ? '\$${totalEarnings.toStringAsFixed(0)}'
               : '--',
           color: const Color(0xFF4CAF50),
-          onTap: () => Navigator.pushNamed(context, Routes.hostEarnings),
         ),
         _buildStatCard(
           icon: Icons.star_rounded,

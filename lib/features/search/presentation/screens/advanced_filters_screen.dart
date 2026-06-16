@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
@@ -26,6 +27,12 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
   int _beds = 0;
   int _bathrooms = 0;
 
+  /// Editable price boxes (min/max). Kept in sync with [_priceRange] in both
+  /// directions so the user can either drag the slider or type an exact value,
+  /// matching the web project's price filter.
+  final TextEditingController _minPriceController = TextEditingController();
+  final TextEditingController _maxPriceController = TextEditingController();
+
   /// Selected amenity IDs (as strings) — these are what the backend
   /// `amenities` filter expects, matching the web project's contract.
   final Set<String> _selectedAmenityIds = <String>{};
@@ -42,8 +49,58 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
   @override
   void initState() {
     super.initState();
+    _syncPriceFields();
     _loadLookups();
   }
+
+  @override
+  void dispose() {
+    _minPriceController.dispose();
+    _maxPriceController.dispose();
+    super.dispose();
+  }
+
+  /// Pushes [_priceRange] into the two text fields. Min shows blank at the
+  /// floor (0 = "any minimum"); max shows blank at the ceiling (= "any
+  /// maximum"), mirroring the web inputs.
+  void _syncPriceFields() {
+    _minPriceController.text =
+        _priceRange.start > 0 ? _priceRange.start.toInt().toString() : '';
+    _maxPriceController.text = _priceRange.end < _maxPriceLimit
+        ? _priceRange.end.toInt().toString()
+        : '';
+  }
+
+  double _parsePrice(String value) {
+    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+    final parsed = double.tryParse(digits) ?? 0;
+    return parsed.clamp(0, _maxPriceLimit).toDouble();
+  }
+
+  /// Live update while typing in the MIN box. Keeps the slider valid
+  /// (start <= end) without rewriting the field being edited.
+  void _onMinPriceChanged(String value) {
+    final parsed = _parsePrice(value);
+    setState(() {
+      final start = parsed > _priceRange.end ? _priceRange.end : parsed;
+      _priceRange = RangeValues(start, _priceRange.end);
+    });
+  }
+
+  /// Live update while typing in the MAX box. An empty box means "no maximum"
+  /// (the ceiling). Keeps end >= start so the slider stays valid.
+  void _onMaxPriceChanged(String value) {
+    final parsed =
+        value.trim().isEmpty ? _maxPriceLimit : _parsePrice(value);
+    setState(() {
+      final end = parsed < _priceRange.start ? _priceRange.start : parsed;
+      _priceRange = RangeValues(_priceRange.start, end);
+    });
+  }
+
+  /// Normalizes the boxes once editing ends (keyboard "done" / focus loss),
+  /// reflecting the clamped values back into both fields.
+  void _commitPriceFields() => setState(_syncPriceFields);
 
   Future<void> _loadLookups() async {
     try {
@@ -139,6 +196,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                 _beds = 0;
                 _bathrooms = 0;
                 _selectedAmenityIds.clear();
+                _syncPriceFields();
               });
             },
             child: Text(
@@ -168,32 +226,10 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      _formatPrice(_priceRange.start),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.neutral600,
-                      ),
-                    ),
-                    Text(
-                      _priceRange.end >= _maxPriceLimit
-                          ? '${_formatPrice(_priceRange.end)}+'
-                          : _formatPrice(_priceRange.end),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.neutral600,
-                      ),
-                    ),
-                  ],
-                ),
                 RangeSlider(
                   values: _priceRange,
                   min: 0,
                   max: _maxPriceLimit,
-                  divisions: 40,
                   activeColor: AppColors.primaryColor,
                   labels: RangeLabels(
                     _formatPrice(_priceRange.start),
@@ -204,8 +240,36 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                   onChanged: (values) {
                     setState(() {
                       _priceRange = values;
+                      _syncPriceFields();
                     });
                   },
+                ),
+                const SizedBox(height: 8),
+                // Editable min/max boxes so the user can type an exact price
+                // (e.g. 3000) instead of being limited to slider steps — the
+                // same UX as the web filter.
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildPriceField(
+                        label: context.tr('filters.minimum'),
+                        controller: _minPriceController,
+                        active: _priceRange.start > 0,
+                        hint: '0',
+                        onChanged: _onMinPriceChanged,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildPriceField(
+                        label: context.tr('filters.maximum'),
+                        controller: _maxPriceController,
+                        active: _priceRange.end < _maxPriceLimit,
+                        hint: _priceFormatter.format(_maxPriceLimit.toInt()),
+                        onChanged: _onMaxPriceChanged,
+                      ),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 32),
@@ -323,7 +387,16 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
               height: 54,
               child: ElevatedButton(
                 onPressed: () {
+                  _commitPriceFields();
                   Navigator.pop(context, {
+                    // Null at the floor/ceiling means "no price filter", matching
+                    // the web contract (minPrice only when > 0, maxPrice only when
+                    // below the ceiling). `priceRange` is kept for completeness.
+                    'minPrice':
+                        _priceRange.start > 0 ? _priceRange.start : null,
+                    'maxPrice': _priceRange.end < _maxPriceLimit
+                        ? _priceRange.end
+                        : null,
                     'priceRange': _priceRange,
                     'bedrooms': _bedrooms,
                     'beds': _beds,
@@ -349,6 +422,80 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriceField({
+    required String label,
+    required TextEditingController controller,
+    required bool active,
+    required String hint,
+    required ValueChanged<String> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: active
+            ? AppColors.primaryColor.withValues(alpha: 0.08)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: active ? AppColors.primaryColor : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: AppColors.neutral600),
+          ),
+          const SizedBox(height: 2),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  textInputAction: TextInputAction.done,
+                  onChanged: onChanged,
+                  onEditingComplete: _commitPriceFields,
+                  onTapOutside: (_) {
+                    FocusScope.of(context).unfocus();
+                    _commitPriceFields();
+                  },
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.charcoal,
+                  ),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    border: InputBorder.none,
+                    hintText: hint,
+                    hintStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.neutral400,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Text(
+                'EGP',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.charcoal,
+                ),
+              ),
+            ],
           ),
         ],
       ),

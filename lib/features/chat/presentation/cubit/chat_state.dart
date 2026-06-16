@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'package:houseiana_mobile_app/features/chat/data/models/chat_message.dart';
+
 abstract class ChatState extends Equatable {
   const ChatState();
 
@@ -11,41 +13,19 @@ class ChatInitial extends ChatState {}
 
 class ChatLoading extends ChatState {}
 
-class ChatsLoaded extends ChatState {
-  final List<dynamic> chats;
-
-  const ChatsLoaded({required this.chats});
-
-  @override
-  List<Object?> get props => [chats];
-}
-
 class ChatMessagesLoaded extends ChatState {
-  final List<dynamic> messages;
-  final String? conversationId;
+  final List<ChatMessage> messages;
+  final String conversationId;
+  final bool isSupport;
 
   const ChatMessagesLoaded({
     required this.messages,
-    this.conversationId,
-  });
-
-  @override
-  List<Object?> get props => [messages, conversationId];
-}
-
-class ChatTypingIndicatorState extends ChatState {
-  final String conversationId;
-  final String userId;
-  final String userName;
-
-  const ChatTypingIndicatorState({
     required this.conversationId,
-    required this.userId,
-    required this.userName,
+    this.isSupport = false,
   });
 
   @override
-  List<Object?> get props => [conversationId, userId, userName];
+  List<Object?> get props => [messages, conversationId, isSupport];
 }
 
 class ChatError extends ChatState {

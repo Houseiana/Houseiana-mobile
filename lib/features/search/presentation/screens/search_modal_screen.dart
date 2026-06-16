@@ -88,11 +88,18 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
 
       if (keyName.isEmpty) continue;
 
+      // The backend `location` filter is a free-text match on the place name
+      // (mirrors the web, which feeds plain city/place names). Sending the full
+      // "City, Country" display string never matches, so every tap fell back to
+      // the unfiltered list ("same result"). Search by the bare city instead.
+      final searchTerm = city.isNotEmpty ? city : keyName;
+
       final key = keyName.toLowerCase();
       final existing = grouped[key];
       if (existing == null) {
         grouped[key] = _LiveDestination(
           name: keyName,
+          searchTerm: searchTerm,
           subtitle: country.isNotEmpty
               ? country
               : city.isNotEmpty
@@ -380,7 +387,9 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
   Widget _destinationTile(_LiveDestination destination) {
     return InkWell(
       onTap: () => setState(() {
-        _locationController.text = destination.name;
+        // Use the bare place name (city) as the query, not the "City, Country"
+        // display label — see _buildDestinations for why.
+        _locationController.text = destination.searchTerm;
         _activeStep = 1;
       }),
       child: Padding(
@@ -682,11 +691,17 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
 
 class _LiveDestination {
   final String name;
+
+  /// The plain place name (city) sent to the search `location` filter. Kept
+  /// separate from [name] because [name] is the "City, Country" display label,
+  /// which the backend's free-text location match does not resolve.
+  final String searchTerm;
   final String subtitle;
   final int count;
 
   const _LiveDestination({
     required this.name,
+    required this.searchTerm,
     required this.subtitle,
     required this.count,
   });
@@ -694,6 +709,7 @@ class _LiveDestination {
   _LiveDestination copyWith({int? count}) {
     return _LiveDestination(
       name: name,
+      searchTerm: searchTerm,
       subtitle: subtitle,
       count: count ?? this.count,
     );

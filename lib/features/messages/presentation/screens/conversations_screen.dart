@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
-import 'package:houseiana_mobile_app/core/services/chat_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/features/chat/data/models/conversation.dart';
+import 'package:houseiana_mobile_app/features/chat/presentation/cubit/conversations_cubit.dart';
+import 'package:houseiana_mobile_app/features/chat/presentation/cubit/conversations_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/message_skeleton.dart';
 
@@ -15,128 +18,49 @@ class ConversationsScreen extends StatefulWidget {
 }
 
 class _ConversationsScreenState extends State<ConversationsScreen> {
-  final _chatService = sl<ChatService>();
   final _session = sl<UserSession>();
-
-  List<Map<String, dynamic>> _conversations = [];
-  bool _isLoading = true;
-  bool _hasError = false;
+  late final ConversationsCubit _cubit;
 
   @override
   void initState() {
     super.initState();
-    _loadConversations();
-  }
-
-  Future<void> _loadConversations() async {
-    if (!_session.isLoggedIn) {
-      setState(() {
-        _isLoading = false;
-        _conversations = [];
-      });
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _hasError = false;
-    });
-
-    try {
-      final convs = await _chatService.getConversations(_session.userId!);
-      if (mounted) {
-        setState(() {
-          _conversations = convs;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _hasError = true;
-        });
-      }
+    _cubit = sl<ConversationsCubit>();
+    if (_session.isLoggedIn) {
+      _cubit.load(_session.userId!);
     }
   }
 
-  String _participantName(BuildContext context, Map<String, dynamic> c) {
-    final participants = c['participants'] as List?;
-    if (participants != null && participants.isNotEmpty) {
-      for (final p in participants) {
-        if (p is Map) {
-          final id = (p['id'] ?? p['userId'] ?? '').toString();
-          if (id != _session.userId) {
-            final first = p['firstName'] ?? p['name'] ?? '';
-            final last = p['lastName'] ?? '';
-            final full = '$first $last'.trim();
-            if (full.isNotEmpty) return full;
-          }
-        }
-      }
+  @override
+  void dispose() {
+    _cubit.close();
+    super.dispose();
+  }
+
+  String _userId() => _session.userId ?? '';
+
+  String _participantName(BuildContext context, Conversation c) {
+    final name = c.otherName(_userId());
+    if (name.trim().isNotEmpty) return name;
+    return context.tr('messages.userFallback');
+  }
+
+  String _timeLabel(BuildContext context, DateTime? dt) {
+    if (dt == null) return '';
+    final local = dt.toLocal();
+    final now = DateTime.now();
+    final diff = now.difference(local);
+    if (diff.inMinutes < 1) return '';
+    if (diff.inMinutes < 60) {
+      return context.tr('notifications.minutesShort', args: {'n': diff.inMinutes});
     }
-    return (c['participantName'] ??
-            c['hostName'] ??
-            c['guestName'] ??
-            context.tr('messages.userFallback'))
-        .toString();
-  }
-
-  String _participantAvatar(Map<String, dynamic> c) {
-    final participants = c['participants'] as List?;
-    if (participants != null && participants.isNotEmpty) {
-      for (final p in participants) {
-        if (p is Map) {
-          final id = (p['id'] ?? p['userId'] ?? '').toString();
-          if (id != _session.userId) {
-            return (p['profilePhoto'] ?? p['avatar'] ?? '').toString();
-          }
-        }
-      }
+    if (diff.inHours < 24) {
+      return context.tr('notifications.hoursShort', args: {'n': diff.inHours});
     }
-    return (c['participantAvatar'] ?? c['hostAvatar'] ?? '').toString();
-  }
-
-  String _lastMessage(Map<String, dynamic> c) {
-    final last = c['lastMessage'];
-    if (last is Map) return (last['content'] ?? last['text'] ?? '').toString();
-    if (last is String) return last;
-    return (c['lastMessageText'] ?? '').toString();
-  }
-
-  String _propertyTitle(Map<String, dynamic> c) =>
-      (c['propertyTitle'] ?? c['property']?['title'] ?? '').toString();
-
-  String _timeLabel(BuildContext context, Map<String, dynamic> c) {
-    final raw = c['updatedAt'] ?? c['lastMessageTime'] ?? '';
-    if (raw.toString().isEmpty) return '';
-    try {
-      final dt = DateTime.parse(raw.toString()).toLocal();
-      final now = DateTime.now();
-      final diff = now.difference(dt);
-      if (diff.inMinutes < 60) {
-        return context.tr('notifications.minutesShort',
-            args: {'n': diff.inMinutes});
-      }
-      if (diff.inHours < 24) {
-        return context.tr('notifications.hoursShort',
-            args: {'n': diff.inHours});
-      }
-      if (diff.inDays == 1) return context.tr('notifications.yesterday');
-      if (diff.inDays < 7) {
-        return context.tr('notifications.daysShort',
-            args: {'n': diff.inDays});
-      }
-      return '${dt.day}/${dt.month}';
-    } catch (_) {
-      return '';
+    if (diff.inDays == 1) return context.tr('notifications.yesterday');
+    if (diff.inDays < 7) {
+      return context.tr('notifications.daysShort', args: {'n': diff.inDays});
     }
-  }
-
-  int _unreadCount(Map<String, dynamic> c) {
-    final count = c['unreadCount'] ?? c['unread'] ?? 0;
-    if (count is int) return count;
-    return int.tryParse(count.toString()) ?? 0;
+    return '${local.day}/${local.month}';
   }
 
   @override
@@ -170,37 +94,44 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     if (!_session.isLoggedIn) {
       return _buildSignInPrompt(context);
     }
-    if (_isLoading) {
-      return const ConversationsSkeletonLoader(itemCount: 6);
-    }
-    if (_hasError) {
-      return _buildErrorState(context);
-    }
-    if (_conversations.isEmpty) {
-      return _buildEmptyState(context);
-    }
-    return RefreshIndicator(
-      onRefresh: _loadConversations,
-      color: AppColors.primaryColor,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: _conversations.length,
-        separatorBuilder: (_, __) =>
-            const Divider(height: 1, indent: 88, endIndent: 24),
-        itemBuilder: (context, index) {
-          return _buildConversationTile(context, _conversations[index]);
-        },
-      ),
+    return BlocBuilder<ConversationsCubit, ConversationsState>(
+      bloc: _cubit,
+      builder: (context, state) {
+        if (state is ConversationsLoading || state is ConversationsInitial) {
+          return const ConversationsSkeletonLoader(itemCount: 6);
+        }
+        if (state is ConversationsError) {
+          return _buildErrorState(context);
+        }
+        final conversations =
+            state is ConversationsLoaded ? state.conversations : <Conversation>[];
+        if (conversations.isEmpty) {
+          return _buildEmptyState(context);
+        }
+        return RefreshIndicator(
+          onRefresh: () async => _cubit.load(_session.userId!),
+          color: AppColors.primaryColor,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: conversations.length,
+            separatorBuilder: (_, __) =>
+                const Divider(height: 1, indent: 88, endIndent: 24),
+            itemBuilder: (context, index) =>
+                _buildConversationTile(context, conversations[index]),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildConversationTile(BuildContext context, Map<String, dynamic> c) {
+  Widget _buildConversationTile(BuildContext context, Conversation c) {
+    final userId = _userId();
     final name = _participantName(context, c);
-    final avatar = _participantAvatar(c);
-    final lastMsg = _lastMessage(c);
-    final property = _propertyTitle(c);
-    final time = _timeLabel(context, c);
-    final unread = _unreadCount(c);
+    final avatar = c.otherAvatar(userId);
+    final lastMsg = c.lastMessage;
+    final property = c.propertyTitle;
+    final time = _timeLabel(context, c.lastMessageTime);
+    final unread = c.unreadFor(userId);
     final hasUnread = unread > 0;
 
     return ListTile(
@@ -215,9 +146,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                 ? Text(
                     name.isNotEmpty
                         ? name[0].toUpperCase()
-                        : context
-                            .tr('messages.userFallback')[0]
-                            .toUpperCase(),
+                        : context.tr('messages.userFallback')[0].toUpperCase(),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -267,8 +196,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
               time,
               style: TextStyle(
                 fontSize: 12,
-                color:
-                    hasUnread ? AppColors.primaryColor : AppColors.neutral600,
+                color: hasUnread ? AppColors.primaryColor : AppColors.neutral600,
                 fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
@@ -282,8 +210,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
               padding: const EdgeInsets.only(top: 2),
               child: Text(
                 property,
-                style:
-                    const TextStyle(fontSize: 12, color: AppColors.neutral600),
+                style: const TextStyle(fontSize: 12, color: AppColors.neutral600),
               ),
             ),
           if (lastMsg.isNotEmpty)
@@ -305,13 +232,8 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
       onTap: () => Navigator.pushNamed(
         context,
         Routes.chatConversation,
-        arguments: {
-          ...c,
-          'name': name,
-          'avatar': avatar,
-          'property': property,
-        },
-      ).then((_) => _loadConversations()),
+        arguments: c.toArgs(userId),
+      ),
     );
   }
 
@@ -347,8 +269,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             const SizedBox(height: 8),
             Text(
               context.tr('messages.noMessagesYetDescription'),
-              style:
-                  const TextStyle(fontSize: 14, color: AppColors.neutral600),
+              style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
               textAlign: TextAlign.center,
             ),
           ],
@@ -364,8 +285,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline,
-                size: 60, color: AppColors.neutral400),
+            const Icon(Icons.error_outline, size: 60, color: AppColors.neutral400),
             const SizedBox(height: 16),
             Text(
               context.tr('messages.failedToLoad'),
@@ -376,13 +296,13 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _loadConversations,
+              onPressed: () => _cubit.load(_session.userId!),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
                 foregroundColor: AppColors.charcoal,
                 elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                shape:
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(context.tr('messages.retry')),
             ),
@@ -421,8 +341,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             const SizedBox(height: 8),
             Text(
               context.tr('messages.signInToViewDescription'),
-              style:
-                  const TextStyle(fontSize: 14, color: AppColors.neutral600),
+              style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -430,8 +349,11 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () => Navigator.pushNamed(context, Routes.login)
-                    .then((_) => _loadConversations()),
+                onPressed: () =>
+                    Navigator.pushNamed(context, Routes.login).then((_) {
+                  if (_session.isLoggedIn) _cubit.load(_session.userId!);
+                  if (mounted) setState(() {});
+                }),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   foregroundColor: AppColors.charcoal,
@@ -441,8 +363,8 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                 ),
                 child: Text(
                   context.tr('messages.signIn'),
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w700),
+                  style:
+                      const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
               ),
             ),

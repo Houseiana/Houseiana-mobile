@@ -36,6 +36,8 @@ class EndPoints {
   // GET  /users/{userId}/user-trips     → get trips (query: status)
   // POST /users/{userId}/passport       → add/update passport
   // GET  /users/{userId}/passport       → get passport
+  // POST /users/{userId}/national-id    → add/update national id (multipart)
+  // GET  /users/{userId}/national-id    → get national id
   // POST /users/address                 → add/update address
   // GET  /users/{userId}/address        → get address
   // POST /users/{userId}/emergency-contact
@@ -51,6 +53,7 @@ class EndPoints {
   static String userFavorites(String userId) => '/users/$userId/favorites';
   static String userTrips(String userId) => '/users/$userId/user-trips';
   static String userPassport(String userId) => '/users/$userId/passport';
+  static String nationalId(String userId) => '/users/$userId/national-id';
   static const String userAddress = '/users/address';
   static String getUserAddress(String userId) => '/users/$userId/address';
   static String emergencyContact(String userId) =>
@@ -119,6 +122,10 @@ class EndPoints {
   // GET /api/Lookups/PayoutMethod → [{ id, name }] — drives the host payout
   // method picker; the chosen id is sent as `payoutMethodId`.
   static const String payoutMethodLookup = '/api/Lookups/PayoutMethod';
+  // GET /api/Lookups/relationshipOfEmergencyContact → [{ id, name }] — drives the
+  // emergency-contact relationship dropdown; the chosen id is sent as `relationship`.
+  static const String relationshipLookup =
+      '/api/Lookups/relationshipOfEmergencyContact';
   static const String propertyHighlightsLookup = '/api/Lookups/PropertyHighlight';
   static const String propertyAdminStatusLookup = '/api/Lookups/PropertyAdminStatus';
   static const String propertySortingLookup = '/api/Lookups/PropertySorting';

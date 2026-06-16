@@ -299,7 +299,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       }
     } else {
       if (mounted) {
-        Navigator.pushReplacementNamed(context, Routes.paymentFailed);
+        Navigator.pushReplacementNamed(
+          context,
+          Routes.paymentFailed,
+          arguments: {'bookingId': _bookingId},
+        );
       }
     }
   }
@@ -346,7 +350,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       }
     } else {
       if (mounted) {
-        Navigator.pushReplacementNamed(context, Routes.paymentFailed);
+        Navigator.pushReplacementNamed(
+          context,
+          Routes.paymentFailed,
+          arguments: {'bookingId': _bookingId},
+        );
       }
     }
   }
@@ -391,7 +399,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       }
     } else {
       if (mounted) {
-        Navigator.pushReplacementNamed(context, Routes.paymentFailed);
+        Navigator.pushReplacementNamed(
+          context,
+          Routes.paymentFailed,
+          arguments: {'bookingId': _bookingId},
+        );
       }
     }
   }

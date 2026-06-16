@@ -298,6 +298,23 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
           return 'Minimum base price is 1000 EGP.';
         }
         break;
+      case 10: // Settings / Contact Info — Primary phone (WhatsApp) is required
+        // Mirrors the web validation: required + Egyptian mobile format
+        // (10 digits matching `^1[0-25]\d{8}$`). Numbers are stored as the
+        // national part (no +20 prefix) in the wizard state.
+        final egyptMobile = RegExp(r'^1[0-25]\d{8}$');
+        final primaryPhone = (state.data.primaryPhone ?? '').trim();
+        if (primaryPhone.isEmpty) {
+          return 'Primary phone number (WhatsApp) is required.';
+        }
+        if (!egyptMobile.hasMatch(primaryPhone)) {
+          return 'Enter a valid Egyptian mobile number (10 digits, e.g. 1012345678).';
+        }
+        final emergencyPhone = (state.data.emergencyPhone ?? '').trim();
+        if (emergencyPhone.isNotEmpty && !egyptMobile.hasMatch(emergencyPhone)) {
+          return 'Enter a valid emergency mobile number (10 digits) or leave it empty.';
+        }
+        break;
     }
     return null;
   }
@@ -444,59 +461,49 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
         lowerRaw['propertyid']?.toString();
   }
 
+  /// Finalizes (publishes) the listing.
+  ///
+  /// Web parity (add-listing `handleSubmit`): every step's data has already
+  /// been persisted incrementally by each "Continue" (`saveDraft`), so
+  /// publishing is a SINGLE `POST /api/properties/draft` carrying the final
+  /// step marker (`stepDraft` 13) + `hostId` + `propertyId`. The web does not
+  /// re-POST every step — doing so (the previous "force sync" loop) was a
+  /// mobile-only divergence and the source of the "Create List" error.
   Future<void> publishListing() async {
-    final publishValidationError = validateStepForContinue(4);
-    if (publishValidationError != null) {
-      setError(publishValidationError);
-      return;
-    }
-
     startPublishing();
     try {
       final hostId = sl<houseiana_mobile_app.UserSession>().userId ?? '';
 
-      // RADICAL FIX: Ensure we ALWAYS have an ID before publishing
+      // The property id is normally created by the incremental per-step saves
+      // (or seeded from edit mode). Recover it silently if it went missing.
       String? safePropertyId = state.draftId;
       safePropertyId ??= await _ensureDraftId(hostId);
 
-      // ULTIMATE RADICAL FIX: The backend strictly enforces step progression and payload correctness.
-      // We forcefully loop through all backend StepDrafts (1 to 13) sequentially.
+      // currentStep 12 → stepDraft 13 (finalize). toApiMap intentionally emits
+      // no property fields for this step — it is just the publish marker.
+      final payload = state.data.toApiMap(
+        hostId: hostId,
+        currentStep: 12,
+        propertyId: safePropertyId,
+      );
+
+      final encoder = const JsonEncoder.withIndent('  ');
       // ignore: avoid_print
-      print(
-          '🚀 [FORCE SYNC] Synchronizing all steps sequentially to satisfy backend...');
+      print('\n======================================================');
+      // ignore: avoid_print
+      print('🚀 [API REQUEST] POST /api/properties/draft (PUBLISH, stepDraft 13)');
+      // ignore: avoid_print
+      print('📤 PAYLOAD:\n${encoder.convert(payload)}');
+      // ignore: avoid_print
+      print('======================================================\n');
 
-      for (int step = 0; step < 13; step++) {
-        final payload = state.data.toApiMap(
-            hostId: hostId, currentStep: step, propertyId: safePropertyId);
-
-        if (step == 12) {
-          // Final publish step (stepDraft 13)
-          final encoder = const JsonEncoder.withIndent('  ');
-          final prettyJson = encoder.convert(payload);
-          // ignore: avoid_print
-          print('\n======================================================');
-          // ignore: avoid_print
-          print(
-              '🚀 [API REQUEST] POST /api/properties/draft (FINAL PUBLISH STEP)');
-          // ignore: avoid_print
-          print('📤 PAYLOAD:\n$prettyJson');
-          // ignore: avoid_print
-          print('======================================================\n');
-        } else {
-          // ignore: avoid_print
-          print('🔄 Syncing UI Step $step (stepDraft: ${step + 1})...');
-        }
-
-        final response = await _hostService.saveDraft(payload);
-        final newId = _extractId(response);
-        if (newId != null && newId.isNotEmpty) {
-          safePropertyId = newId;
-        }
-      }
-
-      finishPublishing(safePropertyId ?? '');
+      final response = await _hostService.saveDraft(payload);
+      final newId = _extractId(response);
+      finishPublishing(newId ?? safePropertyId);
     } catch (e) {
-      publishingFailed(e.toString());
+      // ignore: avoid_print
+      print('[ListingWizardCubit.publishListing] error: $e');
+      publishingFailed('Failed to publish listing: $e');
     }
   }
 

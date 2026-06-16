@@ -267,7 +267,7 @@ class _ErrorState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            message,
+            context.tr(message),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,

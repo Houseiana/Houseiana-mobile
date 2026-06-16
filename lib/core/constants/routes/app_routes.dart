@@ -231,13 +231,7 @@ class AppRoutes {
       case Routes.personalInformation:
         return _buildRoute(const PersonalInformationScreen(), settings);
       case Routes.kycVerification:
-        return _buildRoute(
-          BlocProvider(
-            create: (_) => sl<KycCubit>(),
-            child: const KycVerificationScreen(),
-          ),
-          settings,
-        );
+        return _buildRoute(const IdentityVerificationScreen(), settings);
 
       // ==================== Host ====================
       case Routes.becomeHost:
@@ -280,8 +274,6 @@ class AppRoutes {
           ),
           settings,
         );
-      case Routes.hostEarnings:
-        return _buildRoute(const HostEarningsScreen(), settings);
       case Routes.hostPayout:
         return _buildRoute(const HostPayoutScreen(), settings);
       case Routes.hostReviews:

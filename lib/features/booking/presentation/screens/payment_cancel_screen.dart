@@ -1,10 +1,73 @@
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
+import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/models/booking_model.dart';
+import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
-class PaymentCancelScreen extends StatelessWidget {
+class PaymentCancelScreen extends StatefulWidget {
   const PaymentCancelScreen({super.key});
+
+  @override
+  State<PaymentCancelScreen> createState() => _PaymentCancelScreenState();
+}
+
+class _PaymentCancelScreenState extends State<PaymentCancelScreen> {
+  final _userService = sl<UserService>();
+
+  BookingModel? _booking;
+  bool _isLoading = true;
+  bool _didInit = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didInit) return;
+    _didInit = true;
+    final raw = ModalRoute.of(context)?.settings.arguments;
+    final bookingId =
+        raw is Map<String, dynamic> ? raw['bookingId']?.toString() : null;
+    if (bookingId != null && bookingId.isNotEmpty) {
+      _loadBooking(bookingId);
+    } else {
+      _isLoading = false;
+    }
+  }
+
+  Future<void> _loadBooking(String bookingId) async {
+    try {
+      final booking = await _userService.getBookingDetails(bookingId);
+      if (mounted) {
+        setState(() {
+          _booking = booking;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  String _formatDate(DateTime dt) {
+    final months = context.tr('common.monthsShort').split(',');
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  }
+
+  String get _displayPropertyName =>
+      _booking?.property?.displayTitle ?? _booking?.propertyTitle ?? '--';
+
+  String get _displayCheckIn =>
+      _booking != null ? _formatDate(_booking!.checkIn) : '--';
+
+  String get _displayCheckOut =>
+      _booking != null ? _formatDate(_booking!.checkOut) : '--';
+
+  String get _displayAmount {
+    final b = _booking;
+    if (b == null) return '--';
+    return '${b.totalPrice.toStringAsFixed(2)} ${b.currencyLabel}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,15 +156,37 @@ class PaymentCancelScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _buildDetailRow('${context.tr('booking.property')}:', 'Luxury Villa West Bay'),
-                    const SizedBox(height: 12),
-                    _buildDetailRow('${context.tr('booking.checkInDate')}:', 'Dec 15, 2024'),
-                    const SizedBox(height: 12),
-                    _buildDetailRow('${context.tr('booking.checkOutDate')}:', 'Dec 20, 2024'),
-                    const SizedBox(height: 12),
-                    _buildDetailRow('${context.tr('booking.amount')}:', '\$250.00'),
-                    const SizedBox(height: 12),
-                    _buildDetailRow('${context.tr('booking.status')}:', context.tr('booking.notConfirmed'), isStatus: true),
+                    if (_isLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Center(
+                          child: SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                        ),
+                      )
+                    else ...[
+                      _buildDetailRow('${context.tr('booking.property')}:',
+                          _displayPropertyName),
+                      const SizedBox(height: 12),
+                      _buildDetailRow('${context.tr('booking.checkInDate')}:',
+                          _displayCheckIn),
+                      const SizedBox(height: 12),
+                      _buildDetailRow('${context.tr('booking.checkOutDate')}:',
+                          _displayCheckOut),
+                      const SizedBox(height: 12),
+                      _buildDetailRow(
+                          '${context.tr('booking.amount')}:', _displayAmount),
+                      const SizedBox(height: 12),
+                      _buildDetailRow('${context.tr('booking.status')}:',
+                          context.tr('booking.notConfirmed'),
+                          isStatus: true),
+                    ],
                   ],
                 ),
               ),
@@ -235,12 +320,15 @@ class PaymentCancelScreen extends StatelessWidget {
             color: AppColors.neutral600,
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: isStatus ? AppColors.neutral600 : AppColors.charcoal,
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isStatus ? AppColors.neutral600 : AppColors.charcoal,
+            ),
           ),
         ),
       ],

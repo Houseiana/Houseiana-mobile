@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:houseiana_mobile_app/core/models/booking_model.dart';
 import 'package:houseiana_mobile_app/core/models/gender_option.dart';
 import 'package:houseiana_mobile_app/core/models/public_profile_model.dart';
@@ -181,19 +182,100 @@ class UserService {
     return true;
   }
 
-  // ── KYC / Passport ────────────────────────────────────────────────────────
-
-  /// POST /users/{userId}/passport
-  Future<bool> updatePassport(String userId, Map<String, dynamic> body) async {
-    await _api.post(EndPoints.userPassport(userId), body: body);
-    return true;
-  }
+  // ── Identity Verification ──────────────────────────────────────────────────
+  // Mirrors the web personal-info identity sections (AccountAPI in auth.service):
+  //   passport          → POST /users/{id}/passport          (JSON)
+  //   national id       → POST /users/{id}/national-id        (multipart + photos)
+  //   emergency contact → POST /users/{id}/emergency-contact  (JSON)
+  // The relationship dropdown is driven by the localized lookup, and the chosen
+  // id (not the localized name) is sent back — see [[payment-method-lookup-id-contract]].
 
   /// GET /users/{userId}/passport
   Future<Map<String, dynamic>?> getPassport(String userId) async {
     final response = await _api.get(EndPoints.userPassport(userId));
     return _item(response);
   }
+
+  /// POST /users/{userId}/passport — JSON, mirrors `AccountAPI.updatePassport`.
+  /// Keys: passportNumber, issuingCountry, issueDate (`yyyy-MM-dd`), expiryDate.
+  Future<bool> updatePassport(String userId, Map<String, dynamic> body) async {
+    await _api.post(EndPoints.userPassport(userId), body: body);
+    return true;
+  }
+
+  /// GET /users/{userId}/national-id
+  Future<Map<String, dynamic>?> getNationalId(String userId) async {
+    final response = await _api.get(EndPoints.nationalId(userId));
+    return _item(response);
+  }
+
+  /// POST /users/{userId}/national-id — multipart, mirrors `AccountAPI.addNationalId`.
+  /// Text keys: idNumber, issuingCountry, issueDate (`yyyy-MM-dd`), expiryDate.
+  /// File keys: idFrontPhoto, idBackPhoto (optional). The backend binds these
+  /// from `multipart/form-data` (just like the profile-update endpoint), so the
+  /// photos must go out as [MultipartFile], not paths.
+  Future<bool> addNationalId(
+    String userId, {
+    required Map<String, dynamic> fields,
+    String? frontPhotoPath,
+    String? backPhotoPath,
+  }) async {
+    final body = <String, dynamic>{...fields};
+    if (frontPhotoPath != null && frontPhotoPath.isNotEmpty) {
+      body['idFrontPhoto'] = await MultipartFile.fromFile(
+        frontPhotoPath,
+        filename: _fileName(frontPhotoPath),
+      );
+    }
+    if (backPhotoPath != null && backPhotoPath.isNotEmpty) {
+      body['idBackPhoto'] = await MultipartFile.fromFile(
+        backPhotoPath,
+        filename: _fileName(backPhotoPath),
+      );
+    }
+    await _api.post(
+      EndPoints.nationalId(userId),
+      body: body,
+      formDataIsEnabled: true,
+    );
+    return true;
+  }
+
+  /// GET /users/{userId}/emergency-contact
+  Future<Map<String, dynamic>?> getEmergencyContact(String userId) async {
+    final response = await _api.get(EndPoints.emergencyContact(userId));
+    return _item(response);
+  }
+
+  /// POST /users/{userId}/emergency-contact — JSON, mirrors
+  /// `AccountAPI.addEmergencyContact`.
+  /// Keys: fullName, relationship (lookup id), phoneNumber, whatsappNumber,
+  /// emailAddress.
+  Future<bool> addEmergencyContact(
+      String userId, Map<String, dynamic> body) async {
+    await _api.post(EndPoints.emergencyContact(userId), body: body);
+    return true;
+  }
+
+  /// GET /api/Lookups/relationshipOfEmergencyContact → `[{ id, name }]`.
+  /// Drives the emergency-contact relationship dropdown. Falls back to an empty
+  /// list on failure.
+  Future<List<Map<String, dynamic>>> getRelationshipOptions() async {
+    try {
+      final response = await _api.get(EndPoints.relationshipLookup);
+      return _list(response)
+          .map((e) => {
+                'id': e['id'],
+                'name': e['name']?.toString() ?? '',
+              })
+          .where((m) => m['id'] != null && (m['name'] as String).isNotEmpty)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  String _fileName(String path) => path.split(RegExp(r'[\\/]')).last;
 
   // ── Cancel Booking ────────────────────────────────────────────────────────
 

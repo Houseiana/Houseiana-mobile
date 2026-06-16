@@ -310,25 +310,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Image.asset(
-              'assets/images/logo_icon.png',
-              width: 28,
-              height: 38,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              context.tr('app.name'),
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 20,
-                height: 1.25,
-                color: Color(0xFF1D242B),
-              ),
-            ),
-          ],
+        Image.asset(
+          'assets/icons/full_logo.png',
+          height: 28,
+          fit: BoxFit.contain,
         ),
         Row(
           children: [
