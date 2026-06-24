@@ -23,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Selected region category id from `/api/Lookups/RegionCategory`, sent to
   /// the search endpoint as `featuredRegionId` to filter the home in place.
   /// Null means "All" (no filter). Drilling into a region (See All) uses
-  /// `villageId` instead — see [_buildCityGroupSection].
+  /// `regionId` instead — see [_buildCityGroupSection].
   int? _selectedFeaturedRegionId;
   Set<String> _favoriteProperties = {};
 
@@ -900,7 +900,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Routes.searchProperties,
                   arguments: {
                     'location': displayName,
-                    'villageId': group.regionId,
+                    'regionId': group.regionId,
                   },
                 ),
                 child: Container(

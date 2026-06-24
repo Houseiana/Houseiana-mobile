@@ -418,6 +418,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                         arguments: {'userId': hostId},
                       ),
                     ),
+                    _buildContactHostButton(
+                        context, property, hostId, hostName, title),
                     const _SectionDivider(),
                   ],
                   if (description.isNotEmpty) ...[
@@ -866,6 +868,53 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildContactHostButton(
+    BuildContext context,
+    Map<String, dynamic> property,
+    String hostId,
+    String hostName,
+    String title,
+  ) {
+    final propertyId =
+        (property['id'] ?? property['_id'] ?? '').toString();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      child: SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: OutlinedButton.icon(
+          onPressed: () => Navigator.pushNamed(
+            context,
+            Routes.contactHost,
+            arguments: {
+              'hostId': hostId,
+              'hostName': hostName,
+              'propertyId': propertyId,
+              'propertyName': title,
+              'property': property,
+            },
+          ),
+          icon: const Icon(Icons.chat_bubble_outline,
+              size: 18, color: AppColors.charcoal),
+          label: Text(
+            context.tr('propertyDetails.contactHost'),
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.charcoal,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: AppColors.primaryColor),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
       ),
     );
   }

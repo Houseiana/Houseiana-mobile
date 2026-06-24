@@ -235,7 +235,9 @@ class FirestoreChatService {
           'userId': guestId,
           'role': 'guest',
           'name': guestName,
-          'joinedAt': FieldValue.serverTimestamp(),
+          // Firestore forbids serverTimestamp() inside arrays — use a concrete
+          // client Timestamp instead.
+          'joinedAt': Timestamp.now(),
         }
       ],
       'guestId': guestId,

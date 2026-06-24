@@ -827,7 +827,9 @@
     "supportWelcome": "أهلاً بك في الدعم المباشر. كيف يمكننا مساعدتك اليوم؟",
     "messageDeleted": "[تم حذف الرسالة]",
     "permissionDenied": "ليس لديك صلاحية الوصول إلى هذه المحادثة.",
-    "connectionOffline": "أنت غير متصل — ستتم مزامنة الرسائل عند عودة الاتصال."
+    "connectionOffline": "أنت غير متصل — ستتم مزامنة الرسائل عند عودة الاتصال.",
+    "openChatDirect": "افتح المحادثة مباشرة",
+    "openChatDirectSubtitle": "تخطَّ النموذج وراسل المضيف الآن"
   },
   "notifications": {
     "title": "الإشعارات",
@@ -982,6 +984,7 @@
     "emailOptional": "البريد الإلكتروني (اختياري)",
     "uploadFrontSide": "رفع الوجه الأمامي",
     "uploadBackSide": "رفع الوجه الخلفي",
+    "uploadPassportPhoto": "رفع صورة جواز السفر",
     "tapToReplace": "اضغط للاستبدال",
     "takePhoto": "التقاط صورة",
     "chooseFromGallery": "اختر من المعرض",
@@ -1867,6 +1870,7 @@
     "wizardLocationEnterManually": "أدخل العنوان يدوياً",
     "wizardLocationNoResults": "لم يتم العثور على نتائج لهذا العنوان.",
     "wizardLocationGeocodingError": "تعذر العثور على الموقع. يرجى تجربة بحث مختلف.",
+    "wizardLocationResolving": "جارٍ جلب تفاصيل الموقع…",
     "wizardLocationSearchDescription": "ابحث عن عنوانك (ابدأ بالكتابة لرؤية الاقتراحات)",
     "wizardLocationSearchTypingHint": "ابدأ بكتابة عنوانك...",
     "wizardLocationOrEnterManually": "أو أدخل يدوياً:",

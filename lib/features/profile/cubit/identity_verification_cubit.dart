@@ -57,13 +57,17 @@ class IdentityVerificationCubit extends Cubit<IdentityVerificationState> {
     }
   }
 
-  Future<void> savePassport(Map<String, dynamic> body) async {
+  Future<void> savePassport({
+    required Map<String, dynamic> fields,
+    String? photoPath,
+  }) async {
     final userId = _userId;
     if (userId == null || userId.isEmpty) return _emitSignInRequired();
 
     emit(state.copyWith(savingSection: 'passport'));
     try {
-      await _userService.updatePassport(userId, body);
+      await _userService.updatePassport(userId,
+          fields: fields, photoPath: photoPath);
       final refreshed = await _safe(() => _userService.getPassport(userId));
       emit(_feedback(
         state.copyWith(savingSection: null, passport: refreshed ?? state.passport),

@@ -70,7 +70,7 @@ class NightlyPriceCell extends StatelessWidget {
     final canTap = !isPast && !isOutsideWindow && !isBooked && onTap != null;
 
     final priceText = (price != null && !isPast && !isOutsideWindow)
-        ? _formatPrice(price!, currency)
+        ? _formatPrice(price!)
         : null;
     final strike = isBooked
         ? TextDecoration.lineThrough
@@ -106,20 +106,29 @@ class NightlyPriceCell extends StatelessWidget {
                   ),
                   if (priceText != null) ...[
                     const SizedBox(height: 2),
-                    Text(
-                      priceText,
-                      style: TextStyle(
-                        fontSize: 9.5,
-                        height: 1.1,
-                        fontWeight: isSpecialPrice
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                        color: priceColor,
-                        decoration: strike,
-                        decorationColor: AppColors.neutral400,
+                    // The currency is shown once in the footer ("Approximate
+                    // prices in <currency>…"), so each cell shows just the
+                    // amount and scales it down to fit the narrow cell instead
+                    // of truncating it with an ellipsis (the "EGP 1,…" bug).
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          priceText,
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            height: 1.1,
+                            fontWeight: isSpecialPrice
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: priceColor,
+                            decoration: strike,
+                            decorationColor: AppColors.neutral400,
+                          ),
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ],
@@ -144,8 +153,8 @@ class NightlyPriceCell extends StatelessWidget {
     );
   }
 
-  static String _formatPrice(double value, String currency) {
+  static String _formatPrice(double value) {
     final formatter = NumberFormat.decimalPattern();
-    return '$currency ${formatter.format(value.round())}';
+    return formatter.format(value.round());
   }
 }

@@ -14,7 +14,9 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
   ListingWizardCubit() : super(ListingWizardState.initial());
 
   void goToStep(int step) {
-    if (step >= 0 && step < state.totalSteps) {
+    // Never below minStep: in edit mode minStep is 1 (Location), so the wizard
+    // can't land back on Property Type (stepDraft 1), which creates a new unit.
+    if (step >= state.minStep && step < state.totalSteps) {
       emit(state.copyWith(
         currentStep: step,
         clearError: true,
@@ -289,9 +291,7 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
             state.data.description!.trim().isEmpty) {
           return 'Description is required.';
         }
-        if (state.data.highlights.isEmpty) {
-          return 'At least 1 highlight is required.';
-        }
+        // Highlights are optional (web parity) — no minimum-selection requirement.
         break;
       case 7: // Pricing (shifted)
         if (state.data.basePrice == null || state.data.basePrice! < 1000) {
@@ -334,16 +334,24 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
       final raw = await _hostService.getPropertyForEdit(propertyId);
       final data = WizardData.fromApiJson(raw, base: state.data);
 
-      // Backend step is 1-based (1..13); the UI is 0-based (0..12).
+      // Editing an existing listing: Location (UI index 1) is the earliest
+      // reachable step. The Property Type step (index 0 / stepDraft 1) creates a
+      // *new* unit, so it must stay out of the edit flow entirely.
+      const editMinStep = 1;
+
+      // Backend step is 1-based (1..13); the UI is 0-based (0..12). Clamp the
+      // lower bound to [editMinStep] so a half-finished draft (stepDraft 1)
+      // still opens on Location rather than Property Type.
       final stepDraft = (raw['stepDraft'] as num?)?.toInt();
       final initialStep = (stepDraft != null && stepDraft > 0)
-          ? (stepDraft - 1).clamp(0, state.totalSteps - 1)
+          ? (stepDraft - 1).clamp(editMinStep, state.totalSteps - 1)
           : state.totalSteps - 1; // jump to Review when the step is unknown
 
       emit(state.copyWith(
         data: data,
         draftId: propertyId,
         currentStep: initialStep,
+        minStep: editMinStep,
         isHydrating: false,
       ));
     } catch (e) {

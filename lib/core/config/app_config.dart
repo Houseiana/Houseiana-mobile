@@ -79,6 +79,23 @@ class AppConfig {
     return googleClientId.isNotEmpty && googleServerClientId.isNotEmpty;
   }
 
+  // ── Google Maps / Places ─────────────────────────────────────────────────────
+
+  /// Google Maps API key used by the Places Autocomplete/Details REST APIs that
+  /// power the address search in the listing-location step. Defaults to the same
+  /// key embedded in the native Android manifest / iOS AppDelegate (Maps SDK),
+  /// which is also enabled for the Places web service. Override at build time
+  /// with --dart-define=GOOGLE_MAPS_API_KEY=your_key.
+  static String get googleMapsApiKey {
+    const fromEnv = String.fromEnvironment(
+      'GOOGLE_MAPS_API_KEY',
+      defaultValue: '',
+    );
+    return fromEnv.isNotEmpty
+        ? fromEnv
+        : 'AIzaSyB-j9eljyNW0HUccE15yxhgt70aiHNuC-k';
+  }
+
   // ── PayPal ─────────────────────────────────────────────────────────────────
 
   /// PayPal Client ID (for PayPal checkout).

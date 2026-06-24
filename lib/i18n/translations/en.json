@@ -827,7 +827,9 @@
     "supportWelcome": "Welcome to Live Support. How can we help you today?",
     "messageDeleted": "[Message deleted]",
     "permissionDenied": "You don't have access to this conversation.",
-    "connectionOffline": "You're offline — messages will sync when you reconnect."
+    "connectionOffline": "You're offline — messages will sync when you reconnect.",
+    "openChatDirect": "Open chat directly",
+    "openChatDirectSubtitle": "Skip the form and message the host now"
   },
   "notifications": {
     "title": "Notifications",
@@ -982,6 +984,7 @@
     "emailOptional": "Email (optional)",
     "uploadFrontSide": "Upload front side",
     "uploadBackSide": "Upload back side",
+    "uploadPassportPhoto": "Upload passport photo",
     "tapToReplace": "Tap to replace",
     "takePhoto": "Take a photo",
     "chooseFromGallery": "Choose from gallery",
@@ -1867,6 +1870,7 @@
     "wizardLocationEnterManually": "enter address manually",
     "wizardLocationNoResults": "No results found for this address.",
     "wizardLocationGeocodingError": "Could not find the location. Please try a different search.",
+    "wizardLocationResolving": "Getting location details…",
     "wizardLocationSearchDescription": "Search for your address (Start typing to see suggestions)",
     "wizardLocationSearchTypingHint": "Start typing your address...",
     "wizardLocationOrEnterManually": "Or enter manually:",

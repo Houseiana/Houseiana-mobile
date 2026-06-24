@@ -196,10 +196,32 @@ class UserService {
     return _item(response);
   }
 
-  /// POST /users/{userId}/passport — JSON, mirrors `AccountAPI.updatePassport`.
-  /// Keys: passportNumber, issuingCountry, issueDate (`yyyy-MM-dd`), expiryDate.
-  Future<bool> updatePassport(String userId, Map<String, dynamic> body) async {
-    await _api.post(EndPoints.userPassport(userId), body: body);
+  /// POST /users/{userId}/passport — multipart, mirrors `AccountAPI.updatePassport`.
+  /// Text keys: passportNumber, issuingCountry, issueDate (`yyyy-MM-dd`), expiryDate.
+  /// File key: passportPhoto (optional).
+  ///
+  /// The backend binds these from `multipart/form-data` (`[FromForm]`), exactly
+  /// like the profile-update and national-id endpoints — sending JSON makes every
+  /// field bind as null and the request 400s with "One or more fields are
+  /// invalid". So this MUST go out as form-data, and the photo as a
+  /// [MultipartFile], not a path.
+  Future<bool> updatePassport(
+    String userId, {
+    required Map<String, dynamic> fields,
+    String? photoPath,
+  }) async {
+    final body = <String, dynamic>{...fields};
+    if (photoPath != null && photoPath.isNotEmpty) {
+      body['passportPhoto'] = await MultipartFile.fromFile(
+        photoPath,
+        filename: _fileName(photoPath),
+      );
+    }
+    await _api.post(
+      EndPoints.userPassport(userId),
+      body: body,
+      formDataIsEnabled: true,
+    );
     return true;
   }
 
@@ -249,8 +271,8 @@ class UserService {
 
   /// POST /users/{userId}/emergency-contact — JSON, mirrors
   /// `AccountAPI.addEmergencyContact`.
-  /// Keys: fullName, relationship (lookup id), phoneNumber, whatsappNumber,
-  /// emailAddress.
+  /// Keys: fullName, relationship (lookup id as a *string* — the DTO types it
+  /// as a string, so a raw int 400s), phoneNumber, whatsappNumber, emailAddress.
   Future<bool> addEmergencyContact(
       String userId, Map<String, dynamic> body) async {
     await _api.post(EndPoints.emergencyContact(userId), body: body);

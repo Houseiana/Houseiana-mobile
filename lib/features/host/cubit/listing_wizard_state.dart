@@ -4,6 +4,14 @@ import 'package:equatable/equatable.dart';
 
 class ListingWizardState extends Equatable {
   final int currentStep;
+
+  /// The earliest step the user is allowed to navigate back to.
+  ///
+  /// In CREATE mode this is 0 (Property Type). In EDIT mode it is 1 (Location):
+  /// the Property Type step (stepDraft 1) is what *creates* a new unit on the
+  /// backend, so an existing listing must never be able to step back onto it.
+  final int minStep;
+
   final String? draftId;
   final bool isSavingDraft;
   final bool isPublishing;
@@ -16,6 +24,7 @@ class ListingWizardState extends Equatable {
 
   const ListingWizardState({
     this.currentStep = 0,
+    this.minStep = 0,
     this.draftId,
     this.isSavingDraft = false,
     this.isPublishing = false,
@@ -31,6 +40,7 @@ class ListingWizardState extends Equatable {
 
   ListingWizardState copyWith({
     int? currentStep,
+    int? minStep,
     String? draftId,
     bool? isSavingDraft,
     bool? isPublishing,
@@ -46,6 +56,7 @@ class ListingWizardState extends Equatable {
   }) {
     return ListingWizardState(
       currentStep: currentStep ?? this.currentStep,
+      minStep: minStep ?? this.minStep,
       draftId: draftId ?? this.draftId,
       isSavingDraft: isSavingDraft ?? this.isSavingDraft,
       isPublishing: isPublishing ?? this.isPublishing,
@@ -64,13 +75,14 @@ class ListingWizardState extends Equatable {
 
   int get totalSteps => 13;
   double get progress => (currentStep + 1) / totalSteps;
-  bool get canGoBack => currentStep > 0;
+  bool get canGoBack => currentStep > minStep;
   bool get isLastStep => currentStep == totalSteps - 1;
-  bool get isFirstStep => currentStep == 0;
+  bool get isFirstStep => currentStep == minStep;
 
   @override
   List<Object?> get props => [
         currentStep,
+        minStep,
         draftId,
         isSavingDraft,
         isPublishing,

@@ -153,7 +153,10 @@ class _IdentityForm extends StatelessWidget {
 class _PassportSection extends StatefulWidget {
   final Map<String, dynamic>? data;
   final bool isSaving;
-  final void Function(Map<String, dynamic> body) onSave;
+  final void Function({
+    required Map<String, dynamic> fields,
+    String? photoPath,
+  }) onSave;
 
   const _PassportSection({
     required this.data,
@@ -171,6 +174,7 @@ class _PassportSectionState extends State<_PassportSection> {
   late final TextEditingController _country;
   DateTime? _issueDate;
   DateTime? _expiryDate;
+  String? _photoPath;
 
   @override
   void initState() {
@@ -198,18 +202,24 @@ class _PassportSectionState extends State<_PassportSection> {
       _country.text = widget.data?['issuingCountry']?.toString() ?? '';
       _issueDate = _parseDate(widget.data?['issueDate']);
       _expiryDate = _parseDate(widget.data?['expiryDate']);
+      // A fresh server record arrived — drop the local pick so the box shows the
+      // newly uploaded photo URL instead of the stale local file.
+      _photoPath = null;
     }
   }
 
   void _save() {
     final number = _number.text.trim();
     final country = _country.text.trim();
-    widget.onSave({
-      'passportNumber': number,
-      if (country.isNotEmpty) 'issuingCountry': country,
-      if (_issueDate != null) 'issueDate': _isoDate(_issueDate!),
-      if (_expiryDate != null) 'expiryDate': _isoDate(_expiryDate!),
-    });
+    widget.onSave(
+      fields: {
+        'passportNumber': number,
+        if (country.isNotEmpty) 'issuingCountry': country,
+        if (_issueDate != null) 'issueDate': _isoDate(_issueDate!),
+        if (_expiryDate != null) 'expiryDate': _isoDate(_expiryDate!),
+      },
+      photoPath: _photoPath,
+    );
   }
 
   @override
@@ -246,6 +256,17 @@ class _PassportSectionState extends State<_PassportSection> {
             onExpiry: (d) {
               if (!mounted) return;
               setState(() => _expiryDate = d);
+            },
+          ),
+          const SizedBox(height: 14),
+          _UploadBox(
+            label: context.tr('profile.uploadPassportPhoto'),
+            localPath: _photoPath,
+            existingUrl: _photoUrl(widget.data),
+            onTap: () async {
+              final path = await _pickImage(context);
+              if (!mounted) return;
+              if (path != null) setState(() => _photoPath = path);
             },
           ),
           const SizedBox(height: 18),
@@ -490,19 +511,22 @@ class _EmergencyContactSectionState extends State<_EmergencyContactSection> {
     final whatsapp = _whatsapp.text.trim();
     final email = _email.text.trim();
 
-    // Recover the raw lookup id (int) from the selected string value so we send
-    // the stable id the backend expects, not the localized name.
-    Object? rawId;
+    // Resolve the stable lookup id (not the localized name) from the selected
+    // value. The endpoint's DTO types `relationship` as a string, so we send the
+    // id in string form — sending the raw int makes the JSON number fail to bind
+    // to the string field and the request 400s with "One or more fields are
+    // invalid".
+    String? relationshipId;
     for (final opt in widget.relationshipOptions) {
       if (opt['id'].toString() == _relationshipId) {
-        rawId = opt['id'];
+        relationshipId = opt['id'].toString();
         break;
       }
     }
 
     widget.onSave({
       'fullName': fullName,
-      if (rawId != null) 'relationship': rawId,
+      if (relationshipId != null) 'relationship': relationshipId,
       if (phone.isNotEmpty) 'phoneNumber': phone,
       if (whatsapp.isNotEmpty) 'whatsappNumber': whatsapp,
       if (email.isNotEmpty) 'emailAddress': email,
@@ -600,6 +624,25 @@ String? _maskedSummary(Map<String, dynamic>? data, String numberKey) {
   if (number == null || number.isEmpty) return null;
   final country = data['issuingCountry']?.toString();
   return (country != null && country.isNotEmpty) ? '$number · $country' : number;
+}
+
+/// Resolves an already-uploaded passport photo URL from the backend record.
+/// The exact key isn't pinned by the GET schema, so we probe the likely names
+/// and ignore Swagger placeholder values like literal "string".
+String? _photoUrl(Map<String, dynamic>? data) {
+  if (data == null) return null;
+  const keys = [
+    'passportImageUrl',
+    'passportPhotoUrl',
+    'passportPhoto',
+    'imageUrl',
+    'photoUrl',
+  ];
+  for (final key in keys) {
+    final v = data[key]?.toString();
+    if (v != null && v.isNotEmpty && v != 'string') return v;
+  }
+  return null;
 }
 
 String? _emergencySummary(

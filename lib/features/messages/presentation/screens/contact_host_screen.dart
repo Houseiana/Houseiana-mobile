@@ -163,6 +163,12 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
                 ),
               ),
 
+              const SizedBox(height: 16),
+
+              // Direct-to-chat shortcut — open the conversation without filling
+              // the form. The form below stays available for a templated message.
+              _buildOpenChatButton(context),
+
               const SizedBox(height: 32),
 
               // Topic Selection
@@ -372,6 +378,122 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildOpenChatButton(BuildContext context) {
+    return InkWell(
+      onTap: _isSending ? null : _openChatDirect,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.primaryColor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primaryColor),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.chat_bubble_outline,
+                color: AppColors.charcoal, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.tr('messages.openChatDirect'),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.charcoal,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    context.tr('messages.openChatDirectSubtitle'),
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.neutral600),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios,
+                size: 14, color: AppColors.charcoal),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Opens the conversation thread directly, without requiring the form/message.
+  /// The Firestore conversation doc is lazily created (with metadata) so a
+  /// message sent later from the thread lands in a valid, inbox-visible doc.
+  Future<void> _openChatDirect() async {
+    final session = sl<UserSession>();
+    final guestId = session.userId ?? '';
+
+    if (guestId.isEmpty) {
+      Navigator.pushNamed(
+        context,
+        Routes.login,
+        arguments: {
+          'redirectRoute': Routes.contactHost,
+          'redirectArguments': ModalRoute.of(context)?.settings.arguments,
+        },
+      );
+      return;
+    }
+
+    if (_hostId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr('messages.missingHostInfo')),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final hostName = widget.hostName ?? _resolvedHostName(context);
+    final propertyName = widget.propertyName ?? _resolvedPropertyName(context);
+
+    final chat = sl<FirestoreChatService>();
+    final conversationId = chat.guestHostConversationId(
+      hostId: _hostId,
+      guestId: guestId,
+      propertyId: _propertyId,
+    );
+
+    try {
+      await chat.ensureGuestHostConversation(
+        conversationId: conversationId,
+        hostId: _hostId,
+        guestId: guestId,
+        hostName: hostName,
+        guestName: session.fullName,
+        propertyId: _propertyId,
+        propertyTitle: _propertyId.isEmpty ? '' : propertyName,
+        propertyImage: _propertyImageUrl,
+      );
+    } catch (_) {
+      // Best-effort (e.g. offline) — still open the thread so the user can type;
+      // sending will retry/queue there.
+    }
+
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(
+      context,
+      Routes.chatConversation,
+      arguments: {
+        'id': conversationId,
+        'type': 'GUEST_HOST',
+        'hostId': _hostId,
+        'guestId': guestId,
+        'name': hostName,
+        'avatar': '',
+        'property': _propertyId.isEmpty ? '' : propertyName,
+      },
     );
   }
 

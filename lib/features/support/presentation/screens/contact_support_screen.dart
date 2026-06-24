@@ -111,6 +111,8 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildLiveChatCard(context),
+                    const SizedBox(height: 24),
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -137,8 +139,6 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    _buildLiveChatCard(context),
                     const SizedBox(height: 24),
                     _buildDirectChannels(context),
                     const SizedBox(height: 32),
