@@ -13,6 +13,7 @@ import 'package:houseiana_mobile_app/features/country/presentation/screens/count
 import 'package:houseiana_mobile_app/features/trips/presentation/screens/trips_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/profile_screen.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/whatsapp_support_button.dart';
 
 class BottomNavScreen extends StatefulWidget {
   const BottomNavScreen({super.key});
@@ -53,8 +54,24 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
       create: (_) => BottomNavCubit(),
       child: BlocBuilder<BottomNavCubit, BottomNavState>(
         builder: (ctx, state) {
+          // Keyboard hides the floating button so it never covers an open
+          // keyboard on the search/profile tabs.
+          final keyboardOpen = MediaQuery.viewInsetsOf(ctx).bottom > 0;
           return Scaffold(
-            body: _allScreens[state.index.clamp(0, _allScreens.length - 1)],
+            body: Stack(
+              children: [
+                Positioned.fill(
+                  child: _allScreens[
+                      state.index.clamp(0, _allScreens.length - 1)],
+                ),
+                if (!keyboardOpen)
+                  const Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: WhatsAppSupportButton(),
+                  ),
+              ],
+            ),
             bottomNavigationBar: Container(
               decoration: BoxDecoration(
                 color: Colors.white,

@@ -25,6 +25,7 @@ void main() async {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   // Initialize Firebase (requires google-services.json / GoogleService-Info.plist)
+
   try {
     // await Firebase.initializeApp();
     await Firebase.initializeApp(

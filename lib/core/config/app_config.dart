@@ -10,7 +10,7 @@ enum AppEnvironment {
 class AppConfig {
   AppConfig._();
 
-  static AppEnvironment environment = AppEnvironment.staging;
+  static AppEnvironment environment = AppEnvironment.production;
 
   // ── Backend API ──────────────────────────────────────────────────────────────
 

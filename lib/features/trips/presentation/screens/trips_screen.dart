@@ -5,6 +5,7 @@ import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/models/trip_model.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/features/chat/data/firestore_chat_service.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/trip_skeleton.dart';
 
@@ -192,6 +193,60 @@ class _TripsScreenState extends State<TripsScreen>
     void goToDetails() {
       Navigator.pushNamed(context, Routes.tripDetails,
           arguments: trip.toJson());
+    }
+
+    // Opens the Firestore chat thread with the host for this booking (web parity:
+    // "Message Host" on the trip card). Lazily creates the conversation doc.
+    Future<void> messageHost() async {
+      final guestId = _session.userId ?? '';
+      if (guestId.isEmpty) {
+        Navigator.pushNamed(context, Routes.login);
+        return;
+      }
+      final hostId = trip.hostId ?? '';
+      if (hostId.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.tr('messages.missingHostInfo')),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      final chat = sl<FirestoreChatService>();
+      final conversationId = chat.guestHostConversationId(
+        hostId: hostId,
+        guestId: guestId,
+        propertyId: trip.propertyId,
+      );
+      try {
+        await chat.ensureGuestHostConversation(
+          conversationId: conversationId,
+          hostId: hostId,
+          guestId: guestId,
+          hostName: trip.hostName ?? '',
+          guestName: _session.fullName,
+          propertyId: trip.propertyId,
+          propertyTitle: trip.displayTitle,
+          propertyImage: trip.imageUrl,
+        );
+      } catch (_) {
+        // Best-effort (e.g. offline) — still open the thread.
+      }
+      if (!mounted) return;
+      Navigator.pushNamed(
+        context,
+        Routes.chatConversation,
+        arguments: {
+          'id': conversationId,
+          'type': 'GUEST_HOST',
+          'hostId': hostId,
+          'guestId': guestId,
+          'name': trip.hostName ?? '',
+          'avatar': '',
+          'property': trip.displayTitle,
+        },
+      );
     }
 
     void bookAgain() {
@@ -462,7 +517,7 @@ class _TripsScreenState extends State<TripsScreen>
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: goToDetails,
+                            onPressed: messageHost,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryColor,
                               foregroundColor: AppColors.charcoal,
@@ -471,7 +526,7 @@ class _TripsScreenState extends State<TripsScreen>
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            child: Text(context.tr('trips.detailsButton'),
+                            child: Text(context.tr('trips.messageHost'),
                                 style: const TextStyle(fontSize: 14)),
                           ),
                         ),
