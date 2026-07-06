@@ -45,14 +45,14 @@ Each feature under `lib/features/<feature>/` follows this pattern:
 - `presentation/cubit/` — BLoC/Cubit state classes (`*_cubit.dart`, `*_state.dart`)
 - `data/model/` — Data models (where present)
 
-Features: `auth`, `booking`, `bottom_nav`, `chat`, `country`, `dashboard`, `favorites`, `home`, `host`, `legal`, `notifications`, `profile`, `properties`, `property_details`, `recommendations`, `search`, `splash`, `support`, `trips`
+Features: `auth`, `booking`, `bottom_nav`, `chat`, `country`, `dashboard`, `demo`, `discover`, `favorites`, `home`, `host`, `legal`, `messages`, `notifications`, `profile`, `properties`, `property_details`, `recommendations`, `search`, `splash`, `support`, `trips`
 
 ### Core Infrastructure (`lib/core/`)
 
-- **DI**: `GetIt` service locator; global instance is `sl` from `injection_container.dart`. Each feature registers its dependencies in a dedicated `*_injection.dart` file called from `injection_container.dart#init()`.
-- **Networking**: `DioConsumer` wraps Dio and implements `ApiConsumer`. All backend calls go through `EndPoints` which delegates the base URL to `AppConfig.backendApiUrl`.
-- **Auth**: `ClerkService` directly calls Clerk's Frontend API (`https://clerk.houseiana.com/v1`) using form-urlencoded requests and manual cookie management for multi-step flows. The backend API requires the Clerk user ID as path/query params — it does **not** use JWT bearer tokens from this app.
-- **Session**: `UserSession` persists `clerk_user_id`, `clerk_session_id`, and basic profile fields in `SharedPreferences`. Use `sl<UserSession>()` to read the current user. `isLoggedIn` is the auth gate.
+- **DI**: `GetIt` service locator; global instance is `sl` from `lib/core/injection/injection_container.dart`. Each feature registers its dependencies in a dedicated `*_injection.dart` file (all under `lib/core/injection/`) called from `injection_container.dart#init()`.
+- **Networking**: `DioConsumer` wraps Dio and implements `ApiConsumer`. All backend calls go through `EndPoints` which delegates the base URL to `AppConfig.backendApiUrl`. Two request interceptors run on every call: `AuthInterceptor` (Bearer token + 401 refresh, below) and `LangInterceptor` (adds a `lang: ar|en` header on all requests so the backend returns localized data — mirrors the web client).
+- **Auth**: `ClerkService` directly calls Clerk's Frontend API (`https://clerk.houseiana.com/v1`) using form-urlencoded requests and manual cookie management (persisted `__client` cookie) for multi-step flows. The production backend **requires a valid Clerk session JWT** as `Authorization: Bearer <token>`; many endpoints also take the Clerk user ID as path/query params. `AuthInterceptor` (`lib/core/network/api/auth_interceptor.dart`) attaches the token from `UserSession.authToken`, and on a `401` mints a fresh session JWT via `ClerkService.getSessionToken(sessionId)` (deduped across concurrent 401s), retries the request on a bare Dio, and only forces logout (`pushNamedAndRemoveUntil(Routes.login)` via the global `navigatorKey`) if the session is genuinely dead.
+- **Session**: `UserSession` persists `clerk_user_id`, `clerk_session_id`, `authToken`, and basic profile fields in `SharedPreferences`. Use `sl<UserSession>()` to read the current user. `isLoggedIn` is the auth gate.
 - **Theme**: `AppColors` for colors (primary = `#FCC519` yellow). `AppTheme`/`light_theme`/`dark_theme` for themes. `AppSpacing`, `AppRadius`, `AppShadows` for design tokens.
 
 ### Environment Configuration
@@ -71,6 +71,10 @@ Named routes only. All route names are constants in `lib/core/constants/routes/r
 ### State Management
 
 BLoC/Cubit pattern throughout. The global `AuthCubit` is provided at the root in `app.dart`. Feature-specific cubits are provided locally by each screen or the bottom nav shell. `AppBlocObserver` logs all transitions in debug mode.
+
+### Localization (i18n)
+
+Custom JSON-based i18n in `lib/i18n/` (not ARB/gen-l10n). Supported locales: `en`, `ar`. Translations live in `lib/i18n/translations/{en,ar}.json`; `AppLocalizations` loads them and exposes `tr(key, {args})`. Read strings via the `BuildContext` extension: `context.tr('auth.signIn')`. Missing keys pass through unchanged, so cubits/services can store a **translation key** as their message and the UI wraps it in `context.tr` at render time. `LocaleCubit` holds the active `AppLocale` (persisted under the `app_locale` SharedPreferences key), and `HouseianaApp` applies `TextDirection.rtl` for Arabic. When adding user-facing text, add the key to **both** JSON files.
 
 ### Bottom Navigation
 

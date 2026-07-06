@@ -20,6 +20,18 @@ class _Step04BasicsScreenState extends State<Step04BasicsScreen> {
     super.initState();
     final data = context.read<ListingWizardCubit>().state.data;
     _areaController = TextEditingController(text: data.totalArea?.toInt().toString() ?? '25');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final cubit = context.read<ListingWizardCubit>();
+      final d = cubit.state.data;
+      final seed = <String, dynamic>{
+        if ((d.maxGuests ?? 0) < 1) 'maxGuests': 1,
+        if ((d.bedrooms ?? 0) < 1) 'bedrooms': 1,
+        if ((d.beds ?? 0) < 1) 'beds': 1,
+        if ((d.bathrooms ?? 0) < 1) 'bathrooms': 1,
+      };
+      if (seed.isNotEmpty) cubit.updateStepData(seed);
+    });
   }
 
   @override
@@ -51,42 +63,42 @@ class _Step04BasicsScreenState extends State<Step04BasicsScreen> {
             icon: Icons.group_outlined,
             label: context.tr('wizard.guests'),
             subLabel: context.tr('wizard.maxCapacity'),
-            value: data.maxGuests ?? 0,
+            value: data.maxGuests ?? 1,
             onDec: () =>
-                cubit.updateStepData({'maxGuests': (data.maxGuests ?? 0) - 1}),
+                cubit.updateStepData({'maxGuests': (data.maxGuests ?? 1) - 1}),
             onInc: () =>
-                cubit.updateStepData({'maxGuests': (data.maxGuests ?? 0) + 1}),
+                cubit.updateStepData({'maxGuests': (data.maxGuests ?? 1) + 1}),
           ),
           const Divider(height: 32),
           _buildItem(
             icon: Icons.bed_outlined,
             label: context.tr('wizard.bedrooms'),
             subLabel: context.tr('wizard.privateSleepingAreas'),
-            value: data.bedrooms ?? 0,
+            value: data.bedrooms ?? 1,
             onDec: () =>
-                cubit.updateStepData({'bedrooms': (data.bedrooms ?? 0) - 1}),
+                cubit.updateStepData({'bedrooms': (data.bedrooms ?? 1) - 1}),
             onInc: () =>
-                cubit.updateStepData({'bedrooms': (data.bedrooms ?? 0) + 1}),
+                cubit.updateStepData({'bedrooms': (data.bedrooms ?? 1) + 1}),
           ),
           const Divider(height: 32),
           _buildItem(
             icon: Icons.single_bed_outlined,
             label: context.tr('wizard.beds'),
             subLabel: context.tr('wizard.totalSleepingSpots'),
-            value: data.beds ?? 0,
-            onDec: () => cubit.updateStepData({'beds': (data.beds ?? 0) - 1}),
-            onInc: () => cubit.updateStepData({'beds': (data.beds ?? 0) + 1}),
+            value: data.beds ?? 1,
+            onDec: () => cubit.updateStepData({'beds': (data.beds ?? 1) - 1}),
+            onInc: () => cubit.updateStepData({'beds': (data.beds ?? 1) + 1}),
           ),
           const Divider(height: 32),
           _buildItem(
             icon: Icons.bathtub_outlined,
             label: context.tr('wizard.bathrooms'),
             subLabel: context.tr('wizard.toiletsAndShowers'),
-            value: data.bathrooms ?? 0,
+            value: data.bathrooms ?? 1,
             onDec: () =>
-                cubit.updateStepData({'bathrooms': (data.bathrooms ?? 0) - 1}),
+                cubit.updateStepData({'bathrooms': (data.bathrooms ?? 1) - 1}),
             onInc: () =>
-                cubit.updateStepData({'bathrooms': (data.bathrooms ?? 0) + 1}),
+                cubit.updateStepData({'bathrooms': (data.bathrooms ?? 1) + 1}),
           ),
           const Divider(height: 32),
           _buildAreaItem(
@@ -251,14 +263,14 @@ class _Counter extends StatelessWidget {
     return Row(
       children: [
         GestureDetector(
-          onTap: value > 0 ? onDec : null,
+          onTap: value > 1 ? onDec : null,
           child: Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: value > 0 ? AppColors.neutral400 : AppColors.neutral200),
+              border: Border.all(color: value > 1 ? AppColors.neutral400 : AppColors.neutral200),
             ),
-            child: Icon(Icons.remove, size: 20, color: value > 0 ? AppColors.neutral700 : AppColors.neutral300),
+            child: Icon(Icons.remove, size: 20, color: value > 1 ? AppColors.neutral700 : AppColors.neutral300),
           ),
         ),
         Container(

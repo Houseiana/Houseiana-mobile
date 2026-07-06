@@ -29,6 +29,16 @@ class AppConfig {
     }
   }
 
+  // ── Web app (Next.js) ──────────────────────────────────────────────────────
+
+  /// Deployed Houseiana web app. Account privacy settings and GDPR data
+  /// requests are served by the web app's Next.js API routes, which hold the
+  /// Clerk secret key server-side and store the data in the Clerk user's
+  /// publicMetadata. The mobile app calls them with the same Clerk session
+  /// JWT it already uses for the .NET backend.
+  /// Note: `houseiana.com` (no www) 307-redirects — use the www host directly.
+  static const String webAppUrl = 'https://www.houseiana.com';
+
   // ── Clerk Frontend API ─────────────────────────────────────────────────────
 
   /// Clerk Frontend API — used only for unauthenticated sign-in/sign-up flows.
@@ -112,4 +122,32 @@ class AppConfig {
   static bool get isPayPalConfigured {
     return paypalClientId.isNotEmpty;
   }
+
+  // ── App Store / Google Play (force-update) ───────────────────────────────────
+
+  /// Apple App Store numeric ID for the Houseiana iOS app
+  /// (bundle `com.houseianaapp.users`). Verified via Apple's iTunes lookup API.
+  static const String iosAppStoreId = '6770710644';
+
+  /// Android application id for the Houseiana app on Google Play.
+  static const String androidPackageId = 'com.houseiana.app';
+
+  /// App Store listing (universal link) — opens the App Store app on-device
+  /// and falls back to Safari elsewhere.
+  static String get appStoreUrl =>
+      'https://apps.apple.com/app/id$iosAppStoreId';
+
+  /// App Store deep link — opens the native App Store app directly.
+  /// Requires `itms-apps` in the iOS `LSApplicationQueriesSchemes`.
+  static String get appStoreDeepLink =>
+      'itms-apps://apps.apple.com/app/id$iosAppStoreId';
+
+  /// Google Play listing — opens the Play Store app on-device or a browser.
+  static String get playStoreUrl =>
+      'https://play.google.com/store/apps/details?id=$androidPackageId';
+
+  /// Google Play deep link — opens the native Play Store app directly.
+  /// Requires the `market` scheme in the Android manifest `<queries>`.
+  static String get playStoreDeepLink =>
+      'market://details?id=$androidPackageId';
 }

@@ -577,7 +577,7 @@ class _PropertiesTab extends StatelessWidget {
                       if (p.pricePerNight != null) ...[
                         const SizedBox(height: 8),
                         Text(
-                          '${p.pricePerNight} ${context.tr('ownerProfile.perNight')}',
+                          '${p.pricePerNight!.toStringAsFixed(0)} ${context.tr('ownerProfile.perNight')}',
                           style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,

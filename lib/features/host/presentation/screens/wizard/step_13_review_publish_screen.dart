@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
@@ -248,7 +249,23 @@ class Step13ReviewPublishScreen extends StatelessWidget {
       );
     }
     if (path.startsWith('http')) {
-      return Image.network(path, height: 220, width: double.infinity, fit: BoxFit.cover);
+      return CachedNetworkImage(
+        imageUrl: path,
+        height: 220,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => Container(
+          height: 220,
+          width: double.infinity,
+          color: const Color(0xFFF0F0F0),
+        ),
+        errorWidget: (context, url, error) => Container(
+          height: 220,
+          width: double.infinity,
+          color: const Color(0xFFF0F0F0),
+          child: const Icon(Icons.image_not_supported_outlined, color: Color(0xFF9CA3AF)),
+        ),
+      );
     }
     return Image.file(File(path), height: 220, width: double.infinity, fit: BoxFit.cover);
   }

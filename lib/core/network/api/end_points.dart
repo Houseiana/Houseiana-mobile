@@ -62,6 +62,9 @@ class EndPoints {
   // ── Properties (Host) ───────────────────────────────────────────────────────
   // POST /api/properties                → create listing
   // POST /api/properties/draft          → save draft (also UPDATES when propertyId is sent)
+  // POST /api/properties/modify         → partial update of an EXISTING listing
+  //                                       (multipart; requires propertyId + hostId,
+  //                                       carries only the changed fields)
   // GET  /api/properties/by-host        → host listings
   // GET  /api/properties/{id}           → property (edit prefill — same shape the web edit screen loads)
   // PUT  /api/properties/{id}           → update listing
@@ -70,6 +73,7 @@ class EndPoints {
   // POST /api/properties/reactivate     → reactivate listing (body: { propertyId, hostId })
   static const String properties = '/api/properties';
   static const String propertiesDraft = '/api/properties/draft';
+  static const String propertiesModify = '/api/properties/modify';
   static String propertyById(String id) => '/api/properties/$id';
   static const String propertiesDeactivate = '/api/properties/deactivate';
   static const String propertiesReactivate = '/api/properties/reactivate';
@@ -144,10 +148,15 @@ class EndPoints {
   // POST /api/properties/special-price                          → set special price (host)
   // POST /api/properties/calendar/update-status                  → block / unblock
   // POST /booking-manager/minimum-days                           → set min nights (no /api)
+  // POST /api/properties/discount                                → apply a % discount to a date range
+  // POST /api/properties/discount/delete                         → remove a discount from a date range
   static const String propertiesByHost = '/api/properties/by-host';
   static const String propertyCalendar = '/api/property-calendar';
   static const String specialPrice = '/api/properties/special-price';
   static const String calendarUpdateStatus =
       '/api/properties/calendar/update-status';
   static const String minimumDays = '/booking-manager/minimum-days';
+  static const String propertyDiscount = '/api/properties/discount';
+  static const String propertyDiscountDelete =
+      '/api/properties/discount/delete';
 }

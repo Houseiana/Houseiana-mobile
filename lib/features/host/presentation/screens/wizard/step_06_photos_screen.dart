@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
@@ -252,10 +253,11 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
 
   Widget _buildImageWidget(String path, {BoxFit fit = BoxFit.cover}) {
     if (path.startsWith('http')) {
-      return Image.network(
-        path,
+      return CachedNetworkImage(
+        imageUrl: path,
         fit: fit,
-        errorBuilder: (_, __, ___) => const _ImageErrorPlaceholder(),
+        placeholder: (context, url) => Container(color: const Color(0xFFF0F0F0)),
+        errorWidget: (context, url, error) => const _ImageErrorPlaceholder(),
       );
     }
     return Image.file(
@@ -708,10 +710,13 @@ class _ListingPhotoTile extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           imageUrl.startsWith('http')
-              ? Image.network(
-                  imageUrl,
+              ? CachedNetworkImage(
+                  imageUrl: imageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const _ImageErrorPlaceholder(),
+                  placeholder: (context, url) =>
+                      Container(color: const Color(0xFFF0F0F0)),
+                  errorWidget: (context, url, error) =>
+                      const _ImageErrorPlaceholder(),
                 )
               : Image.file(
                   File(imageUrl),

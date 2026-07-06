@@ -1,6 +1,9 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:houseiana_mobile_app/core/config/app_config.dart';
 import 'package:houseiana_mobile_app/core/constants/app_assets.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
@@ -11,39 +14,54 @@ class ForceUpdateScreen extends StatelessWidget {
 
   const ForceUpdateScreen({super.key, required this.updateUrl});
 
+  /// Ordered list of URLs to try when opening the store, most-preferred first.
+  ///
+  /// The verified platform store links are tried first (deep link, then https)
+  /// so the button works even when the backend `version-check` response omits
+  /// or returns an invalid `updateUrl`. The server value is kept only as a
+  /// trailing safety net.
+  List<String> _storeCandidates() {
+    final candidates = <String>[];
+
+    if (Platform.isIOS) {
+      candidates
+        ..add(AppConfig.appStoreDeepLink)
+        ..add(AppConfig.appStoreUrl);
+    } else if (Platform.isAndroid) {
+      candidates
+        ..add(AppConfig.playStoreDeepLink)
+        ..add(AppConfig.playStoreUrl);
+    }
+
+    final backend = updateUrl.trim();
+    if (backend.isNotEmpty && !candidates.contains(backend)) {
+      candidates.add(backend);
+    }
+
+    return candidates;
+  }
+
   Future<void> _onUpdatePressed(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
     final fallbackText = context.tr('forceUpdate.openLinkFailed');
 
-    void showFailure() {
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(SnackBar(content: Text(fallbackText)));
-    }
+    for (final raw in _storeCandidates()) {
+      final uri = Uri.tryParse(raw);
+      if (uri == null || !uri.hasScheme) continue;
 
-    final url = updateUrl.trim();
-    if (url.isEmpty) {
-      showFailure();
-      return;
-    }
-
-    final uri = Uri.tryParse(url);
-    if (uri == null || !uri.hasScheme) {
-      showFailure();
-      return;
-    }
-
-    try {
-      final launched = await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
-      if (!launched) {
-        showFailure();
+      try {
+        final launched = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+        if (launched) return;
+      } catch (e) {
+        debugPrint('[ForceUpdate] launchUrl failed for $raw: $e');
       }
-    } catch (e) {
-      debugPrint('[ForceUpdate] launchUrl failed: $e');
-      showFailure();
     }
+
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(content: Text(fallbackText)));
   }
 
   @override

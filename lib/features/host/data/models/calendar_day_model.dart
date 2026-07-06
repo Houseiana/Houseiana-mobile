@@ -27,7 +27,15 @@ class CalendarDay extends Equatable {
   /// Normalized to `DateTime(year, month, day)` (no time component).
   final DateTime date;
   final CalendarStatus status;
+
+  /// The regular (pre-discount) nightly price.
   final double? price;
+
+  /// The discounted nightly price, when a discount applies to this day.
+  final double? discountedPrice;
+
+  /// Discount percentage (0–100), when a discount applies.
+  final int? discountPercent;
   final String? bookedByName;
   final String? reason;
   final String? currency;
@@ -36,6 +44,8 @@ class CalendarDay extends Equatable {
     required this.date,
     required this.status,
     this.price,
+    this.discountedPrice,
+    this.discountPercent,
     this.bookedByName,
     this.reason,
     this.currency,
@@ -48,6 +58,15 @@ class CalendarDay extends Equatable {
       status == CalendarStatus.reserved;
 
   bool get isBlocked => status == CalendarStatus.blocked;
+
+  /// A day carries a real discount only when a discounted price is set and it
+  /// actually differs from the regular price (matches the web's guard).
+  bool get hasDiscount =>
+      discountedPrice != null && price != null && discountedPrice != price;
+
+  /// The nightly price used for totals/earnings: the discounted price when a
+  /// discount applies, otherwise the regular price.
+  double? get effectivePrice => hasDiscount ? discountedPrice : price;
 
   /// `yyyy-MM-dd` key built from numeric parts (timezone-safe).
   String get key => dayKey(date);
@@ -65,10 +84,31 @@ class CalendarDay extends Equatable {
         json['isAvailable'] == false) {
       status = CalendarStatus.blocked;
     }
+
+    // Discount fields, mirroring the web calendar's parsing: only treat the
+    // day as discounted when `discountedPrice` differs from `price`, and derive
+    // the percent from the two prices when the API doesn't send it directly.
+    final rawPrice = _toDouble(json['price']);
+    final rawDiscounted = _toDouble(json['discountedPrice']);
+    final hasDiscount = rawDiscounted != null &&
+        rawPrice != null &&
+        rawDiscounted != rawPrice;
+    int? percent;
+    if (hasDiscount) {
+      final rawPercent = _toDouble(json['discountPercent']);
+      if (rawPercent != null) {
+        percent = rawPercent.round();
+      } else if (rawPrice > 0) {
+        percent = (((rawPrice - rawDiscounted) / rawPrice) * 100).round();
+      }
+    }
+
     return CalendarDay(
       date: normalized,
       status: status,
-      price: _toDouble(json['price']),
+      price: rawPrice,
+      discountedPrice: hasDiscount ? rawDiscounted : null,
+      discountPercent: percent,
       bookedByName: (json['bookedByName'] ?? json['guestName'])?.toString(),
       reason: (json['reason'] ?? json['reasonBlockStatus'])?.toString(),
       currency: json['currency']?.toString(),
@@ -76,8 +116,16 @@ class CalendarDay extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [date, status, price, bookedByName, reason, currency];
+  List<Object?> get props => [
+        date,
+        status,
+        price,
+        discountedPrice,
+        discountPercent,
+        bookedByName,
+        reason,
+        currency,
+      ];
 }
 
 /// A contiguous run of occupied days grouped into a single reservation.

@@ -36,6 +36,7 @@ class PropertyModel extends Equatable {
   final double? priceWithoutDiscount;
   final double? weeklyDiscount;
   final double? smallBookingDiscount;
+  final int? discountPercent;
   final String? availabilityType;
   final bool? instantBook;
   final String? status;
@@ -89,6 +90,7 @@ class PropertyModel extends Equatable {
     this.priceWithoutDiscount,
     this.weeklyDiscount,
     this.smallBookingDiscount,
+    this.discountPercent,
     this.availabilityType,
     this.instantBook,
     this.status,
@@ -168,6 +170,7 @@ class PropertyModel extends Equatable {
       priceWithoutDiscount: _toDouble(json['priceWithoutDiscount'] ?? json['originalPrice']),
       weeklyDiscount: _toDouble(json['weeklyDiscount']),
       smallBookingDiscount: _toDouble(json['smallBookingDiscount']),
+      discountPercent: (json['discountPercent'] as num?)?.toInt(),
       availabilityType: json['availabilityType'] as String?,
       instantBook: json['instantBook'] as bool?,
       status: json['status'] as String?,
@@ -235,6 +238,7 @@ class PropertyModel extends Equatable {
         'priceWithoutDiscount': priceWithoutDiscount,
         'weeklyDiscount': weeklyDiscount,
         'smallBookingDiscount': smallBookingDiscount,
+        'discountPercent': discountPercent,
         'availabilityType': availabilityType,
         'instantBook': instantBook,
         'status': status,
@@ -255,6 +259,17 @@ class PropertyModel extends Equatable {
 
   String get displayTitle => title ?? name ?? 'Property';
   double get displayPrice => pricePerNight ?? price ?? basePrice ?? 0;
+
+  /// Effective discount percentage shown on cards, mirroring the web's
+  /// `weeklyDiscount || smallBookingDiscount || discountPercent || 0`
+  /// (first non-zero wins). 0 when no discount applies.
+  int get effectiveDiscountPercent {
+    final weekly = weeklyDiscount ?? 0;
+    if (weekly > 0) return weekly.round();
+    final small = smallBookingDiscount ?? 0;
+    if (small > 0) return small.round();
+    return discountPercent ?? 0;
+  }
   String get displayLocation {
     if (city != null && city!.isNotEmpty) {
       final countryName = countryData?['name']?.toString() ?? '';

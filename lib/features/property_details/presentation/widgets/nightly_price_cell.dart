@@ -6,8 +6,18 @@ enum NightlyCellRangeState { none, start, end, inRange }
 
 class NightlyPriceCell extends StatelessWidget {
   final DateTime? date;
+
+  /// Amount displayed as the main price for this night — the discounted price
+  /// when a discount applies, otherwise the regular price.
   final double? price;
   final bool isSpecialPrice;
+
+  /// Pre-discount price, rendered struck-through above [price]. Non-null only
+  /// when a discount applies.
+  final double? originalPrice;
+
+  /// Discount percentage badge for this night. Non-null only when discounted.
+  final int? discountPercent;
   final NightlyCellRangeState rangeState;
   final bool isToday;
   final bool isPast;
@@ -21,6 +31,8 @@ class NightlyPriceCell extends StatelessWidget {
     required this.date,
     required this.price,
     required this.isSpecialPrice,
+    this.originalPrice,
+    this.discountPercent,
     required this.rangeState,
     required this.isToday,
     required this.isPast,
@@ -69,12 +81,22 @@ class NightlyPriceCell extends StatelessWidget {
 
     final canTap = !isPast && !isOutsideWindow && !isBooked && onTap != null;
 
+    final hasDiscount = originalPrice != null &&
+        price != null &&
+        originalPrice! > price! &&
+        !isPast &&
+        !isOutsideWindow &&
+        !isBooked;
+
     final priceText = (price != null && !isPast && !isOutsideWindow)
         ? _formatPrice(price!)
         : null;
     final strike = isBooked
         ? TextDecoration.lineThrough
         : TextDecoration.none;
+
+    // Rose used for the discounted amount + badge (matches the web calendar).
+    const discountColor = Color(0xFFE11D48);
 
     return InkWell(
       onTap: canTap ? onTap : null,
@@ -104,7 +126,46 @@ class NightlyPriceCell extends StatelessWidget {
                       decorationThickness: 2,
                     ),
                   ),
-                  if (priceText != null) ...[
+                  if (hasDiscount) ...[
+                    const SizedBox(height: 1),
+                    // Original price, struck through, above the discounted one.
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _formatPrice(originalPrice!),
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontSize: 9,
+                            height: 1.05,
+                            color: selected
+                                ? AppColors.charcoal.withValues(alpha: 0.6)
+                                : AppColors.neutral400,
+                            decoration: TextDecoration.lineThrough,
+                            decorationColor: AppColors.neutral400,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _formatPrice(price!),
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontSize: 11,
+                            height: 1.05,
+                            fontWeight: FontWeight.w700,
+                            color:
+                                selected ? AppColors.charcoal : discountColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ] else if (priceText != null) ...[
                     const SizedBox(height: 2),
                     // The currency is shown once in the footer ("Approximate
                     // prices in <currency>…"), so each cell shows just the
@@ -134,7 +195,30 @@ class NightlyPriceCell extends StatelessWidget {
                 ],
               ),
             ),
-            if (isSpecialPrice && !isPast && !isOutsideWindow)
+            // Discount badge takes precedence over the special-price dot.
+            if (hasDiscount && discountPercent != null)
+              Positioned(
+                top: 3,
+                right: 3,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: selected ? Colors.white : discountColor,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '-$discountPercent%',
+                    style: TextStyle(
+                      fontSize: 7.5,
+                      height: 1,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? discountColor : Colors.white,
+                    ),
+                  ),
+                ),
+              )
+            else if (isSpecialPrice && !isPast && !isOutsideWindow)
               Positioned(
                 top: 4,
                 right: 4,

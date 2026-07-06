@@ -428,87 +428,10 @@ class ClerkService {
     }
   }
 
-  Future<Map<String, bool>> getPrivacySettings(String userId) async {
-    final metadata = await _getPublicMetadata(userId);
-    final settings = metadata['privacySettings'];
-
-    return {
-      ...ClerkPrivacyDefaults.values,
-      if (settings is Map)
-        for (final entry in settings.entries)
-          if (entry.value is bool) entry.key.toString(): entry.value as bool,
-    };
-  }
-
-  Future<Map<String, bool>> updatePrivacySetting({
-    required String userId,
-    required String setting,
-    required bool value,
-  }) async {
-    final current = await getPrivacySettings(userId);
-    final updated = {
-      ...current,
-      setting: value,
-    };
-    final metadata = await _getPublicMetadata(userId);
-
-    await _backendDio.patch(
-      '/users/$userId/metadata',
-      data: {
-        'public_metadata': {
-          ...metadata,
-          'privacySettings': updated,
-        },
-      },
-    );
-
-    return updated;
-  }
-
-  Future<Map<String, dynamic>?> getDataRequest(String userId) async {
-    final metadata = await _getPublicMetadata(userId);
-    final request = metadata['dataRequest'];
-    return request is Map<String, dynamic> ? request : null;
-  }
-
-  Future<Map<String, dynamic>> requestDataExport(String userId) async {
-    final existing = await getDataRequest(userId);
-    if (existing != null && existing['status'] == 'pending') {
-      return existing;
-    }
-
-    final now = DateTime.now();
-    final request = {
-      'id': 'dr_${now.millisecondsSinceEpoch}',
-      'requestedAt': now.toIso8601String(),
-      'status': 'pending',
-      'estimatedReadyAt': now.add(const Duration(days: 30)).toIso8601String(),
-    };
-    final metadata = await _getPublicMetadata(userId);
-
-    await _backendDio.patch(
-      '/users/$userId/metadata',
-      data: {
-        'public_metadata': {
-          ...metadata,
-          'dataRequest': request,
-        },
-      },
-    );
-
-    return request;
-  }
-
-  Future<Map<String, dynamic>> _getPublicMetadata(String userId) async {
-    final response = await _backendDio.get('/users/$userId');
-    final data = response.data;
-    final metadata = data is Map ? data['public_metadata'] : null;
-    if (metadata is Map<String, dynamic>) return metadata;
-    if (metadata is Map) {
-      return metadata.map((key, value) => MapEntry(key.toString(), value));
-    }
-    return {};
-  }
+  // NOTE: Privacy settings + GDPR data requests moved to
+  // AccountPrivacyService — they go through the web app's Next.js API routes
+  // because writing Clerk publicMetadata requires the secret key, which must
+  // never ship in the mobile app.
 
   // ── Password Reset (Forgot Password) ─────────────────────────────────────
 
@@ -880,17 +803,3 @@ class ClerkService {
   }
 }
 
-class ClerkPrivacyDefaults {
-  const ClerkPrivacyDefaults._();
-
-  static const values = <String, bool>{
-    'shareActivityWithPartners': false,
-    'includeInSearchEngines': true,
-    'showProfileToHosts': true,
-    'shareLocationWithHosts': true,
-    'personalizedRecommendations': true,
-    'personalizedAds': false,
-    'usageAnalytics': true,
-    'shareWithThirdParties': false,
-  };
-}

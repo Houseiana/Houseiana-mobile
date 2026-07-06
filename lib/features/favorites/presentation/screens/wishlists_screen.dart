@@ -1,9 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/core/utils/discount_utils.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/property_skeleton.dart';
 
@@ -275,6 +277,12 @@ class _SavedHomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currency = (_property['currency'] ?? 'EGP').toString();
+    final discountPct = effectiveDiscountPercent(_property);
+    final original = originalNightlyPrice(_property);
+    final showOriginal =
+        discountPct > 0 && original != null && original > price;
+
     return GestureDetector(
       onTap: () => Navigator.pushNamed(
         context,
@@ -299,12 +307,17 @@ class _SavedHomeCard extends StatelessWidget {
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(16)),
                   child: imageUrl.isNotEmpty
-                      ? Image.network(
-                          imageUrl,
+                      ? CachedNetworkImage(
+                          imageUrl: imageUrl,
                           height: 190,
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _imageFallback(),
+                          placeholder: (context, url) => Container(
+                            height: 190,
+                            width: double.infinity,
+                            color: const Color(0xFFF0F0F0),
+                          ),
+                          errorWidget: (context, url, error) => _imageFallback(),
                         )
                       : _imageFallback(),
                 ),
@@ -328,6 +341,27 @@ class _SavedHomeCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (discountPct > 0)
+                  Positioned(
+                    bottom: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD00416),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '-$discountPct%',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
             Padding(
@@ -361,36 +395,73 @@ class _SavedHomeCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.star_rounded,
-                            size: 15,
-                            color: AppColors.primaryColor,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            rating > 0
-                                ? rating.toStringAsFixed(2)
-                                : context.tr('favorites.newRating'),
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.charcoal,
+                      rating > 0
+                          ? Row(
+                              children: [
+                                const Icon(
+                                  Icons.star_rounded,
+                                  size: 15,
+                                  color: AppColors.primaryColor,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  rating.toStringAsFixed(2),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.charcoal,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : const SizedBox.shrink(),
+                      price > 0
+                          ? Flexible(
+                              child: RichText(
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                text: TextSpan(
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.charcoal,
+                                  ),
+                                  children: [
+                                    if (showOriginal)
+                                      TextSpan(
+                                        text:
+                                            '${original.toStringAsFixed(0)} $currency ',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w400,
+                                          color: Color(0xFF979797),
+                                          decoration: TextDecoration.lineThrough,
+                                          decorationColor: Color(0xFF979797),
+                                        ),
+                                      ),
+                                    TextSpan(
+                                        text:
+                                            '${price.toStringAsFixed(0)} $currency '),
+                                    TextSpan(
+                                      text: context.tr('favorites.perNight'),
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w400,
+                                        color: AppColors.neutral600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : Text(
+                              context.tr('favorites.viewDetailsShort'),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.charcoal,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        price > 0
-                            ? '\$${price.toStringAsFixed(0)} ${context.tr('favorites.perNight')}'
-                            : context.tr('favorites.viewDetailsShort'),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.charcoal,
-                        ),
-                      ),
                     ],
                   ),
                 ],

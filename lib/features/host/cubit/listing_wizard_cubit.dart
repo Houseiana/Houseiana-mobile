@@ -248,26 +248,23 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
         }
         break;
       case 2: // Basics
-        if (state.data.maxGuests == null) {
+        if ((state.data.maxGuests ?? 0) < 1) {
           return 'Number of guests is required.';
         }
-        if (state.data.bedrooms == null) {
+        if ((state.data.bedrooms ?? 0) < 1) {
           return 'Number of bedrooms is required.';
         }
-        if (state.data.beds == null) {
+        if ((state.data.beds ?? 0) < 1) {
           return 'Number of beds is required.';
         }
-        if (state.data.bathrooms == null) {
+        if ((state.data.bathrooms ?? 0) < 1) {
           return 'Number of bathrooms is required.';
         }
         if (state.data.totalArea == null || state.data.totalArea! < 25 || state.data.totalArea! > 3000) {
           return 'Total area must be between 25 and 3000 m².';
         }
         break;
-      case 3: // Amenities
-        if (state.data.amenities.isEmpty) {
-          return 'At least 1 amenity is required.';
-        }
+      case 3: // Amenities — optional (web parity: no minimum selection required)
         break;
       case 4: // House Rules
         if (state.data.checkInTime == null || state.data.checkInTime!.isEmpty) {
@@ -323,11 +320,13 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
     emit(ListingWizardState.initial());
   }
 
-  /// Loads an existing property into the wizard for EDITING, mirroring the web
-  /// edit flow: prefill from GET /api/properties/{id}, then save through the
-  /// same POST /api/properties/draft (it upserts when a propertyId is present).
-  /// Seeds [draftId] so every subsequent saveDraft/publish targets this
-  /// property, and lands on the saved step (or the review step if unknown).
+  /// Loads an existing property into the wizard for EDITING: prefill from
+  /// GET /api/properties/{id}, then save through POST /api/properties/modify —
+  /// which carries only the fields the host actually changed (diffed against
+  /// the loaded snapshot stored in [ListingWizardState.originalData]). Seeds
+  /// [draftId] so every subsequent save/publish targets this property, records
+  /// the baseline for diffing, and lands on the saved step (or the review step
+  /// if unknown).
   Future<void> loadForEdit(String propertyId) async {
     emit(state.copyWith(isHydrating: true, draftId: propertyId, clearError: true));
     try {
@@ -349,6 +348,8 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
 
       emit(state.copyWith(
         data: data,
+        // Baseline snapshot for edit-mode diffing (also marks EDIT mode).
+        originalData: data,
         draftId: propertyId,
         currentStep: initialStep,
         minStep: editMinStep,
@@ -385,6 +386,12 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
 
   /// Returns true if the draft was saved successfully.
   Future<bool> saveDraft() async {
+    // EDIT mode: never touch the draft endpoint. Push a partial update of the
+    // existing listing (changed fields only) via POST /api/properties/modify.
+    if (state.originalData != null) {
+      return _modifyListing();
+    }
+
     startSavingDraft();
     try {
       final hostId = sl<houseiana_mobile_app.UserSession>().userId ?? '';
@@ -437,6 +444,71 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
     }
   }
 
+  /// EDIT-mode save. Diffs the current wizard data against the baseline
+  /// snapshot loaded from the server ([ListingWizardState.originalData]) and
+  /// POSTs only the changed fields to `/api/properties/modify`. On success it
+  /// advances the baseline to the just-saved data, so a later save only carries
+  /// newly-changed fields (and unchanged photos are not re-uploaded).
+  ///
+  /// Returns true on success, INCLUDING the no-op case where nothing changed —
+  /// then no network call is made. Returns false on error (message already set
+  /// via [setError]).
+  Future<bool> _modifyListing() async {
+    final original = state.originalData;
+    if (original == null) return false; // not in edit mode — caller guards this
+
+    startSavingDraft();
+    try {
+      final hostId = sl<houseiana_mobile_app.UserSession>().userId ?? '';
+      final propertyId = state.draftId ?? '';
+      if (propertyId.isEmpty) {
+        throw Exception('Missing propertyId — cannot modify listing.');
+      }
+
+      final payload = state.data.toModifyMap(
+        hostId: hostId,
+        propertyId: propertyId,
+        original: original,
+      );
+
+      final changedKeys = payload.keys
+          .where((k) => k != 'propertyId' && k != 'hostId')
+          .toList();
+
+      // Nothing changed → successful no-op, skip the network round-trip.
+      if (changedKeys.isEmpty) {
+        finishSavingDraft(propertyId);
+        return true;
+      }
+
+      final encoder = const JsonEncoder.withIndent('  ');
+      // ignore: avoid_print
+      print('\n======================================================');
+      // ignore: avoid_print
+      print('🚀 [API REQUEST] POST /api/properties/modify');
+      // ignore: avoid_print
+      print('📤 CHANGED FIELDS (${changedKeys.length}):\n${encoder.convert(payload)}');
+      // ignore: avoid_print
+      print('======================================================\n');
+
+      await _hostService.modifyProperty(payload);
+
+      // Advance the baseline so already-saved edits aren't re-sent next time.
+      emit(state.copyWith(
+        isSavingDraft: false,
+        draftId: propertyId,
+        originalData: state.data,
+      ));
+      return true;
+    } catch (e) {
+      // ignore: avoid_print
+      print('[ListingWizardCubit._modifyListing] error: $e');
+      draftSaveFailed();
+      setError('Failed to save changes: $e');
+      return false;
+    }
+  }
+
   /// Extracts the ID from the response, handling various possible backend formats
   /// (nested 'data', top-level, camelCase, PascalCase, direct string).
   String? _extractId(Map<String, dynamic>? raw) {
@@ -478,6 +550,16 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
   /// re-POST every step — doing so (the previous "force sync" loop) was a
   /// mobile-only divergence and the source of the "Create List" error.
   Future<void> publishListing() async {
+    // EDIT mode: an already-published listing has no separate "publish" step —
+    // the final "Edit List" button just commits the accumulated diff through
+    // /api/properties/modify. Surfacing publishedListingId still drives the
+    // review screen's success dialog (and navigation back to the dashboard).
+    if (state.originalData != null) {
+      final ok = await _modifyListing();
+      if (ok) finishPublishing(state.draftId ?? '');
+      return;
+    }
+
     startPublishing();
     try {
       final hostId = sl<houseiana_mobile_app.UserSession>().userId ?? '';

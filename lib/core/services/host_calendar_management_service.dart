@@ -51,6 +51,11 @@ class HostCalendarManagementService {
   static String postDate(DateTime day) =>
       '${day.year.toString().padLeft(4, '0')}-${_p2(day.month)}-${_p2(day.day)}';
 
+  /// Day-stable ISO-8601 (UTC midnight) for the discount/delete body. Matches
+  /// the web (`YYYY-MM-DDT00:00:00.000Z`); built from numeric parts so the day
+  /// never shifts across timezones.
+  static String isoDay(DateTime day) => '${postDate(day)}T00:00:00.000Z';
+
   static String _p2(int n) => n.toString().padLeft(2, '0');
 
   // ── Endpoints ─────────────────────────────────────────────────────────────
@@ -135,6 +140,60 @@ class HostCalendarManagementService {
           'toDate': postDate(toDate),
           'reasonId': reasonId,
           'reasonText': reasonText ?? '',
+        },
+      );
+    } catch (e) {
+      throw ServerException.msg(e.toString());
+    }
+  }
+
+  /// POST /api/properties/discount — apply a % discount to the given range.
+  /// Payload mirrors the web: `priceBeforeDiscount`/`priceAfterDiscount` are the
+  /// regular and discounted nightly prices; `startDate`/`endDate` are
+  /// `yyyy-MM-dd` (the web sends the range's first/last day in this format).
+  Future<void> applyDiscount({
+    required String hostId,
+    required String propertyId,
+    required double priceBeforeDiscount,
+    required int discountPercent,
+    required double priceAfterDiscount,
+    required DateTime fromDate,
+    required DateTime toDate,
+  }) async {
+    try {
+      await _api.post(
+        EndPoints.propertyDiscount,
+        body: {
+          'hostId': hostId,
+          'propertyId': propertyId,
+          'priceBeforeDiscount': priceBeforeDiscount,
+          'discountPercent': discountPercent,
+          'priceAfterDiscount': priceAfterDiscount,
+          'startDate': postDate(fromDate),
+          'endDate': postDate(toDate),
+        },
+      );
+    } catch (e) {
+      throw ServerException.msg(e.toString());
+    }
+  }
+
+  /// POST /api/properties/discount/delete — remove the discount from the range.
+  /// The web sends `startDate`/`endDate` as ISO-8601 day strings here.
+  Future<void> deleteDiscount({
+    required String hostId,
+    required String propertyId,
+    required DateTime fromDate,
+    required DateTime toDate,
+  }) async {
+    try {
+      await _api.post(
+        EndPoints.propertyDiscountDelete,
+        body: {
+          'hostId': hostId,
+          'propertyId': propertyId,
+          'startDate': isoDay(fromDate),
+          'endDate': isoDay(toDate),
         },
       );
     } catch (e) {

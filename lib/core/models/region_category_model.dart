@@ -30,4 +30,13 @@ class RegionCategory {
       photo: (json['photo'] ?? '').toString(),
     );
   }
+
+  /// Serialises the category so it can be persisted in the home cache and
+  /// re-read via [RegionCategory.fromJson].
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'propertyCount': propertyCount,
+        'photo': photo,
+      };
 }

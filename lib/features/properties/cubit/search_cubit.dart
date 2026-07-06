@@ -15,10 +15,11 @@ class SearchCubit extends Cubit<SearchState> {
   Future<void> search(PropertySearchParams params) async {
     emit(SearchLoading());
     try {
-      final results = await _propertyService.searchProperties(
+      final page = await _propertyService.searchProperties(
         params,
         userId: _userSession.userId,
       );
+      final results = page.properties;
       final propertyMaps =
           results.map((property) => property.toJson()).toList();
       final hasMore = results.length >= params.limit;
@@ -26,6 +27,7 @@ class SearchCubit extends Cubit<SearchState> {
         properties: propertyMaps,
         hasMore: hasMore,
         params: params,
+        total: page.total,
       ));
     } catch (e) {
       emit(SearchError(e.toString()));
@@ -41,6 +43,7 @@ class SearchCubit extends Cubit<SearchState> {
       existing: currentState.properties,
       hasMore: true,
       params: currentState.params,
+      total: currentState.total,
     ));
 
     try {
@@ -70,10 +73,11 @@ class SearchCubit extends Cubit<SearchState> {
         radiusKm: currentState.params.radiusKm,
       );
 
-      final results = await _propertyService.searchProperties(
+      final page = await _propertyService.searchProperties(
         newParams,
         userId: _userSession.userId,
       );
+      final results = page.properties;
       final propertyMaps =
           results.map((property) => property.toJson()).toList();
 
@@ -82,6 +86,7 @@ class SearchCubit extends Cubit<SearchState> {
         properties: [...currentState.properties, ...propertyMaps],
         hasMore: hasMore,
         params: newParams,
+        total: page.total ?? currentState.total,
       ));
     } catch (e) {
       emit(SearchError(e.toString()));
@@ -111,6 +116,7 @@ class SearchCubit extends Cubit<SearchState> {
       properties: updated,
       hasMore: currentState.hasMore,
       params: currentState.params,
+      total: currentState.total,
     ));
 
     await _userService.toggleFavorite(

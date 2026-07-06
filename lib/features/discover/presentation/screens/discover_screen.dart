@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
@@ -198,6 +199,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       location: property.displayLocation,
       price: property.displayPrice,
       originalPrice: property.priceWithoutDiscount,
+      discountPercent: property.effectiveDiscountPercent,
+      currency: property.currency ?? 'EGP',
       rating: _ratingOf(property),
       reviewCount: property.reviewsCount ?? property.reviewCount ?? 0,
       isFavorite: property.isFavourited ?? false,
@@ -369,10 +372,12 @@ class _DestinationCard extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               cover.isNotEmpty
-                  ? Image.network(
-                      cover,
+                  ? CachedNetworkImage(
+                      imageUrl: cover,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _fallback(),
+                      placeholder: (context, url) =>
+                          Container(color: const Color(0xFFF0F0F0)),
+                      errorWidget: (context, url, error) => _fallback(),
                     )
                   : _fallback(),
               DecoratedBox(

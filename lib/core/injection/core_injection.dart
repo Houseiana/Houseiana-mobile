@@ -9,10 +9,12 @@ import 'package:houseiana_mobile_app/core/network/api/auth_interceptor.dart';
 import 'package:houseiana_mobile_app/core/network/api/lang_interceptor.dart';
 import 'package:houseiana_mobile_app/core/network/connection_checker.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/core/services/cache_service.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/host_service.dart';
 import 'package:houseiana_mobile_app/core/services/clerk_service.dart';
+import 'package:houseiana_mobile_app/core/services/account_privacy_service.dart';
 import 'package:houseiana_mobile_app/core/services/support_service.dart';
 
 Future<void> initCore() async {
@@ -22,7 +24,11 @@ Future<void> initCore() async {
 
   // Session & Core Services
   sl.registerLazySingleton(() => UserSession(sl()));
+  sl.registerLazySingleton(() => CacheService(sl<SharedPreferences>()));
   sl.registerLazySingleton(() => ClerkService(sl<SharedPreferences>()));
+  sl.registerLazySingleton(
+    () => AccountPrivacyService(sl<ClerkService>(), sl<UserSession>()),
+  );
 
   // Dio — with interceptors attached at creation
   final dio = Dio();
@@ -55,7 +61,7 @@ Future<void> initCore() async {
 
   // API Services
   sl.registerLazySingleton(() => PropertyService(sl()));
-  sl.registerLazySingleton(() => UserService(sl()));
+  sl.registerLazySingleton(() => UserService(sl(), sl<CacheService>()));
   sl.registerLazySingleton(() => HostService(dio: sl()));
   sl.registerLazySingleton(() => SupportService(dio: sl()));
 }

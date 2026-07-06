@@ -20,8 +20,8 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   /// pull-to-refresh gesture still has something to await.
   Future<void> loadNotifications() async {
     final userId = _userSession.userId;
-    if (userId == null) {
-      emit(const NotificationsError('notifications.loadError'));
+    if (!_userSession.isLoggedIn || userId == null || userId.isEmpty) {
+      emit(NotificationsSignInRequired());
       return;
     }
 

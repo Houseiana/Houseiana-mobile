@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
+import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
+import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/core/utils/discount_utils.dart';
 import 'package:houseiana_mobile_app/features/properties/cubit/search_cubit.dart';
 import 'package:houseiana_mobile_app/features/properties/cubit/search_state.dart';
 import 'package:houseiana_mobile_app/features/properties/presentation/widgets/property_map_view.dart';
 import 'package:houseiana_mobile_app/features/properties/presentation/widgets/property_sort_control.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/cards/property_list_card.dart';
+import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
 
 class SearchPropertiesScreen extends StatefulWidget {
   const SearchPropertiesScreen({super.key});
@@ -322,6 +326,12 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
     final results = state is SearchLoaded
         ? state.properties
         : (state as SearchLoadingMore).existing;
+    // Backend-reported total across all pages; without it the count would be
+    // just the loaded page size (e.g. "20 found" for a 133-match region).
+    final total = state is SearchLoaded
+        ? state.total
+        : (state as SearchLoadingMore).total;
+    final count = total ?? results.length;
     final parts = <String>[];
     final months = context.tr('common.monthsShort').split(',');
     if (_checkIn != null) {
@@ -342,9 +352,9 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
           : '$_totalGuests ${context.tr('booking.guests')}');
     }
 
-    final foundText = results.length == 1
-        ? context.tr('property.propertyFoundShort', args: {'count': results.length})
-        : context.tr('property.propertiesFoundShort', args: {'count': results.length});
+    final foundText = count == 1
+        ? context.tr('property.propertyFoundShort', args: {'count': count})
+        : context.tr('property.propertiesFoundShort', args: {'count': count});
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -432,13 +442,20 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
     final isGuestFavorite =
         (p['isGuestFavorite'] ?? p['guestFavorite'] ?? false) == true;
     final isFav = (p['guestFavorite'] ?? p['isGuestFavorite'] ?? false) == true;
+    final price = double.tryParse(_extractPrice(p)) ?? 0;
+    final discountPct = effectiveDiscountPercent(p);
+    final original = originalNightlyPrice(p);
+    final showOriginal =
+        discountPct > 0 && original != null && original > price;
 
     return PropertyListCard(
       imageUrl: _extractImage(p),
       title: (p['title'] ?? p['name'] ?? context.tr('property.untitled'))
           .toString(),
       location: _extractLocation(p),
-      priceText: (double.tryParse(_extractPrice(p)) ?? 0).toStringAsFixed(0),
+      priceText: price.toStringAsFixed(0),
+      originalPriceText: showOriginal ? original.toStringAsFixed(0) : null,
+      discountPercent: discountPct,
       currency: _extractCurrency(p),
       rating: rating is num ? rating.toDouble() : 0,
       reviewCount: reviewCount is num ? reviewCount.toInt() : 0,
@@ -453,8 +470,13 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
         Routes.propertyDetails,
         arguments: {'propertyId': propertyId, 'property': p},
       ),
-      onFavoriteToggle: () =>
-          context.read<SearchCubit>().toggleFavorite(propertyId),
+      onFavoriteToggle: () {
+        if (!sl<UserSession>().isLoggedIn) {
+          showSignInToSaveFavoritesSheet(context);
+          return;
+        }
+        context.read<SearchCubit>().toggleFavorite(propertyId);
+      },
     );
   }
 

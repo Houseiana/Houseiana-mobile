@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
@@ -54,26 +55,19 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                 minScale: 0.5,
                 maxScale: 4.0,
                 child: Center(
-                  child: Image.network(
-                    widget.photos[index],
+                  child: CachedNetworkImage(
+                    imageUrl: widget.photos[index],
                     fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
+                    placeholder: (context, url) => const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                    errorWidget: (context, url, error) {
                       return const Icon(
                         Icons.broken_image,
                         size: 100,
                         color: Colors.white54,
-                      );
-                    },
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
-                          color: AppColors.primaryColor,
-                        ),
                       );
                     },
                   ),
@@ -219,10 +213,13 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(6),
-                        child: Image.network(
-                          widget.photos[index],
+                        child: CachedNetworkImage(
+                          imageUrl: widget.photos[index],
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
+                          placeholder: (context, url) => Container(
+                            color: Colors.grey[900],
+                          ),
+                          errorWidget: (context, url, error) {
                             return Container(
                               color: Colors.grey[800],
                               child: const Icon(

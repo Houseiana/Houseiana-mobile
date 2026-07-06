@@ -143,8 +143,11 @@ class MonthCalendarWidget extends StatelessWidget {
 
             return NightlyPriceCell(
               date: date,
-              price: priceEntry?.price,
+              price: priceEntry?.effectivePrice,
               isSpecialPrice: priceEntry?.isSpecialPrice ?? false,
+              originalPrice:
+                  (priceEntry?.hasDiscount ?? false) ? priceEntry!.price : null,
+              discountPercent: priceEntry?.discountPercent,
               rangeState: rangeState,
               isToday: isToday,
               isPast: isPast,

@@ -141,6 +141,44 @@ class CityPropertyGroup {
     }
     return name;
   }
+
+  /// Serialises the group (including its raw property maps) so a home page can
+  /// be persisted to the cache and restored via [CityPropertyGroup.fromCacheJson].
+  Map<String, dynamic> toCacheJson() => {
+        'regionId': regionId,
+        'name': name,
+        'nameAr': nameAr,
+        'totalCount': totalCount,
+        'properties': properties,
+      };
+
+  /// Rebuilds a group from its cached JSON (see [toCacheJson]).
+  factory CityPropertyGroup.fromCacheJson(Map<String, dynamic> json) {
+    final rawProps = json['properties'];
+    return CityPropertyGroup(
+      regionId: (json['regionId'] as num?)?.toInt(),
+      name: (json['name'] ?? '').toString(),
+      nameAr: json['nameAr']?.toString(),
+      totalCount: (json['totalCount'] as num?)?.toInt(),
+      properties: rawProps is List
+          ? rawProps
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList()
+          : const [],
+    );
+  }
+}
+
+class PropertySearchPage {
+  final List<PropertyModel> properties;
+
+  /// Backend-reported total number of matches across ALL pages (the
+  /// `totalCount` at the top of the property-search response). Null when the
+  /// response carries no total — callers fall back to the loaded count.
+  final int? total;
+
+  const PropertySearchPage({required this.properties, this.total});
 }
 
 class GroupedPropertiesPage {
@@ -162,7 +200,7 @@ class PropertyService {
 
   PropertyService(this._api);
 
-  Future<List<PropertyModel>> searchProperties(
+  Future<PropertySearchPage> searchProperties(
     PropertySearchParams params, {
     String? userId,
   }) async {
@@ -176,10 +214,36 @@ class PropertyService {
         EndPoints.propertySearch,
         queryParameters: query,
       );
-      return _parsePropertyList(response);
+      return PropertySearchPage(
+        properties: _parsePropertyList(response),
+        total: _extractTotal(response),
+      );
     } catch (e) {
       throw ServerException.msg(e.toString());
     }
+  }
+
+  /// Reads the all-pages match total from a property-search response wrapper,
+  /// checking `totalCount`/`total` at the root, inside `pagination`, and under
+  /// a `data` envelope. Returns null when no total is present.
+  int? _extractTotal(dynamic response) {
+    dynamic totalIn(Map root) {
+      final direct = root['totalCount'] ?? root['total'];
+      if (direct != null) return direct;
+      final pagination = root['pagination'];
+      if (pagination is Map) {
+        return pagination['total'] ?? pagination['totalCount'];
+      }
+      return null;
+    }
+
+    if (response is! Map) return null;
+    var candidate = totalIn(response);
+    if (candidate == null && response['data'] is Map) {
+      candidate = totalIn(response['data'] as Map);
+    }
+    if (candidate is int) return candidate;
+    return int.tryParse(candidate?.toString() ?? '');
   }
 
   /// Calls property-search with `isSorted=true` and returns a paginated set

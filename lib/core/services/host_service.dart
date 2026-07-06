@@ -174,6 +174,104 @@ class HostService {
     }
   }
 
+  /// Sends a partial update of an EXISTING listing to POST /api/properties/modify.
+  ///
+  /// Unlike [saveDraft] (which is step-based and upserts), this carries only the
+  /// fields the host actually changed — [data] is expected to already be the
+  /// diff built by [WizardData.toModifyMap] (propertyId + hostId + changed keys
+  /// only). Media follows the same rule as the draft save: existing `http` URLs
+  /// are re-sent as plain string fields (preserved) while local file paths are
+  /// uploaded as multipart files.
+  Future<Map<String, dynamic>?> modifyProperty(Map<String, dynamic> data) async {
+    try {
+      final formData = FormData.fromMap(data, ListFormat.multiCompatible);
+      await _attachPropertyMedia(formData, data);
+
+      // ignore: avoid_print
+      print('[HostService.modifyProperty] URL: ${_dio.options.baseUrl}${EndPoints.propertiesModify}');
+      // ignore: avoid_print
+      print('[HostService.modifyProperty] FormData fields: ${formData.fields.map((e) => '${e.key}=${e.value}').join(', ')}');
+
+      final response = await _dio.post(
+        EndPoints.propertiesModify,
+        data: formData,
+      );
+
+      // ignore: avoid_print
+      print('[HostService.modifyProperty] status: ${response.statusCode}');
+      // ignore: avoid_print
+      print('[HostService.modifyProperty] response.data: ${response.data}');
+
+      return response.data as Map<String, dynamic>?;
+    } on DioException catch (e) {
+      // ignore: avoid_print
+      print('[HostService.modifyProperty] DioException: ${e.response?.statusCode} ${e.response?.data}');
+      throw _mapDioException(e);
+    }
+  }
+
+  /// Attaches cover photo, property documents, and photos to [formData],
+  /// uploading local file paths as multipart files and re-sending existing
+  /// `http` URLs as plain string fields. Mirrors the media handling in
+  /// [saveDraft]/[createListing]; used by [modifyProperty].
+  Future<void> _attachPropertyMedia(
+    FormData formData,
+    Map<String, dynamic> data,
+  ) async {
+    // Cover photo
+    if (data['coverPhoto'] != null) {
+      formData.fields.removeWhere((e) => e.key == 'coverPhoto');
+      final cp = data['coverPhoto'].toString();
+      if (cp.startsWith('http')) {
+        formData.fields.add(MapEntry('coverPhoto', cp));
+      } else if (cp.isNotEmpty) {
+        formData.files
+            .add(MapEntry('coverPhoto', await MultipartFile.fromFile(cp)));
+      }
+    }
+
+    // Documents
+    const docKeys = [
+      'documentOfProperty.prpopertyDocoument',
+      'documentOfProperty.hostId',
+      'documentOfProperty.powerOfAttorney'
+    ];
+    for (final key in docKeys) {
+      if (data[key] != null) {
+        formData.fields.removeWhere((e) => e.key == key);
+        final path = data[key].toString();
+        if (path.startsWith('http')) {
+          formData.fields.add(MapEntry(key, path));
+        } else if (path.isNotEmpty) {
+          formData.files.add(MapEntry(key, await MultipartFile.fromFile(path)));
+        }
+      }
+    }
+
+    // Photos (mix of existing http URLs and freshly-picked local files)
+    if (data['photos'] is List) {
+      formData.fields
+          .removeWhere((e) => e.key == 'photos' || e.key == 'photos[]');
+      final photosList = data['photos'] as List;
+      for (var i = 0; i < photosList.length; i++) {
+        final path = photosList[i].toString();
+        if (!path.startsWith('http')) {
+          if (i == 0 && data['coverPhoto'] == null) {
+            formData.files.add(
+                MapEntry('coverPhoto', await MultipartFile.fromFile(path)));
+          }
+          formData.files
+              .add(MapEntry('photos', await MultipartFile.fromFile(path)));
+        } else {
+          if (i == 0 && data['coverPhoto'] == null) {
+            formData.fields.add(MapEntry('coverPhoto', path));
+          }
+          formData.fields.add(MapEntry('photos', path));
+        }
+      }
+    }
+  }
+
   Future<List<PropertyModel>> getHostListings(String hostId) async {
     try {
       final response = await _dio.get('/api/properties?hostId=$hostId&limit=100');

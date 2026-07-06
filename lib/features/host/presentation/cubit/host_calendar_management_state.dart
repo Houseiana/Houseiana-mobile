@@ -51,6 +51,7 @@ class HostCalendarManagementLoaded extends HostCalendarManagementState {
   final bool busyBlock;
   final bool busyPrice;
   final bool busyMinNights;
+  final bool busyDiscount;
 
   // One-shot message for the screen listener (keyed by [messageTick]).
   final String? message;
@@ -72,6 +73,7 @@ class HostCalendarManagementLoaded extends HostCalendarManagementState {
     this.busyBlock = false,
     this.busyPrice = false,
     this.busyMinNights = false,
+    this.busyDiscount = false,
     this.message,
     this.messageIsError = false,
     this.messageTick = 0,
@@ -89,6 +91,14 @@ class HostCalendarManagementLoaded extends HostCalendarManagementState {
   bool get selectionAllBlocked =>
       selectedDates.isNotEmpty &&
       selectedDates.every((d) => blockedDates.contains(d));
+
+  /// True when the first selected day already carries a discount (→ offer
+  /// "Remove discount"). Mirrors the web, which keys the affordance off the
+  /// first selected slot.
+  bool get selectionHasDiscount {
+    if (selectedDates.isEmpty) return false;
+    return dailyRates[dayKey(sortedSelection.first)]?.hasDiscount ?? false;
+  }
 
   /// Days that are check-out days (the day after a reservation's last night).
   Set<DateTime> get checkoutDays =>
@@ -116,6 +126,7 @@ class HostCalendarManagementLoaded extends HostCalendarManagementState {
     bool? busyBlock,
     bool? busyPrice,
     bool? busyMinNights,
+    bool? busyDiscount,
     String? message,
     bool? messageIsError,
     int? messageTick,
@@ -135,6 +146,7 @@ class HostCalendarManagementLoaded extends HostCalendarManagementState {
       busyBlock: busyBlock ?? this.busyBlock,
       busyPrice: busyPrice ?? this.busyPrice,
       busyMinNights: busyMinNights ?? this.busyMinNights,
+      busyDiscount: busyDiscount ?? this.busyDiscount,
       message: message ?? this.message,
       messageIsError: messageIsError ?? this.messageIsError,
       messageTick: messageTick ?? this.messageTick,
@@ -157,6 +169,7 @@ class HostCalendarManagementLoaded extends HostCalendarManagementState {
         busyBlock,
         busyPrice,
         busyMinNights,
+        busyDiscount,
         message,
         messageIsError,
         messageTick,

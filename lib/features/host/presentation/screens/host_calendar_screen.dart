@@ -195,6 +195,10 @@ class _HostCalendarScreenState extends State<HostCalendarScreen> {
         return context.tr('hostCalendar.msgUnblocked');
       case 'price-updated':
         return context.tr('hostCalendar.msgPriceUpdated');
+      case 'discount-applied':
+        return context.tr('hostCalendar.msgDiscountApplied');
+      case 'discount-removed':
+        return context.tr('hostCalendar.msgDiscountRemoved');
       case 'min-nights-updated':
         return context.tr('hostCalendar.msgMinNightsUpdated');
       case 'load-error':
@@ -274,7 +278,7 @@ class _StatsGrid extends StatelessWidget {
         daysInMonth > 0 ? ((booked / daysInMonth) * 100).round() : 0;
     final est = monthDays
         .where((d) => d.isBookedLike)
-        .fold<double>(0, (s, d) => s + (d.price ?? 0));
+        .fold<double>(0, (s, d) => s + (d.effectivePrice ?? 0));
 
     Widget card(IconData icon, String value, String label, Color color) =>
         Expanded(
@@ -529,16 +533,19 @@ class _CalendarActionSheet extends StatefulWidget {
 }
 
 class _CalendarActionSheetState extends State<_CalendarActionSheet> {
-  String _mode = 'block'; // 'block' | 'price'
+  String _mode = 'block'; // 'block' | 'price' | 'discount'
   BlockReason? _reason;
   double? _price;
+  int _discountPercent = 0;
   final TextEditingController _notes = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _discountController = TextEditingController();
 
   @override
   void dispose() {
     _notes.dispose();
     _priceController.dispose();
+    _discountController.dispose();
     super.dispose();
   }
 
@@ -614,8 +621,10 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
                   allBlocked
                       ? _unblockSection(context, cubit, state, nights)
                       : _blockSection(context, cubit, state, nights)
+                else if (_mode == 'price')
+                  _priceSection(context, cubit, state)
                 else
-                  _priceSection(context, cubit, state),
+                  _discountSection(context, cubit, state),
               ],
             ),
           ),
@@ -749,6 +758,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
         children: [
           tab('block', context.tr('hostCalendar.block')),
           tab('price', context.tr('hostCalendar.setPrice')),
+          tab('discount', context.tr('hostCalendar.discount')),
         ],
       ),
     );
@@ -926,6 +936,185 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
         ),
       ],
     );
+  }
+
+  Widget _discountSection(
+    BuildContext context,
+    HostCalendarManagementCubit cubit,
+    HostCalendarManagementLoaded state,
+  ) {
+    // Same pre-discount base the cubit sends (never the discount-aware
+    // pricePerNight/displayPrice), so the preview matches the applied value.
+    final base = state.selectedPrice ??
+        state.selectedProperty?.price ??
+        state.selectedProperty?.basePrice ??
+        0;
+    final after = _discountPercent > 0
+        ? (base * (1 - _discountPercent / 100)).round()
+        : null;
+    final hasDiscount = state.selectionHasDiscount;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.ghostWhite,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.neutral200),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(context.tr('hostCalendar.pricePerNight'),
+                  style: const TextStyle(
+                      fontSize: 13, color: AppColors.neutral600)),
+              Text('${state.currency}${base.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.charcoal)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(context.tr('hostCalendar.discount'),
+            style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.charcoal)),
+        const SizedBox(height: 12),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _discountController,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.charcoal),
+                decoration: InputDecoration(
+                  suffixText: '%',
+                  hintText: '0',
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.neutral200),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.neutral200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                        color: AppColors.primaryColor, width: 1.5),
+                  ),
+                ),
+                onChanged: (v) {
+                  final parsed = int.tryParse(v.trim()) ?? 0;
+                  final clamped = parsed.clamp(0, 100);
+                  setState(() => _discountPercent = clamped);
+                  // Reflect the clamp back into the field only when the typed
+                  // number was out of range, so the visible value never
+                  // contradicts what will be applied (and an empty field can
+                  // still be cleared).
+                  if (parsed != clamped) {
+                    _discountController.value = TextEditingValue(
+                      text: clamped.toString(),
+                      selection: TextSelection.collapsed(
+                          offset: clamped.toString().length),
+                    );
+                  }
+                },
+              ),
+            ),
+            if (after != null) ...[
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(context.tr('hostCalendar.afterDiscount'),
+                        style: const TextStyle(
+                            fontSize: 11, color: AppColors.neutral500)),
+                    const SizedBox(height: 2),
+                    Text('${state.currency}$after',
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.success)),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 18),
+        PrimaryButton(
+          text: context.tr('hostCalendar.applyDiscount',
+              args: {'p': _discountPercent}),
+          icon: Icons.percent,
+          isLoading: state.busyDiscount,
+          backgroundColor: AppColors.charcoal,
+          textColor: Colors.white,
+          onPressed: _discountPercent <= 0
+              ? null
+              : () => cubit.applyDiscount(_discountPercent),
+        ),
+        if (hasDiscount) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: state.busyDiscount
+                  ? null
+                  : () => _confirmRemoveDiscount(context, cubit),
+              icon: const Icon(Icons.close, size: 18),
+              label: Text(context.tr('hostCalendar.removeDiscount')),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.error,
+                side: const BorderSide(color: Color(0xFFFCA5A5)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999)),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _confirmRemoveDiscount(
+    BuildContext context,
+    HostCalendarManagementCubit cubit,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.tr('hostCalendar.removeDiscountTitle')),
+        content: Text(context.tr('hostCalendar.removeDiscountBody')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(context.tr('common.cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: Text(context.tr('hostCalendar.removeDiscount')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      cubit.deleteDiscount();
+    }
   }
 
   Widget _reasonChip(BlockReason r, bool selected, VoidCallback onTap) {

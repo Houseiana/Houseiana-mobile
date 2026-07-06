@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
+import 'package:houseiana_mobile_app/core/utils/discount_utils.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class PropertyMapView extends StatefulWidget {
@@ -455,7 +457,14 @@ class _PreviewCard extends StatelessWidget {
         (property['title'] ?? property['name'] ?? '').toString();
     final image = _extractImage(property);
     final price = property['pricePerNight'] ?? property['price'] ?? 0;
+    final priceNum = price is num
+        ? price.toDouble()
+        : double.tryParse(price.toString()) ?? 0;
     final currency = (property['currency'] ?? '').toString();
+    final discountPct = effectiveDiscountPercent(property);
+    final original = originalNightlyPrice(property);
+    final showOriginal =
+        discountPct > 0 && original != null && original > priceNum;
     final rating = property['averageRating'] ?? property['rating'] ?? 0.0;
     final location = _extractLocation(property);
 
@@ -479,19 +488,49 @@ class _PreviewCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(16),
-              ),
-              child: image.isNotEmpty
-                  ? Image.network(
-                      image,
-                      width: 110,
-                      height: 110,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _placeholder(),
-                    )
-                  : _placeholder(),
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.horizontal(
+                    left: Radius.circular(16),
+                  ),
+                  child: image.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: image,
+                          width: 110,
+                          height: 110,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            width: 110,
+                            height: 110,
+                            color: const Color(0xFFF0F0F0),
+                          ),
+                          errorWidget: (context, url, error) => _placeholder(),
+                        )
+                      : _placeholder(),
+                ),
+                if (showOriginal)
+                  Positioned(
+                    bottom: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD00416),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '-$discountPct%',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             Expanded(
               child: Padding(
@@ -500,23 +539,23 @@ class _PreviewCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.star,
-                            size: 13, color: Color(0xFFFCC519)),
-                        const SizedBox(width: 3),
-                        Text(
-                          rating is num && rating > 0
-                              ? rating.toStringAsFixed(2)
-                              : context.tr('property.newRating'),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                    if (rating is num && rating > 0) ...[
+                      Row(
+                        children: [
+                          const Icon(Icons.star,
+                              size: 13, color: Color(0xFFFCC519)),
+                          const SizedBox(width: 3),
+                          Text(
+                            rating.toStringAsFixed(2),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                    ],
                     Text(
                       title,
                       maxLines: 1,
@@ -538,14 +577,34 @@ class _PreviewCard extends StatelessWidget {
                         ),
                       ),
                     const SizedBox(height: 6),
-                    Text(
-                      currency.isNotEmpty
-                          ? '$price $currency'
-                          : price.toString(),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1D242B),
+                    RichText(
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1D242B),
+                        ),
+                        children: [
+                          if (showOriginal)
+                            TextSpan(
+                              text:
+                                  '${original.toStringAsFixed(0)} $currency ',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF979797),
+                                decoration: TextDecoration.lineThrough,
+                                decorationColor: Color(0xFF979797),
+                              ),
+                            ),
+                          TextSpan(
+                            text: currency.isNotEmpty
+                                ? '${priceNum.toStringAsFixed(0)} $currency'
+                                : priceNum.toStringAsFixed(0),
+                          ),
+                        ],
                       ),
                     ),
                   ],

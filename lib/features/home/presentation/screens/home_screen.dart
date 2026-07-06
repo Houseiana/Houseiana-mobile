@@ -1,15 +1,19 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/models/region_category_model.dart';
+import 'package:houseiana_mobile_app/core/services/cache_service.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/features/bottom_nav/presentation/cubit/cubit.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart';
+import 'package:houseiana_mobile_app/core/utils/discount_utils.dart';
 import 'package:houseiana_mobile_app/shared/widgets/cards/property_card_v2.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -48,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _propertyService = sl<PropertyService>();
   final _userService = sl<UserService>();
   final _session = sl<UserSession>();
+  final _cache = sl<CacheService>();
   final _scrollController = ScrollController();
 
   @override
@@ -59,8 +64,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadCategories() async {
+    // Cache-first: serve the chips from cache when present, fetch on a miss.
+    final cached = _cache.getJson<List>(HomeCache.categories);
+    if (cached != null) {
+      final cats = cached
+          .whereType<Map>()
+          .map((m) => RegionCategory.fromJson(Map<String, dynamic>.from(m)))
+          .where((c) => c.id > 0 && c.name.isNotEmpty)
+          .toList();
+      if (cats.isNotEmpty) {
+        setState(() {
+          _regionCategories = cats;
+          _categoriesLoading = false;
+        });
+        return;
+      }
+    }
+
     try {
       final cats = await _propertyService.getRegionCategories();
+      await _cache.setJson(
+        HomeCache.categories,
+        [for (final c in cats) c.toJson()],
+        ttl: HomeCache.categoriesTtl,
+      );
       if (mounted) {
         setState(() {
           _regionCategories = cats;
@@ -88,7 +115,39 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadData() async {
+  /// Loads the home listings with a **cache-first** (read-through) strategy:
+  /// serve instantly from the cache when present, and only hit the API on a
+  /// miss — then write the response back for next time. Pass
+  /// [forceRefresh] (pull-to-refresh) to bypass the cache and re-fetch.
+  ///
+  /// The cache is invalidated whenever the user favourites any unit (see
+  /// `UserService.toggleFavorite`), so after a favourite the next load misses
+  /// the cache and fetches fresh — matching the product spec.
+  Future<void> _loadData({bool forceRefresh = false}) async {
+    final listKey = HomeCache.listKey(_selectedFeaturedRegionId);
+    final favKey = HomeCache.favKey(_session.userId);
+
+    // ── Cache hit → render immediately, no network call. ──
+    if (!forceRefresh) {
+      final cached = _cache.getJson<Map>(listKey);
+      if (cached != null) {
+        final groups = _groupsFromCache(cached['groups']);
+        final favs = _favsFromCache(_cache.getJson<List>(favKey));
+        if (mounted) {
+          setState(() {
+            _cityGroups = groups;
+            _properties = _flatten(groups);
+            _favoriteProperties = favs;
+            _currentPage = 1;
+            _hasMore = cached['hasMore'] == true;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+    }
+
+    // ── Cache miss (or forced refresh) → fetch from the API. ──
     setState(() {
       _isLoading = true;
       _currentPage = 1;
@@ -116,6 +175,17 @@ class _HomeScreenState extends State<HomeScreen> {
           .toSet();
     }
 
+    // ── Write-through: cache the fresh response for the next visit. ──
+    await _cache.setJson(
+      listKey,
+      {
+        'hasMore': page.hasMore,
+        'groups': [for (final g in page.groups) g.toCacheJson()],
+      },
+      ttl: HomeCache.listTtl,
+    );
+    await _cache.setJson(favKey, favIds.toList(), ttl: HomeCache.favTtl);
+
     if (mounted) {
       setState(() {
         _cityGroups = page.groups;
@@ -125,6 +195,25 @@ class _HomeScreenState extends State<HomeScreen> {
         _hasMore = page.hasMore;
       });
     }
+  }
+
+  /// Rebuilds the city groups from a cached `groups` payload (see
+  /// [CityPropertyGroup.toCacheJson]).
+  List<CityPropertyGroup> _groupsFromCache(dynamic raw) {
+    if (raw is! List) return [];
+    return raw
+        .whereType<Map>()
+        .map((m) => CityPropertyGroup.fromCacheJson(Map<String, dynamic>.from(m)))
+        .toList();
+  }
+
+  /// Rebuilds the favourite-id set from a cached list.
+  Set<String> _favsFromCache(List? raw) {
+    if (raw == null) return {};
+    return raw
+        .map((e) => e.toString())
+        .where((s) => s.isNotEmpty)
+        .toSet();
   }
 
   Future<void> _loadMore() async {
@@ -206,46 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _toggleFavorite(String propertyId) async {
     if (!_session.isLoggedIn) {
-      showModalBottomSheet(
-        context: context,
-        backgroundColor: Colors.white,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        builder: (sheetCtx) => Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: const Color(0xFFE5E7EB), borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 28),
-              Container(width: 72, height: 72, decoration: const BoxDecoration(color: Color(0xFFFFF9E6), shape: BoxShape.circle), child: const Icon(Icons.favorite_border, size: 38, color: Color(0xFFFCC519))),
-              const SizedBox(height: 16),
-              Text(context.tr('home.signInToSaveFavorites'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF1D242B))),
-              const SizedBox(height: 8),
-              Text(context.tr('home.signInToSaveFavoritesDescription'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.5)),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity, height: 50,
-                child: ElevatedButton(
-                  onPressed: () { Navigator.pop(sheetCtx); Navigator.pushNamed(context, Routes.login); },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFCC519), foregroundColor: const Color(0xFF1D242B), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                  child: Text(context.tr('auth.signIn'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity, height: 50,
-                child: OutlinedButton(
-                  onPressed: () { Navigator.pop(sheetCtx); Navigator.pushNamed(context, Routes.signUp); },
-                  style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF1D242B), side: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                  child: Text(context.tr('bottomNav.createAccountAction'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      showSignInToSaveFavoritesSheet(context);
       return;
     }
     setState(() {
@@ -265,7 +315,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.primaryColor,
-          onRefresh: _loadData,
+          onRefresh: () => _loadData(forceRefresh: true),
           child: SingleChildScrollView(
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
@@ -771,12 +821,16 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: ClipOval(
                 child: (photoUrl != null && photoUrl.isNotEmpty)
-                    ? Image.network(
-                        photoUrl,
+                    ? CachedNetworkImage(
+                        imageUrl: photoUrl,
                         width: 60,
                         height: 60,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(
+                        placeholder: (_, __) => const SizedBox(
+                          width: 60,
+                          height: 60,
+                        ),
+                        errorWidget: (_, __, ___) => const Icon(
                           Icons.place_outlined,
                           size: 24,
                           color: Color(0xFF9CA3AF),
@@ -945,6 +999,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: (p['title'] ?? p['name'] ?? '').toString(),
                   location: _extractLocation(p),
                   price: (double.tryParse(_extractPrice(p)) ?? 0),
+                  originalPrice: originalNightlyPrice(p),
+                  discountPercent: effectiveDiscountPercent(p),
                   rating: (p['averageRating'] ?? p['rating'] ?? 0.0).toDouble(),
                   currency: (p['currency'] ?? 'EGP').toString(),
                   bedrooms: _asInt(p['bedrooms']),
@@ -981,16 +1037,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final imageUrl = _extractImage(p);
     final isGuestFavorite = (p['isGuestFavorite'] ?? p['guestFavorite'] ?? false) == true;
 
-    final currency = (p['currency'] ?? 'QAR').toString();
+    final currency = (p['currency'] ?? 'EGP').toString();
 
-    final weeklyDiscount = (p['weeklyDiscount'] ?? 0);
-    final smallDiscount = (p['smallBookingDiscount'] ?? 0);
-    final discountPct = weeklyDiscount > 0 ? weeklyDiscount : (smallDiscount > 0 ? smallDiscount : 0);
-
-    final priceWithoutDiscount = p['priceWithoutDiscount'] ?? p['originalPrice'];
-    final originalPriceStr = (priceWithoutDiscount != null && discountPct > 0)
-        ? '${(priceWithoutDiscount as num).toStringAsFixed(0)} $currency'
-        : null;
+    final discountPct = effectiveDiscountPercent(p);
+    final original = originalNightlyPrice(p);
+    final effectivePrice = double.tryParse(price) ?? 0;
+    final originalPriceStr =
+        (discountPct > 0 && original != null && original > effectivePrice)
+            ? '${original.toStringAsFixed(0)} $currency'
+            : null;
 
     final bedrooms = p['bedrooms'] as int?;
     final beds = p['beds'] as int?;
@@ -1097,12 +1152,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: Image.network(
-                      imageUrl,
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
                       width: double.infinity,
                       height: 200,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
+                      placeholder: (context, url) => Container(
+                        width: double.infinity,
+                        height: 200,
+                        color: const Color(0xFFF0F0F0),
+                      ),
+                      errorWidget: (context, url, error) {
                         return Container(
                           width: double.infinity,
                           height: 200,
@@ -1187,34 +1247,37 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.star, size: 14, color: Color(0xFFFCC519)),
-                      const SizedBox(width: 4),
-                      Text(
-                        rating,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                          height: 1.25,
-                          color: Color(0xFF000000),
-                        ),
-                      ),
-                      if (reviewCount != null) ...[
+                  // Rating hidden when there are no reviews yet (web parity)
+                  if ((double.tryParse(rating) ?? 0) > 0) ...[
+                    Row(
+                      children: [
+                        const Icon(Icons.star, size: 14, color: Color(0xFFFCC519)),
                         const SizedBox(width: 4),
                         Text(
-                          context.tr('home.reviewsCount', args: {'n': reviewCount}),
+                          rating,
                           style: const TextStyle(
-                            fontWeight: FontWeight.w400,
+                            fontWeight: FontWeight.w600,
                             fontSize: 12,
                             height: 1.25,
-                            color: Color(0xFF6B7280),
+                            color: Color(0xFF000000),
                           ),
                         ),
+                        if (reviewCount != null) ...[
+                          const SizedBox(width: 4),
+                          Text(
+                            context.tr('home.reviewsCount', args: {'n': reviewCount}),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w400,
+                              fontSize: 12,
+                              height: 1.25,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                   Text(
                     title,
                     style: const TextStyle(

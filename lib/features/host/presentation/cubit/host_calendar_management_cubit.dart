@@ -251,6 +251,84 @@ class HostCalendarManagementCubit extends Cubit<HostCalendarManagementState> {
     }
   }
 
+  /// Applies a [percent] discount to the selected range. The pre-discount base
+  /// is the day's current price (falling back to the property's base price);
+  /// the after-discount price is derived the same way the web does.
+  Future<void> applyDiscount(int percent) async {
+    final s = _loaded;
+    if (s == null || s.selectedProperty == null || s.selectedDates.isEmpty) {
+      return;
+    }
+    if (percent <= 0) return;
+    final sorted = s.sortedSelection;
+    // Pre-discount base = the day's current (pre-discount) price, falling back
+    // to the property's original list price. Mirrors the web's
+    // `pricingAmount || property.price || property.basePrice` — deliberately NOT
+    // `displayPrice`, whose `pricePerNight` can already be a discounted value
+    // (which would double-discount on the fallback path).
+    final base = s.selectedPrice ??
+        s.selectedProperty!.price ??
+        s.selectedProperty!.basePrice ??
+        0;
+    final after = (base * (1 - percent / 100)).round().toDouble();
+    emit(s.copyWith(busyDiscount: true));
+    try {
+      await _service.applyDiscount(
+        hostId: _userId,
+        propertyId: s.selectedProperty!.id,
+        priceBeforeDiscount: base,
+        discountPercent: percent,
+        priceAfterDiscount: after,
+        fromDate: sorted.first,
+        toDate: sorted.last,
+      );
+      final cur = _loaded;
+      if (cur != null) {
+        emit(cur.copyWith(
+          busyDiscount: false,
+          selectedDates: <DateTime>{},
+          message: 'discount-applied',
+          messageIsError: false,
+          messageTick: ++_msgTick,
+        ));
+      }
+      await reloadCalendar();
+    } catch (_) {
+      _emitActionError(busyDiscountOff: true);
+    }
+  }
+
+  /// Removes any discount from the selected range.
+  Future<void> deleteDiscount() async {
+    final s = _loaded;
+    if (s == null || s.selectedProperty == null || s.selectedDates.isEmpty) {
+      return;
+    }
+    final sorted = s.sortedSelection;
+    emit(s.copyWith(busyDiscount: true));
+    try {
+      await _service.deleteDiscount(
+        hostId: _userId,
+        propertyId: s.selectedProperty!.id,
+        fromDate: sorted.first,
+        toDate: sorted.last,
+      );
+      final cur = _loaded;
+      if (cur != null) {
+        emit(cur.copyWith(
+          busyDiscount: false,
+          selectedDates: <DateTime>{},
+          message: 'discount-removed',
+          messageIsError: false,
+          messageTick: ++_msgTick,
+        ));
+      }
+      await reloadCalendar();
+    } catch (_) {
+      _emitActionError(busyDiscountOff: true);
+    }
+  }
+
   Future<void> saveMinNights(int value) async {
     final s = _loaded;
     if (s == null || s.selectedProperty == null) return;
@@ -281,6 +359,7 @@ class HostCalendarManagementCubit extends Cubit<HostCalendarManagementState> {
     bool busyBlockOff = false,
     bool busyPriceOff = false,
     bool busyMinNightsOff = false,
+    bool busyDiscountOff = false,
   }) {
     final cur = _loaded;
     if (cur == null) return;
@@ -288,6 +367,7 @@ class HostCalendarManagementCubit extends Cubit<HostCalendarManagementState> {
       busyBlock: busyBlockOff ? false : null,
       busyPrice: busyPriceOff ? false : null,
       busyMinNights: busyMinNightsOff ? false : null,
+      busyDiscount: busyDiscountOff ? false : null,
       message: 'action-error',
       messageIsError: true,
       messageTick: ++_msgTick,

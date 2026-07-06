@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
@@ -127,10 +128,12 @@ class _CityCard extends StatelessWidget {
             ),
             child: ClipOval(
               child: imageUrl.isNotEmpty
-                  ? Image.network(
-                      imageUrl,
+                  ? CachedNetworkImage(
+                      imageUrl: imageUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _imageFallback(),
+                      placeholder: (context, url) =>
+                          Container(color: const Color(0xFFF0F0F0)),
+                      errorWidget: (context, url, error) => _imageFallback(),
                     )
                   : _imageFallback(),
             ),

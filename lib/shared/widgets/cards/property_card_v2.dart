@@ -11,6 +11,13 @@ class PropertyCardV2 extends StatefulWidget {
   final String location;
   final double price;
   final double? originalPrice;
+
+  /// Effective discount percentage. When > 0 a red "-X%" badge is shown over
+  /// the image and the [originalPrice] strikethrough is rendered.
+  final int? discountPercent;
+
+  /// Currency code (e.g. "EGP") appended after the amounts. Never a "$" symbol.
+  final String currency;
   final double rating;
   final int reviewCount;
   final bool isFavorite;
@@ -27,6 +34,8 @@ class PropertyCardV2 extends StatefulWidget {
     required this.location,
     required this.price,
     this.originalPrice,
+    this.discountPercent,
+    this.currency = 'EGP',
     required this.rating,
     this.reviewCount = 0,
     this.isFavorite = false,
@@ -35,6 +44,12 @@ class PropertyCardV2 extends StatefulWidget {
     this.isSuperhost = false,
     this.ribbonText,
   });
+
+  /// Whether the discount treatment (badge + strikethrough) should show.
+  bool get _hasDiscount =>
+      (discountPercent ?? 0) > 0 &&
+      originalPrice != null &&
+      originalPrice! > price;
 
   @override
   State<PropertyCardV2> createState() => _PropertyCardV2State();
@@ -169,12 +184,13 @@ class _PropertyCardV2State extends State<PropertyCardV2>
 
         ),
 
-        // Rating badge
-        Positioned(
-          bottom: 12,
-          left: 12,
-          child: _buildRatingBadge(),
-        ),
+        // Rating badge — hidden when there are no reviews yet (web parity)
+        if (widget.rating > 0)
+          Positioned(
+            bottom: 12,
+            left: 12,
+            child: _buildRatingBadge(),
+          ),
 
         // Superhost badge
         if (widget.isSuperhost)
@@ -326,57 +342,73 @@ class _PropertyCardV2State extends State<PropertyCardV2>
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // Current price
-              Text(
-                '\$${widget.price.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.charcoal,
-                ),
-              ),
-              const Text(
-                ' / night',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.neutral600,
+              // Price cluster: struck-through original (when on sale), the
+              // effective price, the "/night" suffix, and a red "-X%" pill —
+              // scaled to fit so the amenity icons always keep their space.
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // Original price (struck through) shown before the
+                      // discounted price, matching the web card.
+                      if (widget._hasDiscount) ...[
+                        Text(
+                          '${widget.originalPrice!.toStringAsFixed(0)} ${widget.currency}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF979797),
+                            decoration: TextDecoration.lineThrough,
+                            decorationColor: Color(0xFF979797),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      // Effective (discounted) price
+                      Text(
+                        '${widget.price.toStringAsFixed(0)} ${widget.currency}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.charcoal,
+                        ),
+                      ),
+                      Text(
+                        ' ${context.tr('home.perNight')}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.neutral600,
+                        ),
+                      ),
+                      if (widget._hasDiscount) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD00416),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '-${widget.discountPercent ?? ((1 - widget.price / widget.originalPrice!) * 100).round()}%',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
 
-              // Original price (if on sale)
-              if (widget.originalPrice != null &&
-                  widget.originalPrice! > widget.price) ...[
-                const SizedBox(width: 8),
-                Text(
-                  '\$${widget.originalPrice!.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.neutral400,
-                    decoration: TextDecoration.lineThrough,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '${((1 - widget.price / widget.originalPrice!) * 100).toStringAsFixed(0)}% OFF',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red.shade700,
-                    ),
-                  ),
-                ),
-              ],
-
-              const Spacer(),
+              const SizedBox(width: 8),
 
               // Amenities quick icons
               Row(
@@ -411,6 +443,14 @@ class CompactPropertyCard extends StatelessWidget {
   final String title;
   final String location;
   final double price;
+
+  /// Pre-discount price shown struck-through before [price]. Only rendered when
+  /// non-null, greater than [price], and [discountPercent] > 0.
+  final double? originalPrice;
+
+  /// Effective discount percentage. When > 0 a red "-X%" badge is shown over
+  /// the image and the [originalPrice] strikethrough is rendered.
+  final int? discountPercent;
   final double rating;
   final String currency;
   final int? bedrooms;
@@ -429,6 +469,8 @@ class CompactPropertyCard extends StatelessWidget {
     required this.title,
     required this.location,
     required this.price,
+    this.originalPrice,
+    this.discountPercent,
     required this.rating,
     this.currency = 'EGP',
     this.bedrooms,
@@ -438,6 +480,12 @@ class CompactPropertyCard extends StatelessWidget {
     this.isFavorite = false,
     this.onFavoriteToggle,
   });
+
+  /// Whether the discount treatment (badge + strikethrough) should show.
+  bool get _hasDiscount =>
+      (discountPercent ?? 0) > 0 &&
+      originalPrice != null &&
+      originalPrice! > price;
 
   @override
   Widget build(BuildContext context) {
@@ -513,6 +561,27 @@ class CompactPropertyCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                if (_hasDiscount)
+                  Positioned(
+                    bottom: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD00416),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '-$discountPercent%',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
 
@@ -554,8 +623,37 @@ class CompactPropertyCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Flexible(
-                        child: Text(
-                          '${price.toStringAsFixed(0)} $currency/night',
+                        child: _hasDiscount
+                            ? RichText(
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                text: TextSpan(
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.charcoal,
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text:
+                                          '${originalPrice!.toStringAsFixed(0)} $currency ',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w400,
+                                        color: Color(0xFF979797),
+                                        decoration: TextDecoration.lineThrough,
+                                        decorationColor: Color(0xFF979797),
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text:
+                                          '${price.toStringAsFixed(0)} $currency${context.tr('home.perNight')}',
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : Text(
+                          '${price.toStringAsFixed(0)} $currency${context.tr('home.perNight')}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -565,24 +663,26 @@ class CompactPropertyCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            size: 12,
-                            color: AppColors.bioYellow,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            rating.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.charcoal,
+                      // Rating hidden when there are no reviews yet (web parity)
+                      if (rating > 0)
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              size: 12,
+                              color: AppColors.bioYellow,
                             ),
-                          ),
-                        ],
-                      ),
+                            const SizedBox(width: 2),
+                            Text(
+                              rating.toStringAsFixed(1),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.charcoal,
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   ),
 

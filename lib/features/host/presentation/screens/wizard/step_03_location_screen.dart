@@ -697,6 +697,7 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
           const SizedBox(height: 16),
 
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
                 child: Column(

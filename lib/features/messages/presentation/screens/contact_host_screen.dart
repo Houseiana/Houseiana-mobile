@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
@@ -113,12 +114,17 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: imageUrl.isNotEmpty
-                          ? Image.network(
-                              imageUrl,
+                          ? CachedNetworkImage(
+                              imageUrl: imageUrl,
                               width: 60,
                               height: 60,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
+                              placeholder: (context, url) => Container(
+                                width: 60,
+                                height: 60,
+                                color: const Color(0xFFF0F0F0),
+                              ),
+                              errorWidget: (context, url, error) =>
                                   const _PropertyImageFallback(),
                             )
                           : const _PropertyImageFallback(),

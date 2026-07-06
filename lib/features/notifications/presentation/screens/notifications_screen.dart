@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
+import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/models/notification_model.dart';
 import 'package:houseiana_mobile_app/features/notifications/cubit/notifications_cubit.dart';
 import 'package:houseiana_mobile_app/features/notifications/cubit/notifications_state.dart';
@@ -56,6 +57,10 @@ class NotificationsScreen extends StatelessWidget {
             return const Center(
               child: CircularProgressIndicator(color: AppColors.primaryColor),
             );
+          }
+
+          if (state is NotificationsSignInRequired) {
+            return const _SignInRequiredState();
           }
 
           if (state is NotificationsError) {
@@ -244,6 +249,82 @@ class _EmptyState extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SignInRequiredState extends StatelessWidget {
+  const _SignInRequiredState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.primaryColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.notifications_none,
+                size: 40,
+                color: AppColors.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              context.tr('notifications.signInRequired'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.charcoal,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              context.tr('notifications.signInRequiredDescription'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.neutral600,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => Navigator.pushNamed(
+                context,
+                Routes.login,
+                arguments: {'redirectRoute': Routes.notifications},
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: AppColors.charcoal,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                context.tr('auth.signIn'),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -20,6 +20,7 @@ class ThingsToKnowWidget extends StatefulWidget {
 
   final String? cancellationPolicy;
   final DateTime? cancellationDeadline;
+  final bool hasCancellationWindow;
 
   final VoidCallback? onShowAllRules;
   final VoidCallback? onShowAllSafety;
@@ -41,6 +42,7 @@ class ThingsToKnowWidget extends StatefulWidget {
     this.hasSmokeAlarm = true,
     this.cancellationPolicy,
     this.cancellationDeadline,
+    this.hasCancellationWindow = false,
     this.onShowAllRules,
     this.onShowAllSafety,
   });
@@ -329,14 +331,15 @@ class _ThingsToKnowWidgetState extends State<ThingsToKnowWidget>
             ),
             const SizedBox(height: 8),
           ],
-          Text(
-            context.tr('propertyDetails.partialRefund'),
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF6B7280),
-              height: 1.5,
+          if (widget.hasCancellationWindow)
+            Text(
+              context.tr('propertyDetails.noRefundAfterWindow'),
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF6B7280),
+                height: 1.5,
+              ),
             ),
-          ),
         ],
       ),
     );

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
@@ -318,12 +319,17 @@ class _TripsScreenState extends State<TripsScreen>
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(16)),
               child: imageUrl.isNotEmpty
-                  ? Image.network(
-                      imageUrl,
+                  ? CachedNetworkImage(
+                      imageUrl: imageUrl,
                       height: 180,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _imagePlaceholder(),
+                      placeholder: (context, url) => Container(
+                        height: 180,
+                        width: double.infinity,
+                        color: const Color(0xFFF0F0F0),
+                      ),
+                      errorWidget: (context, url, error) => _imagePlaceholder(),
                     )
                   : _imagePlaceholder(),
             ),

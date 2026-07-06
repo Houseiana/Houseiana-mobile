@@ -18,6 +18,7 @@ import 'package:houseiana_mobile_app/features/property_details/presentation/scre
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/hosted_by_widget.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/things_to_know_widget.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/property_details_skeleton.dart';
@@ -305,6 +306,17 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     return context.tr('propertyDetails.noCancellationPolicy');
   }
 
+  /// Whether the policy defines a free-cancellation window, after which
+  /// cancelling yields no refund (drives the "after that" note in the UI).
+  bool _hasCancellationWindow(Map<String, dynamic> p) {
+    final raw = p['cancellationPolicy'] ?? p['cancelPolicy'];
+    if (raw is! Map) return false;
+    final policyType = (raw['policyType'] ?? '').toString().toLowerCase();
+    final days = (raw['freeCancellationDays'] as num?)?.toInt() ?? 0;
+    final hours = (raw['freeCancellationHours'] as num?)?.toInt() ?? 0;
+    return policyType == 'fixed' || days > 0 || hours > 0;
+  }
+
   bool _isSuperhost(Map<String, dynamic> p) => (p['isSuperhost'] ??
       p['host']?['isSuperhost'] ??
       p['host']?['superhost'] ??
@@ -452,6 +464,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     hasCarbonMonoxideAlarm: _hasCarbonMonoxideAlarm(property),
                     hasSmokeAlarm: _hasSmokeAlarm(property),
                     cancellationPolicy: cancellationPolicy,
+                    hasCancellationWindow: _hasCancellationWindow(property),
                   ),
                   const _SectionDivider(),
                   _buildLocationSection(property, location),
@@ -576,7 +589,10 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   icon: _isFavorite ? Icons.favorite : Icons.favorite_border,
                   iconColor: _isFavorite ? Colors.red : AppColors.charcoal,
                   onTap: () {
-                    if (!_session.isLoggedIn) return;
+                    if (!_session.isLoggedIn) {
+                      showSignInToSaveFavoritesSheet(context);
+                      return;
+                    }
                     final cubitState =
                         context.read<PropertyDetailsCubit>().state;
                     final propId = cubitState is PropertyDetailsLoaded
@@ -1454,6 +1470,11 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
 
   Widget _buildBottomBar(double price, PropertyModel property) {
     final isInstant = property.instantBook ?? false;
+    final currency = property.currency ?? 'EGP';
+    final discountPct = property.effectiveDiscountPercent;
+    final original = property.priceWithoutDiscount;
+    final hasDiscount =
+        discountPct > 0 && original != null && original > price;
 
     final String buttonText = isInstant
         ? context.tr('propertyDetails.reserve')
@@ -1484,17 +1505,59 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  price > 0
-                      ? '${price.toStringAsFixed(0)} ${property.currency ?? 'EGP'}'
-                      : '--',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.charcoal,
+                if (hasDiscount)
+                  Text(
+                    '${original.toStringAsFixed(0)} $currency',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF979797),
+                      decoration: TextDecoration.lineThrough,
+                      decorationColor: Color(0xFF979797),
+                    ),
                   ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        price > 0
+                            ? '${price.toStringAsFixed(0)} $currency'
+                            : '--',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.charcoal,
+                        ),
+                      ),
+                    ),
+                    if (hasDiscount) ...[
+                      const SizedBox(width: 6),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 3),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD00416),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '-$discountPct%',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 Text(
                   context.tr('propertyDetails.perNight'),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
-import 'package:houseiana_mobile_app/core/services/clerk_service.dart';
+import 'package:houseiana_mobile_app/core/services/account_privacy_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
@@ -14,13 +14,15 @@ class PrivacySettingsScreen extends StatefulWidget {
 }
 
 class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
-  final _clerkService = sl<ClerkService>();
+  final _privacyService = sl<AccountPrivacyService>();
   final _session = sl<UserSession>();
 
   bool _isLoading = true;
   bool _isSaving = false;
+
+  /// Translation key (rendered via `context.tr`) — never a raw exception.
   String? _error;
-  Map<String, bool> _settings = ClerkPrivacyDefaults.values;
+  Map<String, bool> _settings = PrivacyDefaults.values;
   Map<String, dynamic>? _dataRequest;
 
   @override
@@ -41,21 +43,21 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     });
 
     try {
-      final results = await Future.wait([
-        _clerkService.getPrivacySettings(_session.userId!),
-        _clerkService.getDataRequest(_session.userId!),
+      final results = await Future.wait<Object?>([
+        _privacyService.getPrivacySettings(),
+        _privacyService.getDataRequest(),
       ]);
 
       if (!mounted) return;
       setState(() {
-        _settings = results[0] as Map<String, bool>;
-        _dataRequest = results[1] as Map<String, dynamic>;
+        _settings = results[0]! as Map<String, bool>;
+        _dataRequest = results[1] as Map<String, dynamic>?;
         _isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = 'common.errorOccurred';
         _isLoading = false;
       });
     }
@@ -76,8 +78,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     });
 
     try {
-      final updated = await _clerkService.updatePrivacySetting(
-        userId: userId,
+      final updated = await _privacyService.updatePrivacySetting(
         setting: key,
         value: nextValue,
       );
@@ -100,7 +101,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString()),
+          content: Text(context.tr('common.errorOccurred')),
           backgroundColor: AppColors.error,
         ),
       );
@@ -137,7 +138,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
 
     setState(() => _isSaving = true);
     try {
-      final request = await _clerkService.requestDataExport(userId);
+      final request = await _privacyService.requestDataExport();
       if (!mounted) return;
       setState(() {
         _dataRequest = request;
@@ -154,10 +155,26 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString()),
+          content: Text(context.tr('common.errorOccurred')),
           backgroundColor: AppColors.error,
         ),
       );
+    }
+  }
+
+  /// The web route stores English enum statuses (pending/processing/ready/
+  /// expired) in metadata — map them to translation keys before display.
+  String _dataRequestStatusLabel(BuildContext context) {
+    switch (_dataRequest?['status']) {
+      case 'processing':
+        return context.tr('profile.processingStatus');
+      case 'ready':
+        return context.tr('profile.readyStatus');
+      case 'expired':
+        return context.tr('profile.expiredStatus');
+      case 'pending':
+      default:
+        return context.tr('profile.pendingStatus');
     }
   }
 
@@ -204,7 +221,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                   ? _MessageState(
                       icon: Icons.error_outline,
                       title: context.tr('profile.unableToLoadPrivacy'),
-                      message: _error!,
+                      message: context.tr(_error!),
                       actionLabel: context.tr('common.retry'),
                       onAction: _loadPrivacyData,
                     )
@@ -302,19 +319,25 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildActionTile(
-            icon: Icons.download_outlined,
-            title: context.tr('profile.requestYourDataTitle'),
-            subtitle: _dataRequest == null
-                ? context.tr('profile.getCopyOfData')
-                : context.tr('profile.currentRequestStatus', args: {
-                    'status': _dataRequest!['status'] ?? context.tr('profile.pendingStatus'),
-                  }),
-            label: _dataRequest == null
-                ? context.tr('profile.request')
-                : context.tr('profile.requested'),
-            onTap: _dataRequest == null ? _requestDataExport : null,
-          ),
+          // The web route only rejects a new export while one is still
+          // pending — ready/expired requests may be re-requested, so only a
+          // pending request disables the button (web parity).
+          Builder(builder: (context) {
+            final isPending = _dataRequest?['status'] == 'pending';
+            return _buildActionTile(
+              icon: Icons.download_outlined,
+              title: context.tr('profile.requestYourDataTitle'),
+              subtitle: _dataRequest == null
+                  ? context.tr('profile.getCopyOfData')
+                  : context.tr('profile.currentRequestStatus', args: {
+                      'status': _dataRequestStatusLabel(context),
+                    }),
+              label: isPending
+                  ? context.tr('profile.requested')
+                  : context.tr('profile.request'),
+              onTap: isPending ? null : _requestDataExport,
+            );
+          }),
           _buildActionTile(
             icon: Icons.delete_outline,
             title: context.tr('profile.deleteAccountTitle'),

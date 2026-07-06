@@ -22,6 +22,15 @@ class ListingWizardState extends Equatable {
   final String? basePriceError;
   final WizardData data;
 
+  /// The server snapshot the wizard was prefilled with in EDIT mode (via
+  /// [ListingWizardCubit.loadForEdit]). Non-null **iff** the wizard is editing
+  /// an existing listing, so it doubles as the edit-mode flag. Saves in edit
+  /// mode diff [data] against this baseline and POST only the changed fields to
+  /// `/api/properties/modify`; it is advanced to the latest saved data after a
+  /// successful modify so already-saved edits aren't re-sent. Always null in
+  /// CREATE mode (where saves go through `/api/properties/draft`).
+  final WizardData? originalData;
+
   const ListingWizardState({
     this.currentStep = 0,
     this.minStep = 0,
@@ -34,6 +43,7 @@ class ListingWizardState extends Equatable {
     this.error,
     this.basePriceError,
     this.data = const WizardData(),
+    this.originalData,
   });
 
   factory ListingWizardState.initial() => const ListingWizardState();
@@ -50,6 +60,7 @@ class ListingWizardState extends Equatable {
     String? error,
     String? basePriceError,
     WizardData? data,
+    WizardData? originalData,
     bool clearError = false,
     bool clearBasePriceError = false,
     bool clearPublishedListingId = false,
@@ -70,6 +81,7 @@ class ListingWizardState extends Equatable {
           ? null
           : (basePriceError ?? this.basePriceError),
       data: data ?? this.data,
+      originalData: originalData ?? this.originalData,
     );
   }
 
@@ -92,6 +104,7 @@ class ListingWizardState extends Equatable {
         error,
         basePriceError,
         data,
+        originalData,
       ];
 }
 
@@ -681,9 +694,11 @@ class WizardData extends Equatable {
     }
 
     // ── Target Step 4: Amenities ─────────────────────────────────────────
-    if (includeStep(4)) {
-      map['amenities'] =
-          amenities.isNotEmpty ? amenities : ['13']; // Fallback to 13
+    // Web parity: amenities are optional. The add-listing page only appends
+    // `amenities` when the host has selected some, and the backend accepts an
+    // empty list — so send nothing when empty instead of a phantom fallback.
+    if (includeStep(4) && amenities.isNotEmpty) {
+      map['amenities'] = amenities;
     }
 
     // ── Target Step 5: House Rules ───────────────────────────────────────
@@ -793,6 +808,229 @@ class WizardData extends Equatable {
     // ── Target Step 13: Publish ──────────────────────────────────────────
     if (includeStep(13)) {
       // Final publish step
+    }
+
+    return map;
+  }
+
+  /// Builds the multipart payload for `POST /api/properties/modify`, carrying
+  /// ONLY the fields whose value differs from [original] (the server snapshot
+  /// the wizard was prefilled with). [propertyId] and [hostId] are always
+  /// included (the endpoint requires them); the returned map contains just
+  /// those two keys when nothing changed, so callers can detect a no-op edit
+  /// by checking whether any *other* key is present.
+  ///
+  /// Field keys follow the `/modify` schema, which differs from the draft
+  /// schema in a few places: house rules use `allowMarriedOnly` (not
+  /// `marriedCouplesOnly`), availability uses `maxNights` /
+  /// `minimumDaysForBooking`, and there is no `countryId`/`stateId`/
+  /// `isPropertyOwner` — those fields are not editable through this endpoint
+  /// and are simply never sent. As a partial update, only non-null changed
+  /// values are pushed (a field is never cleared to null here).
+  Map<String, dynamic> toModifyMap({
+    required String hostId,
+    required String propertyId,
+    required WizardData original,
+  }) {
+    final o = original;
+    final map = <String, dynamic>{
+      'propertyId': propertyId,
+      'hostId': hostId,
+    };
+
+    // ── Property type / room type (locked in edit; kept for completeness) ──
+    if (propertyType != o.propertyType) {
+      final id = int.tryParse(propertyType ?? '');
+      if (id != null && id > 0) map['propertyType.id'] = id;
+    }
+    if (propertyKind != o.propertyKind && propertyKind != null) {
+      final idx = const ['entire', 'private', 'shared'].indexOf(propertyKind!) + 1;
+      if (idx > 0) map['roomType'] = idx;
+    }
+
+    // ── Title / description / highlights ──
+    if (title != o.title && (title?.trim().isNotEmpty ?? false)) {
+      map['title'] = title!.trim();
+    }
+    if (description != o.description && (description?.trim().isNotEmpty ?? false)) {
+      map['description.description'] = description!.trim();
+    }
+    if (!_sameList(highlights, o.highlights)) {
+      map['description.propertyHighlight'] = highlights;
+    }
+
+    // ── Address (countryId/stateId are not part of the modify schema) ──
+    if (address != o.address && (address?.trim().isNotEmpty ?? false)) {
+      map['address.name'] = address!.trim();
+      map['address.streetAddress'] = address!.trim();
+    }
+    if (city != o.city) {
+      final id = int.tryParse(city ?? '');
+      if (id != null && id > 0) map['address.cityId'] = id;
+    }
+    if (village != o.village) {
+      final id = int.tryParse(village ?? '');
+      if (id != null && id > 0) map['address.villageId'] = id;
+    }
+    if (district != o.district && (district?.isNotEmpty ?? false)) {
+      map['address.area'] = district;
+    }
+    if (postalCode != o.postalCode && (postalCode?.isNotEmpty ?? false)) {
+      map['address.zipCode'] = postalCode;
+    }
+    if (latitude != o.latitude && latitude != null) {
+      map['address.latitude'] = latitude;
+    }
+    if (longitude != o.longitude && longitude != null) {
+      map['address.longitude'] = longitude;
+    }
+    if (buildingNumber != o.buildingNumber &&
+        (buildingNumber?.isNotEmpty ?? false)) {
+      map['address.buildingNumber'] = buildingNumber;
+    }
+    if (floorNumber != o.floorNumber && (floorNumber?.isNotEmpty ?? false)) {
+      final f = int.tryParse(floorNumber!);
+      if (f != null) map['address.floorNumber'] = f;
+    }
+    if (unitNumber != o.unitNumber && (unitNumber?.isNotEmpty ?? false)) {
+      final u = int.tryParse(unitNumber!);
+      if (u != null) map['address.unitNumber'] = u;
+    }
+
+    // ── Room details (Basics) ──
+    if (maxGuests != o.maxGuests && maxGuests != null) {
+      map['roomDetails.guests'] = maxGuests;
+    }
+    if (bedrooms != o.bedrooms && bedrooms != null) {
+      map['roomDetails.bedrooms'] = bedrooms;
+    }
+    if (beds != o.beds && beds != null) map['roomDetails.beds'] = beds;
+    if (bathrooms != o.bathrooms && bathrooms != null) {
+      map['roomDetails.bathrooms'] = bathrooms;
+    }
+    if (totalArea != o.totalArea && totalArea != null) {
+      map['roomDetails.area_size'] = totalArea;
+    }
+
+    // ── Amenities ──
+    if (!_sameList(amenities, o.amenities)) map['amenities'] = amenities;
+
+    // ── House rules (note: modify uses `allowMarriedOnly`) ──
+    if (allowPets != o.allowPets && allowPets != null) {
+      map['houseRules.allowPets'] = allowPets;
+    }
+    if (allowSmoking != o.allowSmoking && allowSmoking != null) {
+      map['houseRules.allowSmoking'] = allowSmoking;
+    }
+    if (allowEvents != o.allowEvents && allowEvents != null) {
+      map['houseRules.allowEvents'] = allowEvents;
+    }
+    if (marriedCouplesOnly != o.marriedCouplesOnly &&
+        marriedCouplesOnly != null) {
+      map['houseRules.allowMarriedOnly'] = marriedCouplesOnly;
+    }
+    if (allowGuests != o.allowGuests && allowGuests != null) {
+      map['houseRules.allowGuests'] = allowGuests;
+    }
+    if (checkInTime != o.checkInTime && checkInTime != null) {
+      map['houseRules.checkInTime'] = _hhmm24(checkInTime);
+    }
+    if (checkOutTime != o.checkOutTime && checkOutTime != null) {
+      map['houseRules.checkOutTime'] = _hhmm24(checkOutTime);
+    }
+
+    // ── Photos / cover ── The cover is derived from the photo set, so send the
+    // full current photo list + cover together whenever either one changes.
+    final photosChanged = !_sameList(photos, o.photos);
+    final coverChanged = coverPhoto != o.coverPhoto;
+    if (photosChanged || coverChanged) {
+      if (photos.isNotEmpty) map['photos'] = photos;
+      if (coverPhoto != null && coverPhoto!.isNotEmpty) {
+        map['coverPhoto'] = coverPhoto;
+      }
+    }
+
+    // ── Pricing ──
+    if (basePrice != o.basePrice && basePrice != null) {
+      map['pricing.pricePerNight'] = basePrice;
+    }
+    if (cleaningFee != o.cleaningFee && cleaningFee != null) {
+      map['pricing.cleaningFee'] = cleaningFee;
+    }
+    if (electricalFee != o.electricalFee && electricalFee != null) {
+      map['pricing.electricalFee'] = electricalFee;
+    }
+    if (waterFee != o.waterFee && waterFee != null) {
+      map['pricing.waterFee'] = waterFee;
+    }
+    if (stars != o.stars && stars != null) map['stars'] = stars;
+
+    // ── Discounts ──
+    if (weeklyDiscountPercent != o.weeklyDiscountPercent &&
+        weeklyDiscountPercent != null) {
+      map['discount.weeklyDiscount'] = weeklyDiscountPercent!.toInt();
+    }
+    if (newListingDiscountPercent != o.newListingDiscountPercent &&
+        newListingDiscountPercent != null) {
+      map['discount.newListingDiscount'] = newListingDiscountPercent!.toInt();
+    }
+
+    // ── Cancellation policy ──
+    if (cancellationPolicyType != o.cancellationPolicyType &&
+        cancellationPolicyType != null) {
+      map['cancellationPolicy.policyType'] = cancellationPolicyType;
+    }
+    if (freeCancellationHours != o.freeCancellationHours &&
+        freeCancellationHours != null) {
+      map['cancellationPolicy.freeCancellationHours'] = freeCancellationHours;
+    }
+    if (freeCancellationDays != o.freeCancellationDays &&
+        freeCancellationDays != null) {
+      map['cancellationPolicy.freeCancellationDays'] = freeCancellationDays;
+    }
+
+    // ── Booking settings ──
+    if (instantBook != o.instantBook && instantBook != null) {
+      map['bookingSettings.instantBook'] = instantBook;
+    }
+    if (hasSecurityCameras != o.hasSecurityCameras &&
+        hasSecurityCameras != null) {
+      map['bookingSettings.securitCamera'] = hasSecurityCameras;
+    }
+    if (hasNoiseMonitors != o.hasNoiseMonitors && hasNoiseMonitors != null) {
+      map['bookingSettings.noiseDecibelMonitor'] = hasNoiseMonitors;
+    }
+
+    // ── Availability (not currently wired into the edit flow; diff-guarded) ──
+    if (minimumNights != o.minimumNights && minimumNights != null) {
+      map['minimumDaysForBooking'] = minimumNights;
+    }
+    if (maximumNights != o.maximumNights && maximumNights != null) {
+      map['maxNights'] = maximumNights;
+    }
+
+    // ── Documents (local file paths uploaded by HostService; URLs preserved) ──
+    if (propertyDocument != o.propertyDocument &&
+        (propertyDocument?.isNotEmpty ?? false)) {
+      map['documentOfProperty.prpopertyDocoument'] = propertyDocument;
+    }
+    if (hostIdentityCard != o.hostIdentityCard &&
+        (hostIdentityCard?.isNotEmpty ?? false)) {
+      map['documentOfProperty.hostId'] = hostIdentityCard;
+    }
+    if (powerOfAttorney != o.powerOfAttorney &&
+        (powerOfAttorney?.isNotEmpty ?? false)) {
+      map['documentOfProperty.powerOfAttorney'] = powerOfAttorney;
+    }
+
+    // ── Phones (stored as the national part; submitted as +20<national>) ──
+    if (primaryPhone != o.primaryPhone &&
+        (primaryPhone?.trim().isNotEmpty ?? false)) {
+      map['phoneNumber'] = '+20${primaryPhone!.trim()}';
+    }
+    if (emergencyPhone != o.emergencyPhone &&
+        (emergencyPhone?.trim().isNotEmpty ?? false)) {
+      map['emergencyPhoneNumber'] = '+20${emergencyPhone!.trim()}';
     }
 
     return map;
@@ -969,6 +1207,40 @@ List<String> _photoList(dynamic v) {
   // A bare http string that wasn't a JSON array.
   if (out.isEmpty && v is String && v.startsWith('http')) out.add(v);
   return out;
+}
+
+/// Converts the wizard's 12h display time ("03:00 PM") to the 24h "HH:mm"
+/// format the backend expects ("15:00"). Mirrors the `convertTime` closure in
+/// [WizardData.toApiMap]; falls back to "14:00" on null/unparseable input.
+String _hhmm24(String? time) {
+  if (time == null || time.trim().isEmpty) return '14:00';
+  try {
+    final parts = time.trim().split(' ');
+    if (parts.length != 2) return time.trim();
+    final tp = parts[0].split(':');
+    int hour = int.parse(tp[0]);
+    final minute = tp[1];
+    final isPM = parts[1].toUpperCase() == 'PM';
+    if (isPM && hour < 12) hour += 12;
+    if (!isPM && hour == 12) hour = 0;
+    return '${hour.toString().padLeft(2, '0')}:$minute';
+  } catch (_) {
+    return '14:00';
+  }
+}
+
+/// Order-sensitive value equality for the wizard's list fields (amenities,
+/// highlights, photos). Two nulls are equal. A false positive (different order,
+/// same members) only causes the list to be re-sent as an unchanged whole,
+/// which is harmless for the modify endpoint.
+bool _sameList(List<dynamic>? a, List<dynamic>? b) {
+  if (identical(a, b)) return true;
+  if (a == null || b == null) return a == b;
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }
 
 /// Converts a 24h time ("14:00") to the wizard's 12h display format

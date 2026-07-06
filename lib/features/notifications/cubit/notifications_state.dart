@@ -12,6 +12,10 @@ class NotificationsInitial extends NotificationsState {}
 
 class NotificationsLoading extends NotificationsState {}
 
+/// The viewer is a logged-out guest — notifications are per-user, so the
+/// screen shows a sign-in prompt instead of an error.
+class NotificationsSignInRequired extends NotificationsState {}
+
 class NotificationsLoaded extends NotificationsState {
   final List<NotificationModel> notifications;
 

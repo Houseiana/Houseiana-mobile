@@ -36,6 +36,7 @@ class CalendarDayCell extends StatelessWidget {
   static const Color _checkoutBg = Color(0xFFF0FDF4);
   static const Color _checkoutText = Color(0xFF009966);
   static const Color _checkoutBorder = Color(0xFF86EFAC);
+  static const Color _discountBadge = Color(0xFFF43F5E); // rose-500 (web parity)
 
   @override
   Widget build(BuildContext context) {
@@ -120,18 +121,83 @@ class CalendarDayCell extends StatelessWidget {
               ),
               if (showBlockedIcon)
                 const Icon(Icons.block, size: 12, color: AppColors.neutral400)
-              else if (priceLabel != null)
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    priceLabel,
-                    style: TextStyle(fontSize: 9, color: priceColor),
-                  ),
-                ),
+              else
+                _priceContent(fg, priceColor, priceLabel),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// The bottom-left price content. When the day carries a discount it shows the
+  /// struck-through original above the discounted amount plus a `-X%` badge —
+  /// mirroring the web calendar cell.
+  Widget _priceContent(Color fg, Color priceColor, String? priceLabel) {
+    final day = info;
+    if (day != null && day.hasDiscount && day.discountedPrice != null) {
+      final original = day.price;
+      final discounted = day.discountedPrice!;
+      final pct = day.discountPercent;
+      return FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (original != null)
+              Text(
+                '$currency${_fmt(original)}',
+                style: TextStyle(
+                  fontSize: 7,
+                  color: priceColor,
+                  decoration: TextDecoration.lineThrough,
+                ),
+              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$currency${_fmt(discounted)}',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    color: fg,
+                  ),
+                ),
+                if (pct != null) ...[
+                  const SizedBox(width: 2),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: _discountBadge,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '-$pct%',
+                      style: const TextStyle(
+                        fontSize: 7,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+    if (priceLabel == null) return const SizedBox.shrink();
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Text(
+        priceLabel,
+        style: TextStyle(fontSize: 9, color: priceColor),
       ),
     );
   }

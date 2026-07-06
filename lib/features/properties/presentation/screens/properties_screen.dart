@@ -5,10 +5,12 @@ import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/core/utils/discount_utils.dart';
 import 'package:houseiana_mobile_app/features/properties/presentation/widgets/property_map_view.dart';
 import 'package:houseiana_mobile_app/features/properties/presentation/widgets/property_sort_control.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/cards/property_list_card.dart';
+import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart' show ListSkeletonLoader;
 
 class PropertiesScreen extends StatefulWidget {
@@ -35,6 +37,11 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   int _currentPage = 1;
   static const int _pageLimit = 20;
 
+  /// Backend-reported total across all pages (`totalCount` in the search
+  /// response). Null when the response carries no total — the count label
+  /// then falls back to the loaded length (+ "+" while more pages exist).
+  int? _totalCount;
+
   String? _filterLocation;
   double? _minPrice;
   double? _maxPrice;
@@ -59,9 +66,12 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   /// so the map (and the user's camera position) is never torn down mid-search.
   bool _isAreaSearching = false;
 
-  /// Monotonic stamp so a slow area search can't overwrite a newer one
-  /// (rapid panning fires several; last-requested wins).
-  int _areaSearchSeq = 0;
+  /// Monotonic stamp of the CURRENT query (text/filters/sort/geo scope).
+  /// [_loadData] and [_searchThisArea] bump it when they start a new query and
+  /// drop their own response if a newer one started meanwhile; [_loadMore]
+  /// captures it and drops its page if the query it belongs to was replaced
+  /// while the request was in flight (last-requested query wins).
+  int _querySeq = 0;
 
   /// True while a marker's preview card is shown on the map. Used to lift the
   /// bottom "List" toggle so it doesn't collide with the (taller) preview card.
@@ -92,6 +102,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   }
 
   Future<void> _loadData({String? location}) async {
+    final seq = ++_querySeq;
     setState(() {
       _isLoading = true;
       _currentPage = 1;
@@ -99,7 +110,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       _filterLocation = location;
     });
 
-    final props = await _propertyService.searchProperties(
+    final searchPage = await _propertyService.searchProperties(
       PropertySearchParams(
         location: location ?? _filterLocation,
         minPrice: _minPrice,
@@ -117,6 +128,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       ),
       userId: _session.userId,
     );
+    final props = searchPage.properties;
     final propertyMaps = props.map((property) => property.toJson()).toList();
 
     Set<String> favIds = {};
@@ -128,22 +140,24 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
           .toSet();
     }
 
-    if (mounted) {
-      setState(() {
-        _properties = propertyMaps;
-        _favoriteIds = favIds;
-        _isLoading = false;
-        _hasMore = props.length >= _pageLimit;
-      });
-    }
+    // A newer query started while this was in flight — drop this result.
+    if (!mounted || seq != _querySeq) return;
+    setState(() {
+      _properties = propertyMaps;
+      _favoriteIds = favIds;
+      _isLoading = false;
+      _hasMore = props.length >= _pageLimit;
+      _totalCount = searchPage.total;
+    });
   }
 
   Future<void> _loadMore() async {
     if (_isLoadingMore || !_hasMore) return;
+    final seq = _querySeq;
     setState(() => _isLoadingMore = true);
 
     final nextPage = _currentPage + 1;
-    final more = await _propertyService.searchProperties(
+    final morePage = await _propertyService.searchProperties(
       PropertySearchParams(
         location: _filterLocation,
         minPrice: _minPrice,
@@ -161,25 +175,34 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       ),
       userId: _session.userId,
     );
+    if (!mounted) return;
+    // The query this page belongs to was replaced while the request was in
+    // flight — drop the page, but release the flag so the new list can paginate.
+    if (seq != _querySeq) {
+      setState(() => _isLoadingMore = false);
+      return;
+    }
+    final more = morePage.properties;
     final moreMaps = more.map((property) => property.toJson()).toList();
 
-    if (mounted) {
-      setState(() {
-        if (more.isEmpty) {
-          _hasMore = false;
-        } else {
-          _properties.addAll(moreMaps);
-          _currentPage = nextPage;
-          _hasMore = more.length >= _pageLimit;
-        }
-        _isLoadingMore = false;
-      });
-    }
+    setState(() {
+      if (more.isEmpty) {
+        _hasMore = false;
+      } else {
+        _properties.addAll(moreMaps);
+        _currentPage = nextPage;
+        _hasMore = more.length >= _pageLimit;
+      }
+      if (morePage.total != null) {
+        _totalCount = morePage.total;
+      }
+      _isLoadingMore = false;
+    });
   }
 
   Future<void> _toggleFavorite(String propertyId) async {
     if (!_session.isLoggedIn) {
-      Navigator.pushNamed(context, Routes.login);
+      showSignInToSaveFavoritesSheet(context);
       return;
     }
     final isFav = _favoriteIds.contains(propertyId);
@@ -380,14 +403,14 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   /// it keeps the map mounted (no full-screen skeleton) and preserves the
   /// active text/filter selection, so panning only narrows results by area.
   Future<void> _searchThisArea() async {
-    final seq = ++_areaSearchSeq;
+    final seq = ++_querySeq;
     setState(() {
       _isAreaSearching = true;
       _currentPage = 1;
       _hasMore = true;
     });
     try {
-      final props = await _propertyService.searchProperties(
+      final searchPage = await _propertyService.searchProperties(
         PropertySearchParams(
           location: _filterLocation,
           minPrice: _minPrice,
@@ -405,18 +428,33 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
         ),
         userId: _session.userId,
       );
-      // A newer area search started while this was in flight — drop this result.
-      if (!mounted || seq != _areaSearchSeq) return;
+      // A newer query started while this was in flight — drop this result.
+      if (!mounted || seq != _querySeq) return;
+      final props = searchPage.properties;
       final maps = props.map((property) => property.toJson()).toList();
       setState(() {
         _properties = maps;
         _isAreaSearching = false;
         _hasMore = props.length >= _pageLimit;
+        _totalCount = searchPage.total;
       });
     } catch (_) {
-      if (!mounted || seq != _areaSearchSeq) return;
+      if (!mounted || seq != _querySeq) return;
       setState(() => _isAreaSearching = false);
     }
+  }
+
+  /// Count shown in the list header and map pill: the backend total when
+  /// known, otherwise the loaded length with a "+" while more pages exist.
+  String get _countLabel =>
+      _totalCount?.toString() ?? '${_properties.length}${_hasMore ? '+' : ''}';
+
+  /// Translation key matching [_countLabel]: singular only when the count is
+  /// exactly 1 (known total of 1, or a single fully-loaded result).
+  String get _countLabelKey {
+    final isOne = _totalCount == 1 ||
+        (_totalCount == null && _properties.length == 1 && !_hasMore);
+    return isOne ? 'property.propertyFound' : 'property.propertiesFound';
   }
 
   Widget _buildMapView() {
@@ -491,9 +529,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
             ),
           ] else
             Text(
-              context.tr('property.propertiesFound', args: {
-                'count': '${_properties.length}${_hasMore ? '+' : ''}'
-              }),
+              context.tr(_countLabelKey, args: {'count': _countLabel}),
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -523,7 +559,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
             children: [
               Flexible(
                 child: Text(
-                  context.tr('property.propertiesFound', args: {'count': '${_properties.length}${_hasMore ? '+' : ''}'}),
+                  context.tr(_countLabelKey, args: {'count': _countLabel}),
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -592,11 +628,18 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   }
 
   Widget _buildPropertyCard(Map<String, dynamic> p, String id) {
+    final price = _extractPrice(p);
+    final discountPct = effectiveDiscountPercent(p);
+    final original = originalNightlyPrice(p);
+    final showOriginal =
+        discountPct > 0 && original != null && original > price;
     return PropertyListCard(
       imageUrl: _extractImage(p),
       title: _extractTitle(p),
       location: _extractLocation(p),
-      priceText: _extractPrice(p).toStringAsFixed(0),
+      priceText: price.toStringAsFixed(0),
+      originalPriceText: showOriginal ? original.toStringAsFixed(0) : null,
+      discountPercent: discountPct,
       currency: _extractCurrency(p),
       rating: _extractRating(p),
       reviewCount: _extractCount(p, const ['reviewsCount', 'reviewCount']),

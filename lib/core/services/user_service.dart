@@ -6,13 +6,15 @@ import 'package:houseiana_mobile_app/core/models/trip_model.dart';
 import 'package:houseiana_mobile_app/core/models/user_model.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/end_points.dart';
+import 'package:houseiana_mobile_app/core/services/cache_service.dart';
 
 /// Handles all user-related API calls to the backend.
 /// Routes: /users/*, /booking-manager/*, /api/chat/conversations
 class UserService {
   final ApiConsumer _api;
+  final CacheService _cache;
 
-  UserService(this._api);
+  UserService(this._api, this._cache);
 
   // ── Profile ──────────────────────────────────────────────────────────────
 
@@ -60,6 +62,13 @@ class UserService {
   /// POST /users/favorites
   /// Body: { "userId": "...", "propertyId": "..." }
   /// The backend toggles — if already favourite it removes it.
+  ///
+  /// A favourite changes what the home should show (which hearts are filled),
+  /// and per product spec the home must NOT be served stale from cache after a
+  /// favourite. So this invalidates the cached home list + favourite sets — the
+  /// next home load then misses the cache, fetches fresh from the API and
+  /// re-caches. This is the single choke point for every favourite toggle in
+  /// the app (home, favorites, wishlists, recommendations, search, details).
   Future<bool> toggleFavorite({
     required String userId,
     required String propertyId,
@@ -68,6 +77,8 @@ class UserService {
       EndPoints.favorites,
       body: {'userId': userId, 'propertyId': propertyId},
     );
+    await _cache.removeByPrefix(HomeCache.listPrefix);
+    await _cache.removeByPrefix(HomeCache.favPrefix);
     return true;
   }
 

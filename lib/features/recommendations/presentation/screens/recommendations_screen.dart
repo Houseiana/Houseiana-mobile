@@ -266,6 +266,8 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
       location: property.displayLocation,
       price: property.displayPrice,
       originalPrice: property.priceWithoutDiscount,
+      discountPercent: property.effectiveDiscountPercent,
+      currency: property.currency ?? 'EGP',
       rating: _ratingOf(property),
       reviewCount: property.reviewsCount ?? property.reviewCount ?? 0,
       isFavorite: _favoriteIds.contains(property.id),

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
@@ -337,11 +338,15 @@ class _CountryCard extends StatelessWidget {
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(16)),
                 child: country.imageUrl.isNotEmpty
-                    ? Image.network(
-                        country.imageUrl,
+                    ? CachedNetworkImage(
+                        imageUrl: country.imageUrl,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _imageFallback(),
+                        placeholder: (context, url) => Container(
+                          width: double.infinity,
+                          color: const Color(0xFFF0F0F0),
+                        ),
+                        errorWidget: (context, url, error) => _imageFallback(),
                       )
                     : _imageFallback(),
               ),

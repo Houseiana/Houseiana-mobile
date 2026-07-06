@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
@@ -418,12 +419,14 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: imageUrl.isNotEmpty
-                ? Image.network(
-                    imageUrl,
+                ? CachedNetworkImage(
+                    imageUrl: imageUrl,
                     width: 80,
                     height: 72,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _imgPlaceholder(),
+                    placeholder: (context, url) => Container(
+                        width: 80, height: 72, color: const Color(0xFFF0F0F0)),
+                    errorWidget: (context, url, error) => _imgPlaceholder(),
                   )
                 : _imgPlaceholder(),
           ),

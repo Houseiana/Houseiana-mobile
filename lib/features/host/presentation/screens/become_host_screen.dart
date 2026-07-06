@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
@@ -42,11 +43,24 @@ class BecomeHostScreen extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(16),
-                      child: Image.network(
-                        'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=600',
+                      child: CachedNetworkImage(
+                        imageUrl:
+                            'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=600',
                         height: 200,
                         width: double.infinity,
                         fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          height: 200,
+                          color: const Color(0xFFF0F0F0),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          height: 200,
+                          color: const Color(0xFFF0F0F0),
+                          child: const Icon(
+                            Icons.image_not_supported_outlined,
+                            color: Color(0xFF9CA3AF),
+                          ),
+                        ),
                       ),
                     ),
 

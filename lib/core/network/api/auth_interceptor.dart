@@ -88,7 +88,14 @@ class AuthInterceptor extends Interceptor {
   ) async {
     final headers = Map<String, dynamic>.from(requestOptions.headers)
       ..['Authorization'] = 'Bearer $token';
-    return Dio().request<dynamic>(
+    // Carry over the original client's timeouts — a bare Dio has none, and a
+    // stalled retry would otherwise hang the caller indefinitely.
+    return Dio(
+      BaseOptions(
+        connectTimeout: requestOptions.connectTimeout,
+        receiveTimeout: requestOptions.receiveTimeout,
+      ),
+    ).request<dynamic>(
       requestOptions.uri.toString(),
       data: requestOptions.data,
       options: Options(

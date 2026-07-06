@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
@@ -16,8 +17,17 @@ class PropertyListCard extends StatelessWidget {
   final String location;
 
   /// Numeric price already formatted as a string (e.g. "18900"). The widget
-  /// appends the [currency] and the localized "/night" suffix.
+  /// appends the [currency] and the localized "/night" suffix. When a discount
+  /// applies this is the discounted (effective) price.
   final String priceText;
+
+  /// Pre-discount price already formatted as a string, shown struck-through
+  /// before [priceText]. Only rendered when non-null and [discountPercent] > 0.
+  final String? originalPriceText;
+
+  /// Effective discount percentage. When > 0 a red "-X%" badge is shown over
+  /// the image and the [originalPriceText] strikethrough is rendered.
+  final int discountPercent;
   final String currency;
   final double rating;
   final int reviewCount;
@@ -42,6 +52,8 @@ class PropertyListCard extends StatelessWidget {
     required this.title,
     required this.location,
     required this.priceText,
+    this.originalPriceText,
+    this.discountPercent = 0,
     this.currency = '',
     this.rating = 0,
     this.reviewCount = 0,
@@ -80,12 +92,18 @@ class PropertyListCard extends StatelessWidget {
               child: Stack(
                 children: [
                   imageUrl.isNotEmpty
-                      ? Image.network(
-                          imageUrl,
+                      ? CachedNetworkImage(
+                          imageUrl: imageUrl,
                           height: 180,
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _imagePlaceholder(),
+                          placeholder: (context, url) => Container(
+                            height: 180,
+                            width: double.infinity,
+                            color: const Color(0xFFF0F0F0),
+                          ),
+                          errorWidget: (context, url, error) =>
+                              _imagePlaceholder(),
                         )
                       : _imagePlaceholder(),
                   if (isGuestFavorite)
@@ -101,6 +119,27 @@ class PropertyListCard extends StatelessWidget {
                         ),
                         child: Text(
                           context.tr('home.guestFavorite'),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (discountPercent > 0)
+                    Positioned(
+                      bottom: 12,
+                      left: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD00416),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '-$discountPercent%',
                           style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
@@ -138,32 +177,32 @@ class PropertyListCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.star,
-                          size: 13, color: Color(0xFFFCC519)),
-                      const SizedBox(width: 3),
-                      Text(
-                        rating > 0
-                            ? rating.toStringAsFixed(2)
-                            : context.tr('property.newRating'),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1D242B),
-                        ),
-                      ),
-                      if (reviewCount > 0) ...[
-                        const SizedBox(width: 4),
+                  if (rating > 0) ...[
+                    Row(
+                      children: [
+                        const Icon(Icons.star,
+                            size: 13, color: Color(0xFFFCC519)),
+                        const SizedBox(width: 3),
                         Text(
-                          '($reviewCount)',
+                          rating.toStringAsFixed(2),
                           style: const TextStyle(
-                              fontSize: 11, color: Color(0xFF6B7280)),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1D242B),
+                          ),
                         ),
+                        if (reviewCount > 0) ...[
+                          const SizedBox(width: 4),
+                          Text(
+                            '($reviewCount)',
+                            style: const TextStyle(
+                                fontSize: 11, color: Color(0xFF6B7280)),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                   Text(
                     title,
                     style: const TextStyle(
@@ -198,6 +237,19 @@ class PropertyListCard extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF1D242B)),
                       children: [
+                        if (discountPercent > 0 && originalPriceText != null)
+                          TextSpan(
+                            text: currency.isNotEmpty
+                                ? '$originalPriceText $currency '
+                                : '$originalPriceText ',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF979797),
+                              decoration: TextDecoration.lineThrough,
+                              decorationColor: Color(0xFF979797),
+                            ),
+                          ),
                         TextSpan(
                           text: currency.isNotEmpty
                               ? '$priceText $currency '

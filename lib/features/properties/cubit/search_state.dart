@@ -17,14 +17,20 @@ class SearchLoaded extends SearchState {
   final bool hasMore;
   final PropertySearchParams params;
 
+  /// Backend-reported total across all pages (`totalCount` in the search
+  /// response), or null when unknown — the UI then falls back to
+  /// `properties.length`.
+  final int? total;
+
   const SearchLoaded({
     required this.properties,
     required this.hasMore,
     required this.params,
+    this.total,
   });
 
   @override
-  List<Object?> get props => [properties, hasMore, params];
+  List<Object?> get props => [properties, hasMore, params, total];
 }
 
 class SearchLoadingMore extends SearchState {
@@ -32,14 +38,18 @@ class SearchLoadingMore extends SearchState {
   final bool hasMore;
   final PropertySearchParams params;
 
+  /// See [SearchLoaded.total].
+  final int? total;
+
   const SearchLoadingMore({
     required this.existing,
     required this.hasMore,
     required this.params,
+    this.total,
   });
 
   @override
-  List<Object?> get props => [existing, hasMore, params];
+  List<Object?> get props => [existing, hasMore, params, total];
 }
 
 class SearchError extends SearchState {
