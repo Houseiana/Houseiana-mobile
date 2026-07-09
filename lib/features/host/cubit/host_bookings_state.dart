@@ -16,15 +16,30 @@ class HostBookingsLoaded extends HostBookingsState {
   final List<BookingModel> bookings;
   final List<Map<String, dynamic>> statuses;
   final int? selectedStatusId;
+  final BookingStats stats;
+
+  /// Host properties for the "All properties" filter dropdown, each `{id, name}`.
+  final List<Map<String, dynamic>> properties;
+  final String? selectedPropertyId;
 
   const HostBookingsLoaded({
     required this.bookings,
     required this.statuses,
     this.selectedStatusId,
+    this.stats = BookingStats.empty,
+    this.properties = const [],
+    this.selectedPropertyId,
   });
 
   @override
-  List<Object?> get props => [bookings, statuses, selectedStatusId];
+  List<Object?> get props => [
+        bookings,
+        statuses,
+        selectedStatusId,
+        stats,
+        properties,
+        selectedPropertyId,
+      ];
 }
 
 class HostBookingsError extends HostBookingsState {

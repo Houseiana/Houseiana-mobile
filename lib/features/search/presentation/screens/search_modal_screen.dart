@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
-import 'package:houseiana_mobile_app/core/models/property_model.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
@@ -31,6 +30,12 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
   String? _locationError;
   List<_LiveDestination> _destinations = [];
 
+  /// Region id of the destination the user picked from the list, sent to the
+  /// search screen as `regionId` so the results are scoped to exactly that
+  /// region (mirrors the home "See All"). Cleared the moment the user types a
+  /// free-text destination instead. Null → plain `location` text search.
+  int? _selectedRegionId;
+
   int get _totalGuests => _adults + _children + _infants;
 
   @override
@@ -52,12 +57,16 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
     });
 
     try {
-      final properties = await _propertyService.getProperties(
+      // Use the grouped search (the same source the home city sections use) so
+      // each destination carries the backend's real `totalCount` — the number
+      // of listings in that region across ALL pages. The previous approach
+      // counted only within the first 80 fetched properties, so the "X stays"
+      // figure was always under-reported / wrong.
+      final page = await _propertyService.searchPropertiesGrouped(
+        PropertySearchParams(page: 1, limit: 100, isSorted: true),
         userId: _session.userId,
-        page: 1,
-        limit: 80,
       );
-      final destinations = _buildDestinations(properties);
+      final destinations = _buildDestinations(page.groups);
 
       if (!mounted) return;
       setState(() {
@@ -73,50 +82,31 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
     }
   }
 
-  List<_LiveDestination> _buildDestinations(List<PropertyModel> properties) {
-    final grouped = <String, _LiveDestination>{};
+  List<_LiveDestination> _buildDestinations(List<CityPropertyGroup> groups) {
+    final isArabic = context.isRtl;
+    final items = <_LiveDestination>[];
 
-    for (final property in properties) {
-      final city = (property.city ?? '').trim();
-      final country = (property.countryData?['name'] ?? '').toString().trim();
-      final display = property.displayLocation.trim();
-      final keyName = display.isNotEmpty
-          ? display
-          : city.isNotEmpty
-              ? city
-              : (property.location ?? '').trim();
+    for (final group in groups) {
+      final name = group.localizedName(isArabic: isArabic).trim();
+      if (name.isEmpty) continue;
 
-      if (keyName.isEmpty) continue;
+      // `totalCount` is the backend's own count for this region across every
+      // page — the authoritative "stays" figure. Fall back to the previewed
+      // property count only when the backend omits it.
+      final count = group.totalCount ?? group.properties.length;
+      if (count <= 0) continue;
 
-      // The backend `location` filter is a free-text match on the place name
-      // (mirrors the web, which feeds plain city/place names). Sending the full
-      // "City, Country" display string never matches, so every tap fell back to
-      // the unfiltered list ("same result"). Search by the bare city instead.
-      final searchTerm = city.isNotEmpty ? city : keyName;
-
-      final key = keyName.toLowerCase();
-      final existing = grouped[key];
-      if (existing == null) {
-        grouped[key] = _LiveDestination(
-          name: keyName,
-          searchTerm: searchTerm,
-          subtitle: country.isNotEmpty
-              ? country
-              : city.isNotEmpty
-                  ? context.tr('search.locationTypeCity')
-                  : context.tr('search.locationTypeListing'),
-          count: 1,
-        );
-      } else {
-        grouped[key] = existing.copyWith(count: existing.count + 1);
-      }
+      items.add(_LiveDestination(
+        name: name,
+        regionId: group.regionId,
+        count: count,
+      ));
     }
 
-    final items = grouped.values.toList()
-      ..sort((a, b) {
-        final byCount = b.count.compareTo(a.count);
-        return byCount != 0 ? byCount : a.name.compareTo(b.name);
-      });
+    items.sort((a, b) {
+      final byCount = b.count.compareTo(a.count);
+      return byCount != 0 ? byCount : a.name.compareTo(b.name);
+    });
     return items;
   }
 
@@ -310,8 +300,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
     final query = _locationController.text.trim().toLowerCase();
     final filtered = _destinations.where((destination) {
       if (query.isEmpty) return true;
-      return destination.name.toLowerCase().contains(query) ||
-          destination.subtitle.toLowerCase().contains(query);
+      return destination.name.toLowerCase().contains(query);
     }).toList();
 
     return Column(
@@ -322,7 +311,9 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
           child: TextField(
             controller: _locationController,
             autofocus: _activeStep == 0,
-            onChanged: (_) => setState(() {}),
+            // Typing a free-text destination overrides any region the user had
+            // tapped, so drop the region scope and search by the raw text.
+            onChanged: (_) => setState(() => _selectedRegionId = null),
             decoration: InputDecoration(
               hintText: context.tr('search.searchDestinations'),
               hintStyle: const TextStyle(
@@ -387,9 +378,11 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
   Widget _destinationTile(_LiveDestination destination) {
     return InkWell(
       onTap: () => setState(() {
-        // Use the bare place name (city) as the query, not the "City, Country"
-        // display label — see _buildDestinations for why.
-        _locationController.text = destination.searchTerm;
+        // Scope the upcoming search to this exact region via its id (like the
+        // home "See All"), which guarantees the results match the stay count
+        // shown here. The name only fills the field for display.
+        _locationController.text = destination.name;
+        _selectedRegionId = destination.regionId;
         _activeStep = 1;
       }),
       child: Padding(
@@ -627,6 +620,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
           GestureDetector(
             onTap: () => setState(() {
               _locationController.clear();
+              _selectedRegionId = null;
               _checkIn = null;
               _checkOut = null;
               _adults = 0;
@@ -678,6 +672,10 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
       Routes.searchProperties,
       arguments: {
         'location': _locationController.text,
+        // When the user picked a destination from the list, scope by region id
+        // so the results line up with the stay count shown. Free-text searches
+        // leave this null and fall back to the plain `location` match.
+        if (_selectedRegionId != null) 'regionId': _selectedRegionId,
         'checkIn': _checkIn?.toIso8601String(),
         'checkOut': _checkOut?.toIso8601String(),
         'adults': _adults,
@@ -692,28 +690,22 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
 class _LiveDestination {
   final String name;
 
-  /// The plain place name (city) sent to the search `location` filter. Kept
-  /// separate from [name] because [name] is the "City, Country" display label,
-  /// which the backend's free-text location match does not resolve.
-  final String searchTerm;
-  final String subtitle;
+  /// Region id from the grouped property-search response
+  /// (`propertiesByCountry[].regionId`). Passed to the search screen as
+  /// `regionId` so tapping drills into exactly this region — keeping the
+  /// displayed stay count and the search results in sync. Null falls back to a
+  /// free-text `location` search by [name].
+  final int? regionId;
+
+  /// Backend-reported total listings in this region across ALL pages
+  /// (`totalCount`), not a count within a single fetched page.
   final int count;
 
   const _LiveDestination({
     required this.name,
-    required this.searchTerm,
-    required this.subtitle,
+    required this.regionId,
     required this.count,
   });
-
-  _LiveDestination copyWith({int? count}) {
-    return _LiveDestination(
-      name: name,
-      searchTerm: searchTerm,
-      subtitle: subtitle,
-      count: count ?? this.count,
-    );
-  }
 }
 
 class _InlineMessage extends StatelessWidget {

@@ -137,9 +137,9 @@ class HostCalendarManagementCubit extends Cubit<HostCalendarManagementState> {
 
   // ── Selection ───────────────────────────────────────────────────────────
 
-  /// A tap selects a single start day; the range length is then driven by the
-  /// duration stepper in the action sheet (which is modal). Tapping the same
-  /// single day again clears the selection.
+  /// A tap selects a single start day; the action sheet then lets the host
+  /// pick a full date range (see [setSelectionRange]). Tapping the same single
+  /// day again clears the selection.
   void toggleDateSelection(DateTime day) {
     final s = _loaded;
     if (s == null || s.selectedProperty == null) return;
@@ -153,19 +153,33 @@ class HostCalendarManagementCubit extends Cubit<HostCalendarManagementState> {
     }
   }
 
-  /// Sets the selection to [nights] consecutive days from the current start
-  /// day. Used by the duration stepper in the action sheet.
-  void setDurationNights(int nights) {
+  /// Sets the selection to every day in the inclusive range [start]..[end].
+  /// Used by the date-range picker in the action sheet so the host can select a
+  /// whole season at once instead of stepping night-by-night. The bounds are
+  /// normalized, ordered, clamped to today onward, and capped (≈1 year) so the
+  /// selection set stays bounded.
+  void setSelectionRange(DateTime start, DateTime end) {
     final s = _loaded;
-    if (s == null || s.selectedDates.isEmpty) return;
-    final start = s.sortedSelection.first;
-    final n = nights.clamp(1, 60);
+    if (s == null || s.selectedProperty == null) return;
+    var a = DateTime(start.year, start.month, start.day);
+    var b = DateTime(end.year, end.month, end.day);
+    if (b.isBefore(a)) {
+      final tmp = a;
+      a = b;
+      b = tmp;
+    }
+    final today = _today;
+    if (a.isBefore(today)) a = today;
+    if (b.isBefore(a)) b = a;
     final out = <DateTime>{};
-    var d = DateTime(start.year, start.month, start.day);
-    for (var i = 0; i < n; i++) {
+    var d = a;
+    var guard = 0;
+    while (!d.isAfter(b) && guard < 366) {
       out.add(d);
       d = d.add(const Duration(days: 1));
+      guard++;
     }
+    if (out.isEmpty) return;
     emit(s.copyWith(selectedDates: out));
   }
 
@@ -251,25 +265,22 @@ class HostCalendarManagementCubit extends Cubit<HostCalendarManagementState> {
     }
   }
 
-  /// Applies a [percent] discount to the selected range. The pre-discount base
-  /// is the day's current price (falling back to the property's base price);
-  /// the after-discount price is derived the same way the web does.
-  Future<void> applyDiscount(int percent) async {
+  /// Applies a [percent] discount to the selected range. [priceBeforeDiscount]
+  /// is the regular nightly price the host typed in the sheet (NOT the
+  /// property's fixed base price) — the discount is applied to whatever price
+  /// they entered. The after-discount price is derived from it, and all three
+  /// values are sent to the discount endpoint under their own keys.
+  Future<void> applyDiscount(
+    int percent, {
+    required double priceBeforeDiscount,
+  }) async {
     final s = _loaded;
     if (s == null || s.selectedProperty == null || s.selectedDates.isEmpty) {
       return;
     }
-    if (percent <= 0) return;
+    if (percent <= 0 || priceBeforeDiscount <= 0) return;
     final sorted = s.sortedSelection;
-    // Pre-discount base = the day's current (pre-discount) price, falling back
-    // to the property's original list price. Mirrors the web's
-    // `pricingAmount || property.price || property.basePrice` — deliberately NOT
-    // `displayPrice`, whose `pricePerNight` can already be a discounted value
-    // (which would double-discount on the fallback path).
-    final base = s.selectedPrice ??
-        s.selectedProperty!.price ??
-        s.selectedProperty!.basePrice ??
-        0;
+    final base = priceBeforeDiscount;
     final after = (base * (1 - percent / 100)).round().toDouble();
     emit(s.copyWith(busyDiscount: true));
     try {

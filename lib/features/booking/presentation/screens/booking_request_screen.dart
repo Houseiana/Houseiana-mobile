@@ -5,6 +5,7 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/core/utils/discount_utils.dart';
 import 'package:houseiana_mobile_app/features/booking/cubit/booking_cubit.dart';
 import 'package:houseiana_mobile_app/features/booking/cubit/booking_state.dart';
 import 'package:houseiana_mobile_app/features/booking/presentation/widgets/guest_info_modal.dart';
@@ -110,6 +111,27 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   double get _serviceFee =>
       _nights > 0 ? (_availServiceFee ?? _serviceFeeFromProperty()) : 0;
   double get _total => _subtotal + _cleaningFee + _serviceFee;
+
+  /// Original (pre-discount) nightly price from the property payload
+  /// (`priceWithoutDiscount`/`originalPrice`), or null when the listing has no
+  /// discount. `_pricePerNight` is already the discounted rate, so the subtotal
+  /// and total above already reflect the discount — the discount row rendered
+  /// in the breakdown is informational, mirroring the web reserve summary.
+  double? get _originalPricePerNight => originalNightlyPrice(_property);
+
+  /// Whether a real price reduction applies (original nightly price is higher
+  /// than the discounted rate being charged) for the selected dates.
+  bool get _hasDiscount {
+    final original = _originalPricePerNight;
+    return _nights > 0 && original != null && original > _pricePerNight;
+  }
+
+  /// Total amount saved across the stay: (original − discounted) × nights.
+  double get _discountAmount {
+    final original = _originalPricePerNight;
+    if (!_hasDiscount || original == null) return 0;
+    return (original - _pricePerNight) * _nights;
+  }
 
   /// Currency code for price display (e.g. EGP). Matches the web, which
   /// prefixes amounts with the currency code instead of a `$` sign and treats
@@ -673,6 +695,14 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
           _priceRow(context.tr('booking.cleaningFee'), _money(_cleaningFee)),
           const SizedBox(height: 12),
           _priceRow(context.tr('booking.serviceFee'), _money(_serviceFee)),
+          if (_hasDiscount) ...[
+            const SizedBox(height: 12),
+            _priceRow(
+              context.tr('booking.discount'),
+              '- ${_money(_discountAmount)}',
+              isDiscount: true,
+            ),
+          ],
           const Divider(height: 24, color: Color(0xFFE5E7EB)),
           _priceRow(context.tr('booking.totalUsd'), _money(_total),
               isTotal: true),
@@ -681,7 +711,9 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
     );
   }
 
-  Widget _priceRow(String label, String value, {bool isTotal = false}) {
+  Widget _priceRow(String label, String value,
+      {bool isTotal = false, bool isDiscount = false}) {
+    const discountGreen = Color(0xFF059669);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -689,14 +721,17 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
             style: TextStyle(
               fontSize: isTotal ? 16 : 14,
               fontWeight: isTotal ? FontWeight.w700 : FontWeight.w400,
-              color:
-                  isTotal ? const Color(0xFF1D242B) : const Color(0xFF6B7280),
+              color: isDiscount
+                  ? discountGreen
+                  : isTotal
+                      ? const Color(0xFF1D242B)
+                      : const Color(0xFF6B7280),
             )),
         Text(value,
             style: TextStyle(
               fontSize: isTotal ? 18 : 14,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1D242B),
+              color: isDiscount ? discountGreen : const Color(0xFF1D242B),
             )),
       ],
     );

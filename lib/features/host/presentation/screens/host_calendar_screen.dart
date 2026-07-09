@@ -536,15 +536,18 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
   String _mode = 'block'; // 'block' | 'price' | 'discount'
   BlockReason? _reason;
   double? _price;
+  double? _discountBase; // host-entered pre-discount price (discount mode)
   int _discountPercent = 0;
   final TextEditingController _notes = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _discountBaseController = TextEditingController();
   final TextEditingController _discountController = TextEditingController();
 
   @override
   void dispose() {
     _notes.dispose();
     _priceController.dispose();
+    _discountBaseController.dispose();
     _discountController.dispose();
     super.dispose();
   }
@@ -643,7 +646,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
   ) {
     Widget dateBox(String label, String value) => Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
@@ -665,51 +668,98 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
           ),
         );
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.ghostWhite,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              dateBox(context.tr('hostCalendar.from'), fmtDay(from)),
-              const SizedBox(width: 12),
-              dateBox(context.tr('hostCalendar.to'), fmtDay(to)),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(context.tr('hostCalendar.duration'),
+    // The whole card is tappable and opens a full date-range picker so the host
+    // can select a long span (e.g. the summer season) in one gesture instead of
+    // stepping night-by-night.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _pickRange(context, cubit, from, to),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.ghostWhite,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                dateBox(context.tr('hostCalendar.from'), fmtDay(from)),
+                const SizedBox(width: 12),
+                dateBox(context.tr('hostCalendar.to'), fmtDay(to)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${context.tr('hostCalendar.duration')} · ${_nightsLabel(context, nights)}',
                   style: const TextStyle(
-                      fontSize: 14, color: AppColors.neutral600)),
-              Row(
-                children: [
-                  _stepBtn(Icons.remove,
-                      () => cubit.setDurationNights(nights - 1)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: Text(
-                      _nightsLabel(context, nights),
+                      fontSize: 13, color: AppColors.neutral600),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.edit_calendar_outlined,
+                        size: 16, color: AppColors.charcoal),
+                    const SizedBox(width: 6),
+                    Text(
+                      context.tr('hostCalendar.changeDates'),
                       style: const TextStyle(
-                          fontSize: 15,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: AppColors.charcoal),
                     ),
-                  ),
-                  _stepBtn(
-                      Icons.add, () => cubit.setDurationNights(nights + 1)),
-                ],
-              ),
-            ],
-          ),
-        ],
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  /// Opens the Material date-range picker seeded with the current selection and
+  /// writes the chosen span back to the cubit. Localized via the app's
+  /// `GlobalMaterialLocalizations`; themed to the brand primary.
+  Future<void> _pickRange(
+    BuildContext context,
+    HostCalendarManagementCubit cubit,
+    DateTime from,
+    DateTime to,
+  ) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final lastDate = DateTime(today.year + 2, today.month, today.day);
+
+    var initStart = from.isBefore(today) ? today : from;
+    var initEnd = to.isBefore(initStart) ? initStart : to;
+    if (initEnd.isAfter(lastDate)) initEnd = lastDate;
+
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: today,
+      lastDate: lastDate,
+      initialDateRange: DateTimeRange(start: initStart, end: initEnd),
+      helpText: context.tr('hostCalendar.selectDatesHelp'),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.primaryColor,
+            onPrimary: AppColors.charcoal,
+            surface: Colors.white,
+            onSurface: AppColors.charcoal,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+
+    if (picked != null) {
+      cubit.setSelectionRange(picked.start, picked.end);
+    }
   }
 
   Widget _segmented(BuildContext context) {
@@ -943,40 +993,64 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
     HostCalendarManagementCubit cubit,
     HostCalendarManagementLoaded state,
   ) {
-    // Same pre-discount base the cubit sends (never the discount-aware
-    // pricePerNight/displayPrice), so the preview matches the applied value.
-    final base = state.selectedPrice ??
-        state.selectedProperty?.price ??
-        state.selectedProperty?.basePrice ??
-        0;
-    final after = _discountPercent > 0
+    // Pre-discount price is host-editable: it defaults to the day's current
+    // (pre-discount) price / property list price, but the host types whatever
+    // regular price they want to discount from — the discount is applied to
+    // this value, not the property's fixed nightly price.
+    if (_discountBase == null) {
+      _discountBase = state.selectedPrice ??
+          state.selectedProperty?.price ??
+          state.selectedProperty?.basePrice ??
+          0;
+      _discountBaseController.text = (_discountBase ?? 0).toStringAsFixed(0);
+    }
+    final base = _discountBase ?? 0;
+    final after = (_discountPercent > 0 && base > 0)
         ? (base * (1 - _discountPercent / 100)).round()
         : null;
     final hasDiscount = state.selectionHasDiscount;
+    final canApply = _discountPercent > 0 && base > 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: AppColors.ghostWhite,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.neutral200),
+        Text(context.tr('hostCalendar.priceBeforeDiscount'),
+            style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.charcoal)),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _discountBaseController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: AppColors.charcoal),
+          decoration: InputDecoration(
+            prefixText: '${state.currency} ',
+            prefixStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.neutral500),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.neutral200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.neutral200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: AppColors.primaryColor, width: 1.5),
+            ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(context.tr('hostCalendar.pricePerNight'),
-                  style: const TextStyle(
-                      fontSize: 13, color: AppColors.neutral600)),
-              Text('${state.currency}${base.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.charcoal)),
-            ],
-          ),
+          onChanged: (v) =>
+              setState(() => _discountBase = double.tryParse(v.trim()) ?? 0),
         ),
         const SizedBox(height: 16),
         Text(context.tr('hostCalendar.discount'),
@@ -1062,9 +1136,10 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
           isLoading: state.busyDiscount,
           backgroundColor: AppColors.charcoal,
           textColor: Colors.white,
-          onPressed: _discountPercent <= 0
-              ? null
-              : () => cubit.applyDiscount(_discountPercent),
+          onPressed: canApply
+              ? () => cubit.applyDiscount(_discountPercent,
+                  priceBeforeDiscount: base)
+              : null,
         ),
         if (hasDiscount) ...[
           const SizedBox(height: 12),

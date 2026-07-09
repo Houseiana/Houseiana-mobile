@@ -542,7 +542,8 @@ class _HostDashboardView extends StatelessWidget {
   }
 
   Widget _buildBookingCard(BuildContext context, BookingModel booking) {
-    final propertyName = booking.property?.displayTitle ??
+    final propertyName = booking.displayUnitName ??
+        booking.property?.displayTitle ??
         booking.propertyTitle ??
         context.tr('property.untitled');
     final checkIn = _formatDate(context, booking.checkIn.toIso8601String());

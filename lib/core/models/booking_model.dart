@@ -34,10 +34,23 @@ class BookingModel extends Equatable {
   final String? message;
   final PropertySummary? property;
   final String? propertyTitle;
+  /// Property/unit name as returned flat by `/api/bookings/list` (`unitName`).
+  final String? unitName;
   final String? propertyCoverPhoto;
   final String? currency;
   final String? confirmationCode;
+  /// Real reservation reference from the backend (`bookingCode`), preferred
+  /// over the id-derived `R-XXXX` fallback.
+  final String? bookingCode;
   final DateTime? createdAt;
+  /// Guest display name as returned flat by `/api/bookings/list` (`title`).
+  /// The backend falls back to `Booking #XXXX` when the guest has no name.
+  final String? guestName;
+  /// Free-text note left on the booking (`notes`).
+  final String? notes;
+  /// Nights count as returned by `/api/bookings/list` (`nights`); when absent
+  /// the count is derived from [checkIn]/[checkOut].
+  final int? apiNights;
 
   const BookingModel({
     required this.id,
@@ -52,10 +65,15 @@ class BookingModel extends Equatable {
     this.message,
     this.property,
     this.propertyTitle,
+    this.unitName,
     this.propertyCoverPhoto,
     this.currency,
     this.confirmationCode,
+    this.bookingCode,
     this.createdAt,
+    this.guestName,
+    this.notes,
+    this.apiNights,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -86,12 +104,19 @@ class BookingModel extends Equatable {
       property: propertySummary,
       propertyTitle:
           propertySummary?.displayTitle ?? json['propertyTitle'] as String?,
+      unitName: json['unitName'] as String?,
       propertyCoverPhoto: json['propertyCoverPhoto'] as String?,
       currency: json['currency'] as String?,
       confirmationCode: json['confirmationCode'] as String?,
+      bookingCode: json['bookingCode'] as String?,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString())
           : null,
+      guestName: json['title'] as String? ?? json['guestName'] as String?,
+      notes: json['notes'] as String?,
+      apiNights: json['nights'] is int
+          ? json['nights'] as int
+          : int.tryParse('${json['nights'] ?? ''}'),
     );
   }
 
@@ -107,24 +132,70 @@ class BookingModel extends Equatable {
         'status': status,
         'message': message,
         'propertyTitle': propertyTitle,
+        'unitName': unitName,
+        'bookingCode': bookingCode,
       };
 
   int get nights => checkOut.difference(checkIn).inDays;
+
+  /// Nights count preferring the backend-provided `nights`, falling back to the
+  /// date-derived count (mirrors the web reservation card).
+  int get nightsCount =>
+      (apiNights != null && apiNights! > 0) ? apiNights! : nights;
+
   BookingStatus get bookingStatus => BookingStatus.fromString(status);
+
+  /// Short id-derived reference shown on the host reservation card, matching the
+  /// web's `R-${id.slice(0,4).toUpperCase()}` (independent of [bookingCode]).
+  String get bookingRefShort {
+    if (id.isEmpty) return '';
+    return 'R-${id.substring(0, id.length.clamp(0, 4)).toUpperCase()}';
+  }
+
+  /// Title-cased status for the coloured badge (backend sends display strings
+  /// like `Requested`, `Currently Hosting`; [status] itself is upper-cased).
+  String get statusLabel {
+    if (status.isEmpty) return status;
+    return status
+        .split(' ')
+        .map((w) => w.isEmpty
+            ? w
+            : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}')
+        .join(' ');
+  }
+
+  /// Guest name for the reservation card; falls back to the booking reference
+  /// when the backend supplies no guest name.
+  String get guestDisplayName {
+    if (guestName != null && guestName!.isNotEmpty) return guestName!;
+    final ref = bookingRefShort;
+    return ref.isEmpty ? '' : 'Booking $ref';
+  }
 
   /// Currency code shown next to the total (web defaults to EGP).
   String get currencyLabel =>
       (currency != null && currency!.isNotEmpty) ? currency! : 'EGP';
 
   /// Short, human-friendly booking reference shown instead of the raw id.
-  /// Mirrors the web host reservations card (`R-XXXX`) while preferring the
-  /// real confirmation code when the backend provides one.
+  /// Prefers the real backend `bookingCode`, then `confirmationCode`, and only
+  /// falls back to the id-derived `R-XXXX` when neither is provided.
   String get bookingCodeFormatted {
+    if (bookingCode != null && bookingCode!.isNotEmpty) {
+      return bookingCode!;
+    }
     if (confirmationCode != null && confirmationCode!.isNotEmpty) {
       return confirmationCode!;
     }
     if (id.isEmpty) return '';
     return 'R-${id.substring(0, id.length.clamp(0, 4)).toUpperCase()}';
+  }
+
+  /// Property/unit name for host booking cards. Prefers the flat `unitName`
+  /// field from `/api/bookings/list`, then any nested property title.
+  String? get displayUnitName {
+    if (unitName != null && unitName!.isNotEmpty) return unitName;
+    if (propertyTitle != null && propertyTitle!.isNotEmpty) return propertyTitle;
+    return null;
   }
 
   @override
@@ -206,10 +277,53 @@ class PropertySummary extends Equatable {
   List<Object?> get props => [id, title, name, city, hostId];
 }
 
+/// Aggregate booking counters returned alongside `/api/bookings/list` under
+/// the top-level `bookingStats` key. Powers the host Reservations stat cards.
+class BookingStats extends Equatable {
+  final int totalReservations;
+  final int totalUpcoming;
+  final int totalRequested;
+  final double revenueSecured;
+
+  /// Currency code for [revenueSecured] (backend may omit it; the web hard-codes
+  /// EGP). Defaults to EGP at the render layer when null.
+  final String? currency;
+
+  const BookingStats({
+    this.totalReservations = 0,
+    this.totalUpcoming = 0,
+    this.totalRequested = 0,
+    this.revenueSecured = 0,
+    this.currency,
+  });
+
+  static const BookingStats empty = BookingStats();
+
+  factory BookingStats.fromJson(Map<String, dynamic> json) => BookingStats(
+        totalReservations: _toInt(json['totalReservations']),
+        totalUpcoming: _toInt(json['totalUpcoming']),
+        totalRequested: _toInt(json['totalRequested']),
+        revenueSecured: _toDouble(json['revenueSecured']),
+        currency: json['currency'] as String?,
+      );
+
+  @override
+  List<Object?> get props =>
+      [totalReservations, totalUpcoming, totalRequested, revenueSecured, currency];
+}
+
 double _toDouble(dynamic value) {
   if (value == null) return 0;
   if (value is double) return value;
   if (value is int) return value.toDouble();
   if (value is String) return double.tryParse(value) ?? 0;
+  return 0;
+}
+
+int _toInt(dynamic value) {
+  if (value == null) return 0;
+  if (value is int) return value;
+  if (value is double) return value.round();
+  if (value is String) return int.tryParse(value) ?? double.tryParse(value)?.round() ?? 0;
   return 0;
 }

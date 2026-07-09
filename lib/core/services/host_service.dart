@@ -342,6 +342,29 @@ class HostService {
     int page = 1,
     int limit = 50,
   }) async {
+    final result = await getHostBookingsPage(
+      hostId,
+      statusId: statusId,
+      guestName: guestName,
+      propertyId: propertyId,
+      page: page,
+      limit: limit,
+    );
+    return result.bookings;
+  }
+
+  /// Fetches host bookings together with the aggregate `bookingStats` block
+  /// (total / upcoming / requested / revenue secured) returned by
+  /// `/api/bookings/list`, mirroring the web Reservations page which reads both
+  /// `response.data.data` and `response.data.bookingStats`.
+  Future<HostBookingsPage> getHostBookingsPage(
+    String hostId, {
+    int? statusId,
+    String? guestName,
+    String? propertyId,
+    int page = 1,
+    int limit = 50,
+  }) async {
     try {
       final response = await _dio.get(
         EndPoints.listBookings,
@@ -354,10 +377,30 @@ class HostService {
           'limit': limit,
         },
       );
-      return _list(response.data).map((e) => BookingModel.fromJson(e)).toList();
+      final bookings =
+          _list(response.data).map((e) => BookingModel.fromJson(e)).toList();
+      return HostBookingsPage(
+        bookings: bookings,
+        stats: _extractBookingStats(response.data),
+      );
     } on DioException catch (e) {
       throw _mapDioException(e);
     }
+  }
+
+  /// Locates the `bookingStats` object, whether it sits at the top level of the
+  /// response body (alongside `data`) or nested inside a `data` envelope.
+  BookingStats _extractBookingStats(dynamic data) {
+    if (data is Map) {
+      final direct = data['bookingStats'];
+      if (direct is Map<String, dynamic>) return BookingStats.fromJson(direct);
+      final nested = data['data'];
+      if (nested is Map && nested['bookingStats'] is Map<String, dynamic>) {
+        return BookingStats.fromJson(
+            nested['bookingStats'] as Map<String, dynamic>);
+      }
+    }
+    return BookingStats.empty;
   }
 
   Future<Map<String, dynamic>> getHostStats(String hostId) async {
@@ -526,4 +569,16 @@ class HostService {
     }
     return ServerException.msg(message);
   }
+}
+
+/// Result of [HostService.getHostBookingsPage]: the page of bookings plus the
+/// aggregate [BookingStats] block returned by `/api/bookings/list`.
+class HostBookingsPage {
+  final List<BookingModel> bookings;
+  final BookingStats stats;
+
+  const HostBookingsPage({
+    required this.bookings,
+    required this.stats,
+  });
 }
