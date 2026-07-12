@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
@@ -157,19 +158,7 @@ class _PaymentCancelScreenState extends State<PaymentCancelScreen> {
                     ),
                     const SizedBox(height: 16),
                     if (_isLoading)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Center(
-                          child: SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primaryColor,
-                            ),
-                          ),
-                        ),
-                      )
+                      const _BookingDetailsRowsSkeleton()
                     else ...[
                       _buildDetailRow('${context.tr('booking.property')}:',
                           _displayPropertyName),
@@ -332,6 +321,47 @@ class _PaymentCancelScreenState extends State<PaymentCancelScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Skeleton matching the five label/value detail rows of the
+/// booking-details card while the booking is loading.
+class _BookingDetailsRowsSkeleton extends StatelessWidget {
+  const _BookingDetailsRowsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer(
+      containersColor: AppColors.skeletonBaseColor,
+      child: Column(
+        children: List.generate(5, (index) {
+          return Padding(
+            padding: EdgeInsets.only(top: index == 0 ? 0 : 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  height: 14,
+                  width: 90,
+                  decoration: BoxDecoration(
+                    color: AppColors.neutral200,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Container(
+                  height: 14,
+                  width: 110,
+                  decoration: BoxDecoration(
+                    color: AppColors.neutral200,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ),
     );
   }
 }

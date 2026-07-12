@@ -2,6 +2,7 @@ import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/models/property_model.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/end_points.dart';
+import 'package:houseiana_mobile_app/core/services/lookups_cache.dart';
 import 'package:houseiana_mobile_app/features/host/data/models/block_reason_model.dart';
 import 'package:houseiana_mobile_app/features/host/data/models/calendar_day_model.dart';
 
@@ -34,8 +35,9 @@ class HostCalendarData {
 /// - POST body `fromDate`/`toDate` → ISO-8601 (UTC), date-stable.
 class HostCalendarManagementService {
   final ApiConsumer _api;
+  final LookupsCache _lookups;
 
-  HostCalendarManagementService(this._api);
+  HostCalendarManagementService(this._api, this._lookups);
 
   // ── Date helpers ──────────────────────────────────────────────────────────
 
@@ -224,7 +226,10 @@ class HostCalendarManagementService {
   /// GET /api/Lookups/ReasonBlockProperty — falls back to a static list.
   Future<List<BlockReason>> getBlockReasons() async {
     try {
-      final res = await _api.get(EndPoints.reasonBlockPropertyLookup);
+      final res = await _lookups.getOrFetch(
+        EndPoints.reasonBlockPropertyLookup,
+        () => _api.get(EndPoints.reasonBlockPropertyLookup),
+      );
       final reasons = _extractList(res)
           .map(BlockReason.fromJson)
           .where((r) => r.name.isNotEmpty)

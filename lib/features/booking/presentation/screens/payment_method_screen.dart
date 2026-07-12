@@ -7,6 +7,7 @@ import 'package:houseiana_mobile_app/core/services/payment_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/features/booking/presentation/widgets/paymob_phone_bottom_sheet.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PaymentMethodScreen extends StatefulWidget {
@@ -445,11 +446,14 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 ),
                 const SizedBox(height: 20),
                 if (_methodsLoading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 32),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primaryColor,
+                  ...List.generate(
+                    4,
+                    (_) => const Padding(
+                      padding: EdgeInsets.only(bottom: 12),
+                      child: TileSkeletonItem(
+                        leadingSize: 48,
+                        showTrailing: true,
+                        height: 80,
                       ),
                     ),
                   )

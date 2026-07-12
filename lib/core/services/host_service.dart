@@ -1,23 +1,27 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:houseiana_mobile_app/core/config/app_config.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/models/booking_model.dart';
 import 'package:houseiana_mobile_app/core/models/host_listings_response_model.dart';
 import 'package:houseiana_mobile_app/core/models/property_model.dart';
+import 'package:houseiana_mobile_app/core/services/lookups_cache.dart';
 
 import '../network/api/end_points.dart';
 
 class HostService {
   final Dio _dio;
+  final LookupsCache? _lookups;
 
-  HostService({Dio? dio})
-      : _dio = dio ??
+  HostService({Dio? dio, LookupsCache? lookups})
+      : _lookups = lookups,
+        _dio = dio ??
             Dio(BaseOptions(
               baseUrl: AppConfig.backendApiUrl,
               connectTimeout: const Duration(seconds: 30),
               receiveTimeout: const Duration(seconds: 30),
             )) {
-    if (!_dio.interceptors.any((i) => i is LogInterceptor)) {
+    if (kDebugMode && !_dio.interceptors.any((i) => i is LogInterceptor)) {
       _dio.interceptors.add(LogInterceptor(
         request: true,
         requestHeader: true,
@@ -25,6 +29,9 @@ class HostService {
         responseHeader: true,
         responseBody: true,
         error: true,
+        logPrint: (Object object) {
+          debugPrint(object.toString());
+        },
       ));
     }
   }
@@ -307,10 +314,18 @@ class HostService {
     }
   }
 
+  /// Fetches a `/api/Lookups/*` endpoint through [LookupsCache] when
+  /// available (only raw JSON is cached — `response.data`, never the
+  /// [Response] envelope).
+  Future<dynamic> _lookupJson(String endpoint) {
+    fetch() async => (await _dio.get(endpoint)).data;
+    final lookups = _lookups;
+    return lookups != null ? lookups.getOrFetch(endpoint, fetch) : fetch();
+  }
+
   Future<List<Map<String, dynamic>>> getPropertyAdminStatuses() async {
     try {
-      final response = await _dio.get(EndPoints.propertyAdminStatusLookup);
-      return _list(response.data);
+      return _list(await _lookupJson(EndPoints.propertyAdminStatusLookup));
     } on DioException catch (e) {
       throw _mapDioException(e);
     }
@@ -318,8 +333,7 @@ class HostService {
 
   Future<List<Map<String, dynamic>>> getPropertySortingOptions() async {
     try {
-      final response = await _dio.get(EndPoints.propertySortingLookup);
-      return _list(response.data);
+      return _list(await _lookupJson(EndPoints.propertySortingLookup));
     } on DioException catch (e) {
       throw _mapDioException(e);
     }
@@ -327,8 +341,7 @@ class HostService {
 
   Future<List<Map<String, dynamic>>> getBookingStatuses() async {
     try {
-      final response = await _dio.get(EndPoints.bookingDisplayStatusLookup);
-      return _list(response.data);
+      return _list(await _lookupJson(EndPoints.bookingDisplayStatusLookup));
     } on DioException catch (e) {
       throw _mapDioException(e);
     }

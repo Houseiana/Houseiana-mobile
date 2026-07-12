@@ -12,6 +12,7 @@ import 'package:houseiana_mobile_app/features/properties/presentation/widgets/pr
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/cards/property_list_card.dart';
 import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart';
 
 class SearchPropertiesScreen extends StatefulWidget {
   const SearchPropertiesScreen({super.key});
@@ -179,9 +180,9 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
               child: BlocBuilder<SearchCubit, SearchState>(
                 builder: (context, state) {
                   if (state is SearchLoading) {
-                    return const Center(
-                      child:
-                          CircularProgressIndicator(color: Color(0xFFFCC519)),
+                    return const ListSkeletonLoader(
+                      showSearchBar: false,
+                      showCategories: false,
                     );
                   }
                   if (state is SearchError) {
@@ -400,37 +401,30 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
   Widget _buildResultsList(
       SearchState state, List<Map<String, dynamic>> results) {
     final isLoadingMore = state is SearchLoadingMore;
-    return NotificationListener<ScrollNotification>(
-      onNotification: (notification) {
-        if (notification is ScrollEndNotification &&
-            notification.metrics.pixels >=
-                notification.metrics.maxScrollExtent - 200) {
-          context.read<SearchCubit>().loadMore();
-        }
-        return false;
+    // Pagination is driven by _onScroll (the controller listener) alone — a
+    // NotificationListener here used to double-fire loadMore per scroll-end
+    // and could be triggered by nested horizontal scrollables.
+    return RefreshIndicator(
+      onRefresh: () async {
+        _doSearch();
       },
-      child: RefreshIndicator(
-        onRefresh: () async {
-          _doSearch();
+      color: const Color(0xFFFCC519),
+      child: ListView.separated(
+        controller: _scrollController,
+        padding: const EdgeInsets.all(20),
+        itemCount: results.length + (isLoadingMore ? 1 : 0),
+        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        itemBuilder: (context, index) {
+          if (index >= results.length) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(color: Color(0xFFFCC519)),
+              ),
+            );
+          }
+          return _buildPropertyCard(results[index]);
         },
-        color: const Color(0xFFFCC519),
-        child: ListView.separated(
-          controller: _scrollController,
-          padding: const EdgeInsets.all(20),
-          itemCount: results.length + (isLoadingMore ? 1 : 0),
-          separatorBuilder: (_, __) => const SizedBox(height: 16),
-          itemBuilder: (context, index) {
-            if (index >= results.length) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(color: Color(0xFFFCC519)),
-                ),
-              );
-            }
-            return _buildPropertyCard(results[index]);
-          },
-        ),
       ),
     );
   }
@@ -441,7 +435,6 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
     final reviewCount = (p['reviewsCount'] ?? p['reviewCount'] ?? 0);
     final isGuestFavorite =
         (p['isGuestFavorite'] ?? p['guestFavorite'] ?? false) == true;
-    final isFav = (p['guestFavorite'] ?? p['isGuestFavorite'] ?? false) == true;
     final price = double.tryParse(_extractPrice(p)) ?? 0;
     final discountPct = effectiveDiscountPercent(p);
     final original = originalNightlyPrice(p);
@@ -464,7 +457,7 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
       beds: _extractCount(p, const ['beds', 'bedsCount', 'bedCount']),
       bathrooms: _extractCount(p, const ['bathrooms', 'bathroomCount']),
       isGuestFavorite: isGuestFavorite,
-      isFavorite: isFav,
+      propertyId: propertyId,
       onTap: () => Navigator.pushNamed(
         context,
         Routes.propertyDetails,

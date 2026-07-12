@@ -43,6 +43,17 @@ class _PropertyMapViewState extends State<PropertyMapView> {
   bool _buildingMarkers = true;
   Map<String, dynamic>? _selectedProperty;
 
+  /// Marker bitmaps by `'$id|$imageUrl'` — "search as you move" re-queries
+  /// overlapping areas constantly, and regenerating every circular bitmap
+  /// (Canvas → toImage → PNG encode, all on the UI isolate) per pan was the
+  /// map's dominant jank. Insertion-ordered so it can evict oldest-first.
+  final Map<String, BitmapDescriptor> _iconCache = {};
+  static const int _iconCacheCap = 200;
+
+  /// Monotonic guard: a slow _buildMarkers pass must not overwrite the
+  /// markers of a newer one during rapid pans.
+  int _buildSeq = 0;
+
   /// Fallback map center used only in interactive mode when the current
   /// results carry no coordinates (so we still render a pannable map). Cairo,
   /// matching the web's default discover-map center.
@@ -115,6 +126,7 @@ class _PropertyMapViewState extends State<PropertyMapView> {
   }
 
   Future<void> _buildMarkers() async {
+    final seq = ++_buildSeq;
     setState(() => _buildingMarkers = true);
     final geo = _geoProperties;
     final newMarkers = <Marker>{};
@@ -127,15 +139,27 @@ class _PropertyMapViewState extends State<PropertyMapView> {
         final lng = _readLng(p)!;
         final imageUrl = _extractImage(p);
 
-        BitmapDescriptor icon;
-        try {
-          icon = await _circularMarkerFromUrl(imageUrl);
-        } catch (_) {
-          icon = BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueYellow,
-          );
+        // Incremental: only cache misses pay the Canvas/PNG generation cost.
+        // Failed loads cache the fallback pin too, so a broken image URL
+        // isn't re-fetched on every pan (a new URL busts the key).
+        final cacheKey = '$id|$imageUrl';
+        var icon = _iconCache[cacheKey];
+        if (icon == null) {
+          try {
+            icon = await _circularMarkerFromUrl(imageUrl);
+          } catch (_) {
+            icon = BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueYellow,
+            );
+          }
+          if (_iconCache.length >= _iconCacheCap) {
+            _iconCache.remove(_iconCache.keys.first);
+          }
+          _iconCache[cacheKey] = icon;
         }
 
+        // Markers themselves are cheap — recreate them so onTap closes over
+        // the CURRENT property map; only the bitmap descriptors are cached.
         newMarkers.add(
           Marker(
             markerId: MarkerId(id),
@@ -147,7 +171,8 @@ class _PropertyMapViewState extends State<PropertyMapView> {
       }),
     );
 
-    if (!mounted) return;
+    // A newer pass started while this one awaited — let it win.
+    if (!mounted || seq != _buildSeq) return;
     setState(() {
       _markers
         ..clear()
@@ -702,7 +727,9 @@ Future<BitmapDescriptor> _circularMarkerFromUrl(String url) async {
 
 Future<ui.Image> _loadNetworkImage(String url) async {
   final completer = Completer<ui.Image>();
-  final provider = NetworkImage(url);
+  // Cached provider: cards already downloaded most of these covers — reuse
+  // the disk/memory cache instead of re-downloading per marker.
+  final provider = CachedNetworkImageProvider(url);
   final stream = provider.resolve(ImageConfiguration.empty);
   late final ImageStreamListener listener;
   listener = ImageStreamListener(

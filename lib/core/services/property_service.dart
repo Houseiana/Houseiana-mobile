@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/models/nightly_price_model.dart';
 import 'package:houseiana_mobile_app/core/models/property_model.dart';
@@ -5,6 +7,7 @@ import 'package:houseiana_mobile_app/core/models/region_category_model.dart';
 import 'package:houseiana_mobile_app/core/models/review_model.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/end_points.dart';
+import 'package:houseiana_mobile_app/core/services/lookups_cache.dart';
 
 class PropertySearchParams {
   final String? location;
@@ -170,8 +173,24 @@ class CityPropertyGroup {
   }
 }
 
+/// Normalizes raw property-search JSON through the [PropertyModel] layer
+/// (`fromJson(...).toJson()`), which is what the card widgets' map keys rely
+/// on. Top-level so [compute] can run it off the UI isolate for big pages —
+/// the map CONTENTS are byte-identical to the old on-main-thread path.
+List<Map<String, dynamic>> _normalizePropertyMaps(
+    List<Map<String, dynamic>> raw) {
+  return raw.map((m) => PropertyModel.fromJson(m).toJson()).toList();
+}
+
+/// Below this count the isolate spawn + payload copy costs more than the
+/// normalization itself, so small pages stay synchronous.
+const int _normalizeComputeThreshold = 30;
+
 class PropertySearchPage {
-  final List<PropertyModel> properties;
+  /// Normalized property maps (see [_normalizePropertyMaps]) — the exact
+  /// shape the guest list cards consume. Callers no longer re-serialize
+  /// models themselves.
+  final List<Map<String, dynamic>> properties;
 
   /// Backend-reported total number of matches across ALL pages (the
   /// `totalCount` at the top of the property-search response). Null when the
@@ -197,12 +216,14 @@ class GroupedPropertiesPage {
 
 class PropertyService {
   final ApiConsumer _api;
+  final LookupsCache _lookups;
 
-  PropertyService(this._api);
+  PropertyService(this._api, this._lookups);
 
   Future<PropertySearchPage> searchProperties(
     PropertySearchParams params, {
     String? userId,
+    CancelToken? cancelToken,
   }) async {
     final query = params.toQueryParams();
     if (userId != null) {
@@ -213,11 +234,18 @@ class PropertyService {
       final response = await _api.get(
         EndPoints.propertySearch,
         queryParameters: query,
+        cancelToken: cancelToken,
       );
+      final rawList = _extractList(response);
+      final normalized = rawList.length >= _normalizeComputeThreshold
+          ? await compute(_normalizePropertyMaps, rawList)
+          : _normalizePropertyMaps(rawList);
       return PropertySearchPage(
-        properties: _parsePropertyList(response),
+        properties: normalized,
         total: _extractTotal(response),
       );
+    } on RequestCancelledException {
+      rethrow; // keep the type — callers swallow cancellations silently
     } catch (e) {
       throw ServerException.msg(e.toString());
     }
@@ -254,6 +282,7 @@ class PropertyService {
   Future<GroupedPropertiesPage> searchPropertiesGrouped(
     PropertySearchParams params, {
     String? userId,
+    CancelToken? cancelToken,
   }) async {
     final query = params.toQueryParams();
     query['isSorted'] = 'true';
@@ -265,8 +294,11 @@ class PropertyService {
       final response = await _api.get(
         EndPoints.propertySearch,
         queryParameters: query,
+        cancelToken: cancelToken,
       );
       return _parseGroupedPage(response);
+    } on RequestCancelledException {
+      rethrow;
     } catch (e) {
       throw ServerException.msg(e.toString());
     }
@@ -371,6 +403,7 @@ class PropertyService {
     String? userId,
     String? checkIn,
     String? checkOut,
+    CancelToken? cancelToken,
   }) async {
     try {
       final response = await _api.get(
@@ -380,9 +413,12 @@ class PropertyService {
           'checkin': checkIn ?? DateTime.now().toIso8601String(),
           'checkout': checkOut ?? DateTime.now().add(const Duration(days: 1)).toIso8601String(),
         },
+        cancelToken: cancelToken,
       );
       final item = _parseItem(response);
       return item != null ? PropertyModel.fromJson(item) : null;
+    } on RequestCancelledException {
+      rethrow;
     } catch (e) {
       throw ServerException.msg(e.toString());
     }
@@ -393,7 +429,10 @@ class PropertyService {
   /// endpoint expects as the `sortBy` filter.
   Future<List<SortOption>> getSortingOptions() async {
     try {
-      final response = await _api.get(EndPoints.propertySortingLookup);
+      final response = await _lookups.getOrFetch(
+        EndPoints.propertySortingLookup,
+        () => _api.get(EndPoints.propertySortingLookup),
+      );
       return _extractList(response)
           .map((m) {
             final id = (m['id'] ?? m['value'] ?? '').toString().trim();
@@ -415,7 +454,10 @@ class PropertyService {
   /// filter); when drilling into a region it is sent as `villageId`.
   Future<List<RegionCategory>> getRegionCategories() async {
     try {
-      final response = await _api.get(EndPoints.regionCategoryLookup);
+      final response = await _lookups.getOrFetch(
+        EndPoints.regionCategoryLookup,
+        () => _api.get(EndPoints.regionCategoryLookup),
+      );
       return _extractList(response)
           .map(RegionCategory.fromJson)
           .where((c) => c.id > 0 && c.name.isNotEmpty)

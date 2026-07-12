@@ -54,22 +54,29 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
       create: (_) => BottomNavCubit(),
       child: BlocBuilder<BottomNavCubit, BottomNavState>(
         builder: (ctx, state) {
-          // Keyboard hides the floating button so it never covers an open
-          // keyboard on the search/profile tabs.
-          final keyboardOpen = MediaQuery.viewInsetsOf(ctx).bottom > 0;
           return Scaffold(
             body: Stack(
               children: [
                 Positioned.fill(
-                  child: _allScreens[
-                      state.index.clamp(0, _allScreens.length - 1)],
-                ),
-                if (!keyboardOpen)
-                  const Positioned(
-                    right: 16,
-                    bottom: 16,
-                    child: WhatsAppSupportButton(),
+                  child: _LazyIndexedStack(
+                    index: state.index.clamp(0, _allScreens.length - 1),
+                    children: _allScreens,
                   ),
+                ),
+                // Keyboard hides the floating button so it never covers an
+                // open keyboard on the search/profile tabs. viewInsets is
+                // read inside this Builder only, so keyboard animation
+                // frames rebuild just the button — not the whole shell.
+                Positioned(
+                  right: 16,
+                  bottom: 16,
+                  child: Builder(
+                    builder: (btnCtx) =>
+                        MediaQuery.viewInsetsOf(btnCtx).bottom > 0
+                            ? const SizedBox.shrink()
+                            : const WhatsAppSupportButton(),
+                  ),
+                ),
               ],
             ),
             bottomNavigationBar: Container(
@@ -139,6 +146,49 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
         child: Icon(activeIcon, size: 28),
       ),
       label: label,
+    );
+  }
+}
+
+/// An [IndexedStack] that only builds a tab's subtree after its first visit.
+///
+/// Visited tabs stay mounted, so switching tabs no longer disposes/recreates
+/// screen State (no repeated initState → no re-fetch, scroll positions and
+/// form state survive). Unvisited tabs cost nothing — they are
+/// [SizedBox.shrink] placeholders until first selected. Hidden tabs get
+/// `TickerMode(enabled: false)` so their animations/spinners stop ticking.
+class _LazyIndexedStack extends StatefulWidget {
+  const _LazyIndexedStack({required this.index, required this.children});
+
+  final int index;
+  final List<Widget> children;
+
+  @override
+  State<_LazyIndexedStack> createState() => _LazyIndexedStackState();
+}
+
+class _LazyIndexedStackState extends State<_LazyIndexedStack> {
+  late final Set<int> _visited = {widget.index};
+
+  @override
+  void didUpdateWidget(covariant _LazyIndexedStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _visited.add(widget.index);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IndexedStack(
+      index: widget.index,
+      children: [
+        for (var i = 0; i < widget.children.length; i++)
+          _visited.contains(i)
+              ? TickerMode(
+                  enabled: i == widget.index,
+                  child: widget.children[i],
+                )
+              : const SizedBox.shrink(),
+      ],
     );
   }
 }

@@ -1,7 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
+import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/favorite_heart_button.dart';
 
 /// Modern property card with enhanced design
 class PropertyCardV2 extends StatefulWidget {
@@ -55,16 +58,8 @@ class PropertyCardV2 extends StatefulWidget {
   State<PropertyCardV2> createState() => _PropertyCardV2State();
 }
 
-class _PropertyCardV2State extends State<PropertyCardV2>
-    with SingleTickerProviderStateMixin {
-  bool _isFavorite = false;
+class _PropertyCardV2State extends State<PropertyCardV2> {
   bool _isPressed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _isFavorite = widget.isFavorite;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,15 +109,12 @@ class _PropertyCardV2State extends State<PropertyCardV2>
             height: 180,
             width: double.infinity,
             fit: BoxFit.cover,
+            memCacheWidth: 800,
+            // Static placeholder — a spinner per card means many concurrent
+            // animations repainting while a list loads.
             placeholder: (context, url) => Container(
               height: 180,
               color: AppColors.neutral200,
-              child: const Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.primaryColor,
-                ),
-              ),
             ),
             errorWidget: (context, url, error) => Container(
               height: 180,
@@ -229,28 +221,34 @@ class _PropertyCardV2State extends State<PropertyCardV2>
   }
 
   Widget _buildFavoriteButton() {
-    return Material(
-      color: AppColors.cardBackground.withValues(alpha: 0.9),
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: () {
-          setState(() => _isFavorite = !_isFavorite);
-          widget.onFavoriteToggle?.call();
-        },
-        customBorder: const CircleBorder(),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: Icon(
-              _isFavorite ? Icons.favorite : Icons.favorite_border,
-              key: ValueKey(_isFavorite),
-              size: 22,
-              color: _isFavorite ? Colors.red : AppColors.charcoal,
+    // Filled state comes from the app-wide FavoritesNotifier so a toggle
+    // repaints only this heart (and stays in sync across screens) — the old
+    // copied-once local flag went stale when the parent list updated.
+    return ValueListenableBuilder<Set<String>>(
+      valueListenable: sl<FavoritesNotifier>(),
+      builder: (context, favoriteIds, _) {
+        final isFavorite = favoriteIds.contains(widget.id);
+        return Material(
+          color: AppColors.cardBackground.withValues(alpha: 0.9),
+          shape: const CircleBorder(),
+          child: InkWell(
+            onTap: widget.onFavoriteToggle,
+            customBorder: const CircleBorder(),
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  key: ValueKey(isFavorite),
+                  size: 22,
+                  color: isFavorite ? Colors.red : AppColors.charcoal,
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -457,6 +455,10 @@ class CompactPropertyCard extends StatelessWidget {
   final int? beds;
   final int? bathrooms;
   final VoidCallback? onTap;
+
+  /// Id used by the heart to read its filled state from the app-wide
+  /// [FavoritesNotifier]. When empty, [isFavorite] is a static fallback.
+  final String propertyId;
   final bool isFavorite;
 
   /// When provided, a favorite (heart) button is shown over the image.
@@ -477,6 +479,7 @@ class CompactPropertyCard extends StatelessWidget {
     this.beds,
     this.bathrooms,
     this.onTap,
+    this.propertyId = '',
     this.isFavorite = false,
     this.onFavoriteToggle,
   });
@@ -520,6 +523,7 @@ class CompactPropertyCard extends StatelessWidget {
                     height: 120,
                     width: 200,
                     fit: BoxFit.cover,
+                    memCacheWidth: 450,
                     placeholder: (context, url) => Container(
                       height: 120,
                       color: AppColors.neutral200,
@@ -535,31 +539,41 @@ class CompactPropertyCard extends StatelessWidget {
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: GestureDetector(
-                      onTap: onFavoriteToggle,
-                      child: Container(
-                        width: 30,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(15),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.12),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
+                    child: propertyId.isNotEmpty
+                        ? FavoriteHeartButton(
+                            propertyId: propertyId,
+                            onPressed: onFavoriteToggle!,
+                            size: 30,
+                            withShadow: true,
+                          )
+                        : GestureDetector(
+                            onTap: onFavoriteToggle,
+                            child: Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        Colors.black.withValues(alpha: 0.12),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                isFavorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                size: 16,
+                                color: isFavorite
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFF9CA3AF),
+                              ),
                             ),
-                          ],
-                        ),
-                        child: Icon(
-                          isFavorite ? Icons.favorite : Icons.favorite_border,
-                          size: 16,
-                          color: isFavorite
-                              ? const Color(0xFFEF4444)
-                              : const Color(0xFF9CA3AF),
-                        ),
-                      ),
-                    ),
+                          ),
                   ),
                 if (_hasDiscount)
                   Positioned(

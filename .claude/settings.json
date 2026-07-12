@@ -10,7 +10,9 @@
       "Bash(:)",
       "Bash(tee /tmp/warnings.txt)",
       "Bash(xargs -0 grep -l \"\\\\.withOpacity\\(\")",
-      "Bash(flutter test *)"
+      "Bash(flutter test *)",
+      "PowerShell(flutter analyze --no-pub 2>$null)",
+      "PowerShell(flutter test 2>$null)"
     ]
   }
 }

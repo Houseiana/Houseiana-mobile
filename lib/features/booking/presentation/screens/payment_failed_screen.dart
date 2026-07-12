@@ -5,6 +5,7 @@ import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/models/booking_model.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class PaymentFailedScreen extends StatefulWidget {
   const PaymentFailedScreen({super.key});
@@ -189,19 +190,7 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
                               ),
                               const SizedBox(height: 16),
                               if (_isLoading)
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 12),
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: AppColors.primaryColor,
-                                      ),
-                                    ),
-                                  ),
-                                )
+                                const _PaymentDetailsSkeleton()
                               else ...[
                                 _buildDetailRow(
                                   '${context.tr('booking.transactionId')}:',
@@ -354,6 +343,50 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Skeleton matching the four label/value detail rows shown while the
+/// booking details are loading.
+class _PaymentDetailsSkeleton extends StatelessWidget {
+  const _PaymentDetailsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer(
+      containersColor: AppColors.skeletonBaseColor,
+      child: Column(
+        children: List.generate(
+          4,
+          (index) => Padding(
+            padding: EdgeInsetsDirectional.only(
+              bottom: index == 3 ? 0 : 12,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  height: 14,
+                  width: 96,
+                  decoration: BoxDecoration(
+                    color: AppColors.neutral200,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Container(
+                  height: 14,
+                  width: 120,
+                  decoration: BoxDecoration(
+                    color: AppColors.neutral200,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

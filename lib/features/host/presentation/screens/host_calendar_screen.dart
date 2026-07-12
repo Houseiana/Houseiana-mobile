@@ -9,6 +9,8 @@ import 'package:houseiana_mobile_app/features/host/presentation/widgets/calendar
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/common/enhanced_buttons.dart'
     show PrimaryButton;
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart'
+    show CalendarSkeleton;
 
 /// Host Calendar — manage availability, pricing & reservations for a property.
 /// Mirrors the web `host-dashboard/calendar` screen.
@@ -67,9 +69,7 @@ class _HostCalendarScreenState extends State<HostCalendarScreen> {
         builder: (context, state) {
           if (state is HostCalendarManagementLoading ||
               state is HostCalendarManagementInitial) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryColor),
-            );
+            return const CalendarSkeleton();
           }
           if (state is HostCalendarManagementError) {
             return state.isNotLoggedIn

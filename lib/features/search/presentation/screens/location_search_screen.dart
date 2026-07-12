@@ -5,6 +5,7 @@ import 'package:houseiana_mobile_app/core/models/property_model.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class LocationSearchScreen extends StatefulWidget {
   const LocationSearchScreen({super.key});
@@ -129,8 +130,10 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryColor),
+          ? const TileListSkeleton(
+              itemCount: 8,
+              leadingSize: 40,
+              padding: EdgeInsets.fromLTRB(24, 16, 24, 24),
             )
           : _error != null
               ? _LocationMessageState(

@@ -6,6 +6,7 @@ import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class HostPayoutScreen extends StatefulWidget {
   const HostPayoutScreen({super.key});
@@ -167,7 +168,12 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const TileListSkeleton(
+        itemCount: 5,
+        leadingSize: 48,
+        showTrailing: true,
+        padding: EdgeInsets.all(16),
+      );
     }
 
     if (_error != null) {

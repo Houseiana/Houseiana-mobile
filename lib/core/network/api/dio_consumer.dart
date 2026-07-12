@@ -26,28 +26,32 @@ class DioConsumer implements ApiConsumer {
       client.options.headers['Authorization'] = 'Bearer $authToken';
     }
 
-    client.interceptors.add(LogInterceptor(
-      request: true,
-      requestHeader: true,
-      requestBody: true,
-      responseHeader: true,
-      responseBody: true,
-      error: true,
-      logPrint: (Object object) {
-        debugPrint(object.toString());
-      },
-    ));
+    if (kDebugMode) {
+      client.interceptors.add(LogInterceptor(
+        request: true,
+        requestHeader: true,
+        requestBody: true,
+        responseHeader: true,
+        responseBody: true,
+        error: true,
+        logPrint: (Object object) {
+          debugPrint(object.toString());
+        },
+      ));
+    }
   }
 
   @override
   Future<dynamic> get(
     String path, {
     Map<String, dynamic>? queryParameters,
+    CancelToken? cancelToken,
   }) async {
     try {
       final response = await client.get(
         path,
         queryParameters: queryParameters,
+        cancelToken: cancelToken,
       );
       return response.data;
     } on DioException catch (e) {
@@ -61,12 +65,14 @@ class DioConsumer implements ApiConsumer {
     Map<String, dynamic>? body,
     bool formDataIsEnabled = false,
     Map<String, dynamic>? queryParameters,
+    CancelToken? cancelToken,
   }) async {
     try {
       final response = await client.post(
         path,
         data: formDataIsEnabled ? FormData.fromMap(body ?? {}) : body,
         queryParameters: queryParameters,
+        cancelToken: cancelToken,
       );
       return response.data;
     } on DioException catch (e) {
@@ -147,12 +153,10 @@ class DioConsumer implements ApiConsumer {
           ),
         );
       case DioExceptionType.cancel:
-        throw const ServerException(
-          exceptionModel: ExceptionModel(
-            statusCode: 0,
-            message: 'Request cancelled',
-          ),
-        );
+        // Typed so opt-in callers can swallow it (never show "Request
+        // cancelled" to the user); untouched call sites still see a
+        // ServerException as before.
+        throw const RequestCancelledException();
       default:
         throw const ServerException(
           exceptionModel: ExceptionModel(

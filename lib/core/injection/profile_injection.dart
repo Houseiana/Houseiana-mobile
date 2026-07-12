@@ -6,7 +6,7 @@ import 'package:houseiana_mobile_app/features/profile/cubit/payment_methods_cubi
 import 'package:houseiana_mobile_app/features/profile/cubit/saved_addresses_cubit.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/cubit/owner_profile_cubit.dart';
 
-Future<void> initProfile() async {
+void initProfile() {
   sl.registerFactory(() => IdentityVerificationCubit(
         sl<UserService>(),
         sl<UserSession>(),

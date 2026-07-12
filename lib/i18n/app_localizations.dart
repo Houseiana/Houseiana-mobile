@@ -1,6 +1,13 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+/// Top-level so it can run on a background isolate via [compute] — the
+/// translation files are ~100-130KB and decoding them on the UI isolate
+/// costs a visible chunk of the first frame.
+Map<String, dynamic> _decodeTranslations(String jsonString) =>
+    json.decode(jsonString) as Map<String, dynamic>;
 
 /// Supported locales
 enum AppLocale {
@@ -49,7 +56,7 @@ class AppLocalizations {
       final jsonString = await rootBundle.loadString(
         'lib/i18n/translations/${locale.code}.json',
       );
-      final strings = json.decode(jsonString) as Map<String, dynamic>;
+      final strings = await compute(_decodeTranslations, jsonString);
       _cached = AppLocalizations._(locale: locale, strings: strings);
       _currentLocale = locale;
       return _cached!;
@@ -134,8 +141,11 @@ class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
     return AppLocalizations.load(AppLocale.fromCode(locale.languageCode));
   }
 
+  // Locale changes already trigger a reload through the framework (the
+  // Localizations widget reloads whenever `locale` differs); returning true
+  // here only forces redundant load() churn on every root rebuild.
   @override
-  bool shouldReload(AppLocalizationsDelegate old) => true;
+  bool shouldReload(AppLocalizationsDelegate old) => false;
 }
 
 /// Convenience extension: `context.tr('auth.signIn')`.

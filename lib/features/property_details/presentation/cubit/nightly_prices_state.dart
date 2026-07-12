@@ -38,6 +38,40 @@ class NightlyPricesState extends Equatable {
 
   bool get hasCompleteRange => checkIn != null && checkOut != null;
 
+  /// Sums the loaded nightly prices over the selected range (check-in
+  /// inclusive, check-out exclusive): `original` is the pre-discount total and
+  /// `effective` the total actually charged (discounted nights use their
+  /// discounted price). Returns null unless a complete range is selected and
+  /// every night in it has a loaded price.
+  ({double original, double effective})? get selectedRangeTotals {
+    final ci = checkIn;
+    final co = checkOut;
+    if (ci == null || co == null) return null;
+    final end = DateTime(co.year, co.month, co.day);
+    var day = DateTime(ci.year, ci.month, ci.day);
+    double original = 0;
+    double effective = 0;
+    while (day.isBefore(end)) {
+      final monthPrices =
+          pricesByMonth[NightlyPricesPage.monthKeyFromDate(day)];
+      if (monthPrices == null) return null;
+      NightlyPrice? entry;
+      for (final p in monthPrices) {
+        if (p.date.year == day.year &&
+            p.date.month == day.month &&
+            p.date.day == day.day) {
+          entry = p;
+          break;
+        }
+      }
+      if (entry == null) return null;
+      original += entry.price;
+      effective += entry.effectivePrice;
+      day = DateTime(day.year, day.month, day.day + 1);
+    }
+    return (original: original, effective: effective);
+  }
+
   NightlyPricesState copyWith({
     Map<String, List<NightlyPrice>>? pricesByMonth,
     Set<String>? loadingMonths,

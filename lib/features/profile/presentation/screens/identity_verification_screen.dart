@@ -10,6 +10,7 @@ import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/features/profile/cubit/identity_verification_cubit.dart';
 import 'package:houseiana_mobile_app/features/profile/cubit/identity_verification_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 /// Identity Verification — the mobile parity of the web personal-info identity
 /// sections. Lets the user add/update their Government ID (passport / national
@@ -78,7 +79,12 @@ class _IdentityView extends StatelessWidget {
         builder: (context, state) {
           switch (state.status) {
             case IdentityLoadStatus.loading:
-              return const Center(child: CircularProgressIndicator());
+              return const TileListSkeleton(
+                itemCount: 4,
+                leadingSize: 40,
+                tileHeight: 76,
+                padding: EdgeInsets.all(20),
+              );
             case IdentityLoadStatus.error:
               return _LoadError(
                 message: context.tr(state.loadError ?? 'common.error'),

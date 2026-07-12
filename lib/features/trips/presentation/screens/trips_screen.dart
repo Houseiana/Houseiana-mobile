@@ -1,11 +1,14 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/models/trip_model.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/features/bottom_nav/presentation/cubit/cubit.dart';
+import 'package:houseiana_mobile_app/features/bottom_nav/presentation/cubit/states.dart';
 import 'package:houseiana_mobile_app/features/chat/data/firestore_chat_service.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/trip_skeleton.dart';
@@ -92,8 +95,29 @@ class _TripsScreenState extends State<TripsScreen>
     }
   }
 
+  /// Silent refresh when the Trips tab becomes visible again. The tab stays
+  /// mounted in the shell's lazy IndexedStack, so initState no longer re-runs
+  /// per visit — but trips reflect actions taken elsewhere (booking, payment,
+  /// cancellation), so re-fetch the active tab while keeping the current list
+  /// on screen (the skeleton only shows when there is no cached data).
+  void _refreshVisibleTab() {
+    final controller = _tabController;
+    if (!_session.isLoggedIn || controller == null || _tabs.isEmpty) return;
+    _loadTab(_tabs[controller.index], force: true);
+  }
+
   @override
   Widget build(BuildContext context) {
+    return BlocListener<BottomNavCubit, BottomNavState>(
+      listenWhen: (prev, next) =>
+          prev.index != BottomNavCubit.tripsTab &&
+          next.index == BottomNavCubit.tripsTab,
+      listener: (_, __) => _refreshVisibleTab(),
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -324,6 +348,7 @@ class _TripsScreenState extends State<TripsScreen>
                       height: 180,
                       width: double.infinity,
                       fit: BoxFit.cover,
+                      memCacheWidth: 800,
                       placeholder: (context, url) => Container(
                         height: 180,
                         width: double.infinity,

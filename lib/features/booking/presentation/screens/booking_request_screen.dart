@@ -80,7 +80,33 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
         : double.tryParse('$cleaning') ?? 0);
   }
 
-  double get _subtotal => _pricePerNight * _nights;
+  /// Subtotal actually charged for the stay. Prefers the availability API's
+  /// `subtotal`, which sums the effective (discount-applied) nightly prices of
+  /// the selected dates — per-night calendar discounts only exist there, the
+  /// property payload only carries today's price. Falls back to nightly rate ×
+  /// nights while availability is loading or on failure.
+  double get _subtotal => _availSubtotal ?? _pricePerNight * _nights;
+
+  double? get _availSubtotal {
+    final v = _availability?['subtotal'];
+    return v is num ? v.toDouble() : null;
+  }
+
+  /// Total amount saved over the stay per the availability API (`discount`),
+  /// or null when availability hasn't loaded. Mirrors the web reserve flow
+  /// (`avail.discount`).
+  double? get _availDiscount {
+    final v = _availability?['discount'];
+    return v is num ? v.toDouble() : null;
+  }
+
+  /// Grand total per the availability API (`totalPrice` = discounted subtotal
+  /// + service fee + cleaning fee), or null when availability hasn't loaded.
+  double? get _availTotalPrice {
+    final v = _availability?['totalPrice'];
+    return v is num ? v.toDouble() : null;
+  }
+
   double _serviceFeeFromProperty() {
     final fees = _property['fees'] as Map<String, dynamic>? ?? {};
     final service = fees['service'] ?? fees['serviceFee'] ?? 0;
@@ -110,28 +136,38 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
       _nights > 0 ? (_availCleaningFee ?? _cleaningFeeFromProperty()) : 0;
   double get _serviceFee =>
       _nights > 0 ? (_availServiceFee ?? _serviceFeeFromProperty()) : 0;
-  double get _total => _subtotal + _cleaningFee + _serviceFee;
+  double get _total =>
+      _availTotalPrice ?? (_subtotal + _cleaningFee + _serviceFee);
 
   /// Original (pre-discount) nightly price from the property payload
   /// (`priceWithoutDiscount`/`originalPrice`), or null when the listing has no
-  /// discount. `_pricePerNight` is already the discounted rate, so the subtotal
-  /// and total above already reflect the discount — the discount row rendered
-  /// in the breakdown is informational, mirroring the web reserve summary.
+  /// discount. Only used as a fallback while availability hasn't loaded —
+  /// it reflects today's listing-level discount, not the selected dates.
   double? get _originalPricePerNight => originalNightlyPrice(_property);
 
-  /// Whether a real price reduction applies (original nightly price is higher
-  /// than the discounted rate being charged) for the selected dates.
-  bool get _hasDiscount {
-    final original = _originalPricePerNight;
-    return _nights > 0 && original != null && original > _pricePerNight;
-  }
-
-  /// Total amount saved across the stay: (original − discounted) × nights.
+  /// Total amount saved across the stay for the selected dates. Prefers the
+  /// availability API's `discount`; falls back to the listing-level
+  /// (original − discounted) × nights. Informational: `_subtotal` is already
+  /// discounted, so this is never subtracted from `_total` again.
   double get _discountAmount {
+    final availDiscount = _availDiscount;
+    if (_availSubtotal != null) return availDiscount ?? 0;
     final original = _originalPricePerNight;
-    if (!_hasDiscount || original == null) return 0;
+    if (original == null || original <= _pricePerNight) return 0;
     return (original - _pricePerNight) * _nights;
   }
+
+  /// Whether a real price reduction applies for the selected dates.
+  bool get _hasDiscount => _nights > 0 && _discountAmount > 0;
+
+  /// Pre-discount subtotal (what the stay would cost without the discount).
+  /// With availability data this is `subtotal + discount`; the fallback
+  /// resolves to original nightly rate × nights.
+  double get _grossSubtotal => _subtotal + _discountAmount;
+
+  /// Pre-discount nightly rate shown in the "{price} × {nights}" row, derived
+  /// from the gross subtotal so the row's arithmetic always adds up.
+  double get _grossNightly => _nights > 0 ? _grossSubtotal / _nights : 0;
 
   /// Currency code for price display (e.g. EGP). Matches the web, which
   /// prefixes amounts with the currency code instead of a `$` sign and treats
@@ -244,6 +280,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
       setState(() {
         _checkIn = date;
         if (_checkOut != null && !_checkOut!.isAfter(date)) _checkOut = null;
+        _availability = null; // stale — priced for the previous dates
       });
       _loadAvailability();
     }
@@ -268,7 +305,10 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
       ),
     );
     if (date != null && mounted) {
-      setState(() => _checkOut = date);
+      setState(() {
+        _checkOut = date;
+        _availability = null; // stale — priced for the previous dates
+      });
       _loadAvailability();
     }
   }
@@ -675,7 +715,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   }
 
   Widget _buildPriceCard() {
-    final priceFormatted = _money(_pricePerNight);
+    final priceFormatted = _money(_grossNightly);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -690,7 +730,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                       args: {'price': priceFormatted, 'nights': _nights})
                   : context.tr('booking.priceByNightsTemplate',
                       args: {'price': priceFormatted, 'nights': _nights}),
-              _money(_subtotal)),
+              _money(_grossSubtotal)),
           const SizedBox(height: 12),
           _priceRow(context.tr('booking.cleaningFee'), _money(_cleaningFee)),
           const SizedBox(height: 12),

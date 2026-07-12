@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/features/bottom_nav/presentation/cubit/cubit.dart';
+import 'package:houseiana_mobile_app/features/bottom_nav/presentation/cubit/states.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -44,6 +48,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoggedIn = sl<UserSession>().isLoggedIn;
+    // The tab stays mounted in the shell's lazy IndexedStack, so initState
+    // no longer re-runs per visit — re-backfill the profile name silently
+    // whenever this tab becomes visible again.
+    return BlocListener<BottomNavCubit, BottomNavState>(
+      listenWhen: (prev, next) =>
+          prev.index != BottomNavCubit.profileTab &&
+          next.index == BottomNavCubit.profileTab,
+      listener: (_, __) => _refreshProfile(),
+      child: _buildScaffold(context, isLoggedIn),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context, bool isLoggedIn) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FA),
       body: SafeArea(
@@ -273,6 +290,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onPressed: () async {
                               Navigator.pop(ctx);
                               await sl<UserSession>().clear();
+                              // Hearts must not leak into the next account.
+                              sl<FavoritesNotifier>().clear();
                               if (!context.mounted) return;
                               Navigator.pushNamedAndRemoveUntil(
                                 context,

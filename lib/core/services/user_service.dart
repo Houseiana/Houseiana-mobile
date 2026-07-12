@@ -7,14 +7,18 @@ import 'package:houseiana_mobile_app/core/models/user_model.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/end_points.dart';
 import 'package:houseiana_mobile_app/core/services/cache_service.dart';
+import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
+import 'package:houseiana_mobile_app/core/services/lookups_cache.dart';
 
 /// Handles all user-related API calls to the backend.
 /// Routes: /users/*, /booking-manager/*, /api/chat/conversations
 class UserService {
   final ApiConsumer _api;
   final CacheService _cache;
+  final LookupsCache _lookups;
+  final FavoritesNotifier _favorites;
 
-  UserService(this._api, this._cache);
+  UserService(this._api, this._cache, this._lookups, this._favorites);
 
   // ── Profile ──────────────────────────────────────────────────────────────
 
@@ -73,10 +77,18 @@ class UserService {
     required String userId,
     required String propertyId,
   }) async {
-    await _api.post(
-      EndPoints.favorites,
-      body: {'userId': userId, 'propertyId': propertyId},
-    );
+    // Optimistic: flip the app-wide notifier first so every heart repaints
+    // instantly, then revert if the POST fails.
+    _favorites.toggle(propertyId);
+    try {
+      await _api.post(
+        EndPoints.favorites,
+        body: {'userId': userId, 'propertyId': propertyId},
+      );
+    } catch (_) {
+      _favorites.toggle(propertyId);
+      rethrow;
+    }
     await _cache.removeByPrefix(HomeCache.listPrefix);
     await _cache.removeByPrefix(HomeCache.favPrefix);
     return true;
@@ -89,7 +101,10 @@ class UserService {
   /// Awaiting Approval). Falls back to a static list if the lookup fails.
   Future<List<TripFilterTab>> getTripFilterTabs() async {
     try {
-      final response = await _api.get(EndPoints.bookingStatusLookup);
+      final response = await _lookups.getOrFetch(
+        EndPoints.bookingStatusLookup,
+        () => _api.get(EndPoints.bookingStatusLookup),
+      );
       final tabs = _list(response)
           .map(TripFilterTab.fromJson)
           .where((t) => t.label.isNotEmpty)
@@ -153,7 +168,10 @@ class UserService {
   /// profile-update endpoint expects. Falls back to a static list on failure.
   Future<List<GenderOption>> getGenders() async {
     try {
-      final response = await _api.get(EndPoints.genderLookup);
+      final response = await _lookups.getOrFetch(
+        EndPoints.genderLookup,
+        () => _api.get(EndPoints.genderLookup),
+      );
       final options = _list(response)
           .map(GenderOption.fromJson)
           .where((g) => g.name.isNotEmpty)
@@ -295,7 +313,10 @@ class UserService {
   /// list on failure.
   Future<List<Map<String, dynamic>>> getRelationshipOptions() async {
     try {
-      final response = await _api.get(EndPoints.relationshipLookup);
+      final response = await _lookups.getOrFetch(
+        EndPoints.relationshipLookup,
+        () => _api.get(EndPoints.relationshipLookup),
+      );
       return _list(response)
           .map((e) => {
                 'id': e['id'],
@@ -441,7 +462,10 @@ class UserService {
   /// Drives the "Add payout method" picker. Falls back to an empty list.
   Future<List<Map<String, dynamic>>> getPayoutMethodOptions() async {
     try {
-      final response = await _api.get(EndPoints.payoutMethodLookup);
+      final response = await _lookups.getOrFetch(
+        EndPoints.payoutMethodLookup,
+        () => _api.get(EndPoints.payoutMethodLookup),
+      );
       return _list(response)
           .map((e) => {
                 'id': e['id'],

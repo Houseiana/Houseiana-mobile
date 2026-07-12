@@ -9,6 +9,7 @@ import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/features/profile/cubit/personal_info_cubit.dart';
 import 'package:houseiana_mobile_app/features/profile/cubit/personal_info_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class PersonalInformationScreen extends StatelessWidget {
   const PersonalInformationScreen({super.key});
@@ -367,7 +368,10 @@ class _PersonalInformationContentState
         centerTitle: true,
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const FormSkeleton(
+              fieldCount: 7,
+              padding: EdgeInsets.all(24),
+            )
           : loadError != null
               ? _LoadErrorState(
                   message: loadError,

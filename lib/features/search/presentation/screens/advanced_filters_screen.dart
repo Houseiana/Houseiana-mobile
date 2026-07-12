@@ -5,6 +5,7 @@ import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/end_points.dart';
+import 'package:houseiana_mobile_app/core/services/lookups_cache.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class AdvancedFiltersScreen extends StatefulWidget {
@@ -105,7 +106,10 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
   Future<void> _loadLookups() async {
     try {
       final api = sl<ApiConsumer>();
-      final response = await api.get(EndPoints.amenitiesLookup);
+      final response = await sl<LookupsCache>().getOrFetch(
+        EndPoints.amenitiesLookup,
+        () => api.get(EndPoints.amenitiesLookup),
+      );
       final amenities = _extractAmenities(response);
       if (!mounted) return;
       setState(() {

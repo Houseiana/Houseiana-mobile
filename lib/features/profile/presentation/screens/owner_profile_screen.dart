@@ -8,6 +8,7 @@ import 'package:houseiana_mobile_app/core/models/public_profile_model.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/cubit/owner_profile_cubit.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/cubit/owner_profile_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart';
 
 const _months = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -73,9 +74,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen>
       body: BlocBuilder<OwnerProfileCubit, OwnerProfileState>(
         builder: (context, state) {
           if (state is OwnerProfileLoading || state is OwnerProfileInitial) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.charcoal),
-            );
+            return const ProfileSkeletonLoader();
           }
           if (state is OwnerProfileError) {
             return _ErrorView(messageKey: state.messageKey);

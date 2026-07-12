@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/favorite_heart_button.dart';
 
 /// Standard vertical property card shared by the search results screen and the
 /// Search-tab listing, so both surfaces render listings identically: a
@@ -38,7 +39,12 @@ class PropertyListCard extends StatelessWidget {
   /// Shows the dark "Guest favorite" badge over the image when true.
   final bool isGuestFavorite;
 
-  /// Filled-heart state for the favorite toggle.
+  /// Id used by the heart to read its filled state from the app-wide
+  /// [FavoritesNotifier] — only the heart repaints on a toggle, never the
+  /// list. When empty, [isFavorite] is used as a static fallback.
+  final String propertyId;
+
+  /// Static filled-heart fallback, only honoured when [propertyId] is empty.
   final bool isFavorite;
   final VoidCallback? onTap;
 
@@ -61,6 +67,7 @@ class PropertyListCard extends StatelessWidget {
     this.beds = 0,
     this.bathrooms = 0,
     this.isGuestFavorite = false,
+    this.propertyId = '',
     this.isFavorite = false,
     this.onTap,
     this.onFavoriteToggle,
@@ -97,6 +104,9 @@ class PropertyListCard extends StatelessWidget {
                           height: 180,
                           width: double.infinity,
                           fit: BoxFit.cover,
+                          // Cap the decoded bitmap: listing photos are multi-
+                          // megapixel but render at full card width (~400dp).
+                          memCacheWidth: 800,
                           placeholder: (context, url) => Container(
                             height: 180,
                             width: double.infinity,
@@ -152,22 +162,30 @@ class PropertyListCard extends StatelessWidget {
                     Positioned(
                       top: 12,
                       right: 12,
-                      child: GestureDetector(
-                        onTap: onFavoriteToggle,
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: const BoxDecoration(
-                              color: Colors.white, shape: BoxShape.circle),
-                          child: Icon(
-                            isFavorite ? Icons.favorite : Icons.favorite_border,
-                            size: 16,
-                            color: isFavorite
-                                ? const Color(0xFFEF4444)
-                                : const Color(0xFF9CA3AF),
-                          ),
-                        ),
-                      ),
+                      child: propertyId.isNotEmpty
+                          ? FavoriteHeartButton(
+                              propertyId: propertyId,
+                              onPressed: onFavoriteToggle!,
+                            )
+                          : GestureDetector(
+                              onTap: onFavoriteToggle,
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle),
+                                child: Icon(
+                                  isFavorite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  size: 16,
+                                  color: isFavorite
+                                      ? const Color(0xFFEF4444)
+                                      : const Color(0xFF9CA3AF),
+                                ),
+                              ),
+                            ),
                     ),
                 ],
               ),

@@ -4,6 +4,7 @@ import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class PaymentHistoryScreen extends StatefulWidget {
   const PaymentHistoryScreen({super.key});
@@ -87,8 +88,11 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primaryColor),
+      return const TileListSkeleton(
+        itemCount: 6,
+        showTrailing: true,
+        tileHeight: 108,
+        padding: EdgeInsets.all(20),
       );
     }
 

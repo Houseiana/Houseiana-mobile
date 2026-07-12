@@ -122,4 +122,5 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/google_fonts/
     - lib/i18n/translations/

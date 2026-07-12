@@ -676,6 +676,7 @@
     "calendarSelectCheckOut": "Select check-out",
     "calendarNightStay": "{n}-night stay",
     "calendarApproxPrices": "Approximate prices in {currency} for a 1-night stay",
+    "calendarStayTotal": "Stay total:",
     "propertyNotFound": "Property not found"
   },
   "review": {
@@ -1279,6 +1280,10 @@
     "nights": "nights",
     "guestLabel": "Guest",
     "paid": "Paid",
+    "paymentPending": "Payment pending",
+    "paymentFailed": "Payment failed",
+    "refunded": "Refunded",
+    "partiallyRefunded": "Partially refunded",
     "approve": "Approve",
     "searchByGuestName": "Search by guest name...",
     "noBookingsFound": "No bookings found",

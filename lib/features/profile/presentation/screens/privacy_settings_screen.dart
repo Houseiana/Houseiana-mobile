@@ -5,6 +5,7 @@ import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/account_privacy_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class PrivacySettingsScreen extends StatefulWidget {
   const PrivacySettingsScreen({super.key});
@@ -212,10 +213,11 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               ).then((_) => _loadPrivacyData()),
             )
           : _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primaryColor,
-                  ),
+              ? const TileListSkeleton(
+                  itemCount: 8,
+                  leadingSize: 40,
+                  showTrailing: true,
+                  padding: EdgeInsets.all(24),
                 )
               : _error != null
                   ? _MessageState(

@@ -6,6 +6,7 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/models/region_category_model.dart';
 import 'package:houseiana_mobile_app/core/services/cache_service.dart';
+import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
@@ -15,6 +16,8 @@ import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart';
 import 'package:houseiana_mobile_app/core/utils/discount_utils.dart';
 import 'package:houseiana_mobile_app/shared/widgets/cards/property_card_v2.dart';
+import 'package:houseiana_mobile_app/shared/widgets/favorite_heart_button.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,7 +32,6 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Null means "All" (no filter). Drilling into a region (See All) uses
   /// `regionId` instead — see [_buildCityGroupSection].
   int? _selectedFeaturedRegionId;
-  Set<String> _favoriteProperties = {};
 
   List<RegionCategory> _regionCategories = [];
   bool _categoriesLoading = true;
@@ -133,11 +135,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (cached != null) {
         final groups = _groupsFromCache(cached['groups']);
         final favs = _favsFromCache(_cache.getJson<List>(favKey));
+        if (_session.isLoggedIn) sl<FavoritesNotifier>().seed(favs);
         if (mounted) {
           setState(() {
             _cityGroups = groups;
             _properties = _flatten(groups);
-            _favoriteProperties = favs;
             _currentPage = 1;
             _hasMore = cached['hasMore'] == true;
             _isLoading = false;
@@ -161,19 +163,21 @@ class _HomeScreenState extends State<HomeScreen> {
       isSorted: true,
     );
 
-    final page = await _propertyService.searchPropertiesGrouped(
+    // Listings and favourites are independent — fire both together so the
+    // cold load costs max(listings, favourites) instead of their sum.
+    final pageFuture = _propertyService.searchPropertiesGrouped(
       params,
       userId: _session.userId,
     );
+    final favsFuture = _session.isLoggedIn
+        ? _userService.getFavorites(_session.userId!)
+        : Future.value(const <Map<String, dynamic>>[]);
 
-    Set<String> favIds = {};
-    if (_session.isLoggedIn) {
-      final favs = await _userService.getFavorites(_session.userId!);
-      favIds = favs
-          .map((f) => (f['propertyId'] ?? f['id'] ?? '').toString())
-          .where((id) => id.isNotEmpty)
-          .toSet();
-    }
+    final page = await pageFuture;
+    final favIds = (await favsFuture)
+        .map((f) => (f['propertyId'] ?? f['id'] ?? '').toString())
+        .where((id) => id.isNotEmpty)
+        .toSet();
 
     // ── Write-through: cache the fresh response for the next visit. ──
     await _cache.setJson(
@@ -186,11 +190,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     await _cache.setJson(favKey, favIds.toList(), ttl: HomeCache.favTtl);
 
+    if (_session.isLoggedIn) sl<FavoritesNotifier>().seed(favIds);
     if (mounted) {
       setState(() {
         _cityGroups = page.groups;
         _properties = _flatten(page.groups);
-        _favoriteProperties = favIds;
         _isLoading = false;
         _hasMore = page.hasMore;
       });
@@ -298,58 +302,63 @@ class _HomeScreenState extends State<HomeScreen> {
       showSignInToSaveFavoritesSheet(context);
       return;
     }
-    setState(() {
-      if (_favoriteProperties.contains(propertyId)) {
-        _favoriteProperties.remove(propertyId);
-      } else {
-        _favoriteProperties.add(propertyId);
-      }
-    });
-    await _userService.toggleFavorite(userId: _session.userId!, propertyId: propertyId);
+    // No setState: UserService flips the FavoritesNotifier optimistically
+    // (and rolls back on failure), so only the tapped heart repaints — not
+    // the whole home tree.
+    try {
+      await _userService.toggleFavorite(
+          userId: _session.userId!, propertyId: propertyId);
+    } catch (_) {
+      // Rollback already handled by the notifier.
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // CustomScrollView + lazy slivers: only visible city sections/cards are
+    // built (the old SingleChildScrollView→Column built every card eagerly).
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.primaryColor,
           onRefresh: () => _loadData(forceRefresh: true),
-          child: SingleChildScrollView(
+          child: CustomScrollView(
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(),
-                      const SizedBox(height: 16),
-                      _buildHeroSection(),
-                      const SizedBox(height: 16),
-                      _buildSearchBar(),
-                      const SizedBox(height: 20),
-                      _buildCategoryFilters(),
-                      const SizedBox(height: 20),
-                      _buildPropertyList(),
-                      if (_isLoadingMore)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20),
-                          child: Center(
-                            child: CircularProgressIndicator(color: AppColors.primaryColor),
-                          ),
-                        ),
-                    ],
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                sliver: SliverList.list(
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 16),
+                    _buildHeroSection(),
+                    const SizedBox(height: 16),
+                    _buildSearchBar(),
+                    const SizedBox(height: 20),
+                    _buildCategoryFilters(),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                sliver: _buildContentSliver(),
+              ),
+              if (_isLoadingMore)
+                const SliverPadding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  sliver: SliverToBoxAdapter(
+                    child: Center(
+                      child: CircularProgressIndicator(
+                          color: AppColors.primaryColor),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 32),
-                _buildTrustBadges(),
-              ],
-            ),
+              const SliverToBoxAdapter(child: SizedBox(height: 32)),
+              SliverToBoxAdapter(child: _buildTrustBadges()),
+            ],
           ),
         ),
       ),
@@ -746,19 +755,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCategoryFilters() {
     if (_categoriesLoading) {
-      return const SizedBox(
-        height: 92,
-        child: Center(
-          child: SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: AppColors.primaryColor,
-            ),
-          ),
-        ),
-      );
+      return _buildCategoriesSkeleton();
     }
 
     if (_regionCategories.isEmpty) return const SizedBox.shrink();
@@ -785,6 +782,49 @@ class _HomeScreenState extends State<HomeScreen> {
             photoUrl: category.photo,
           );
         },
+      ),
+    );
+  }
+
+  /// Skeleton for the region-category chips row: circular photo placeholder
+  /// with a short label bar underneath, matching [_buildCategoryChip].
+  Widget _buildCategoriesSkeleton() {
+    return SizedBox(
+      height: 92,
+      child: Skeletonizer(
+        containersColor: AppColors.skeletonBaseColor,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
+          itemCount: 5,
+          separatorBuilder: (_, __) => const SizedBox(width: 16),
+          itemBuilder: (_, __) => SizedBox(
+            width: 72,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: const BoxDecoration(
+                    color: AppColors.neutral200,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  width: 48,
+                  height: 11,
+                  decoration: BoxDecoration(
+                    color: AppColors.neutral200,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -826,6 +866,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: 60,
                         height: 60,
                         fit: BoxFit.cover,
+                        memCacheWidth: 180,
                         placeholder: (_, __) => const SizedBox(
                           width: 60,
                           height: 60,
@@ -864,61 +905,62 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPropertyList() {
+  /// The listings area as a sliver: skeleton/empty states are single
+  /// adapters, and the grouped/flat lists are lazy [SliverList]s so only
+  /// visible sections/cards get built.
+  Widget _buildContentSliver() {
     if (_isLoading) {
-      return ListSkeletonLoader(
-        itemCount: 4,
-        showSearchBar: false,
-        showCategories: false,
+      return SliverToBoxAdapter(
+        child: ListSkeletonLoader(
+          itemCount: 4,
+          showSearchBar: false,
+          showCategories: false,
+        ),
       );
     }
 
     if (_properties.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 40),
-        child: Center(
-          child: Column(
-            children: [
-              const Icon(Icons.home_outlined, size: 64, color: AppColors.neutral400),
-              const SizedBox(height: 16),
-              Text(
-                context.tr('property.noPropertiesFound'),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.charcoal),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                context.tr('property.noPropertiesFoundDescription'),
-                style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
-              ),
-            ],
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40),
+          child: Center(
+            child: Column(
+              children: [
+                const Icon(Icons.home_outlined,
+                    size: 64, color: AppColors.neutral400),
+                const SizedBox(height: 16),
+                Text(
+                  context.tr('property.noPropertiesFound'),
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.charcoal),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.tr('property.noPropertiesFoundDescription'),
+                  style: const TextStyle(
+                      fontSize: 14, color: AppColors.neutral600),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
     if (_cityGroups.isEmpty) {
-      return Column(
-        children: [
-          for (int i = 0; i < _properties.length; i++) ...[
-            if (i > 0) const SizedBox(height: 16),
-            _buildPropertyCardFromData(_properties[i]),
-          ],
-        ],
+      return SliverList.separated(
+        itemCount: _properties.length,
+        itemBuilder: (_, i) => _buildPropertyCardFromData(_properties[i]),
+        separatorBuilder: (_, __) => const SizedBox(height: 16),
       );
     }
 
-    return _buildCityGroups();
-  }
-
-  Widget _buildCityGroups() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (int gi = 0; gi < _cityGroups.length; gi++) ...[
-          if (gi > 0) const SizedBox(height: 32),
-          _buildCityGroupSection(_cityGroups[gi], gi),
-        ],
-      ],
+    return SliverList.separated(
+      itemCount: _cityGroups.length,
+      itemBuilder: (_, gi) => _buildCityGroupSection(_cityGroups[gi], gi),
+      separatorBuilder: (_, __) => const SizedBox(height: 32),
     );
   }
 
@@ -985,6 +1027,9 @@ class _HomeScreenState extends State<HomeScreen> {
         SizedBox(
           height: 260,
           child: ListView.separated(
+            // Keeps this rail's scroll offset when the section is scrolled
+            // out of view and disposed by the lazy sliver list.
+            key: PageStorageKey('home_rail_$index'),
             scrollDirection: Axis.horizontal,
             itemCount: group.properties.length,
             separatorBuilder: (_, __) => const SizedBox(width: 12),
@@ -1006,7 +1051,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   bedrooms: _asInt(p['bedrooms']),
                   beds: _asInt(p['beds']),
                   bathrooms: _asInt(p['bathrooms']),
-                  isFavorite: _favoriteProperties.contains(cid),
+                  propertyId: cid,
                   onFavoriteToggle: () => _toggleFavorite(cid),
                   onTap: () {
                     Navigator.pushNamed(
@@ -1118,7 +1163,6 @@ class _HomeScreenState extends State<HomeScreen> {
     int? beds,
     int? bathrooms,
   }) {
-    final isFavorite = _favoriteProperties.contains(propertyId);
     return GestureDetector(
       onTap: () {
         Navigator.pushNamed(
@@ -1157,6 +1201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: double.infinity,
                       height: 200,
                       fit: BoxFit.cover,
+                      memCacheWidth: 800,
                       placeholder: (context, url) => Container(
                         width: double.infinity,
                         height: 200,
@@ -1201,21 +1246,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   Positioned(
                     top: 12,
                     right: 12,
-                    child: GestureDetector(
-                      onTap: () => _toggleFavorite(propertyId),
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Icon(
-                          isFavorite ? Icons.favorite : Icons.favorite_border,
-                          size: 16,
-                          color: isFavorite ? const Color(0xFFEF4444) : const Color(0xFF9CA3AF),
-                        ),
-                      ),
+                    child: FavoriteHeartButton(
+                      propertyId: propertyId,
+                      onPressed: () => _toggleFavorite(propertyId),
                     ),
                   ),
                   if (discount != null)

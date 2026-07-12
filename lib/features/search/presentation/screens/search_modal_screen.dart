@@ -5,6 +5,7 @@ import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class SearchModalScreen extends StatefulWidget {
   const SearchModalScreen({super.key});
@@ -349,9 +350,17 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
         ),
         if (_isLoadingLocations)
           const Padding(
-            padding: EdgeInsets.all(20),
-            child: Center(
-              child: CircularProgressIndicator(color: AppColors.primaryColor),
+            padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: Column(
+              children: [
+                TileSkeletonItem(leadingSize: 36, height: 56),
+                SizedBox(height: 8),
+                TileSkeletonItem(leadingSize: 36, height: 56),
+                SizedBox(height: 8),
+                TileSkeletonItem(leadingSize: 36, height: 56),
+                SizedBox(height: 8),
+                TileSkeletonItem(leadingSize: 36, height: 56),
+              ],
             ),
           )
         else if (_locationError != null)

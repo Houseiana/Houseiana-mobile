@@ -6,6 +6,7 @@ import 'package:houseiana_mobile_app/features/property_details/presentation/cubi
 import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/nightly_prices_state.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/month_calendar_widget.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 import 'package:intl/intl.dart';
 
 class NightlyPricesCalendarScreen extends StatefulWidget {
@@ -57,11 +58,7 @@ class _NightlyPricesCalendarScreenState
             return _buildFatalError(context, state.fatalError!);
           }
           if (!state.initialized) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primaryColor,
-              ),
-            );
+            return const CalendarSkeleton();
           }
           return Column(
             children: [
@@ -237,6 +234,60 @@ class _NightlyPricesCalendarScreenState
     );
   }
 
+  /// Total for the selected stay, computed from the loaded nightly prices.
+  /// When any night is discounted the pre-discount total renders struck
+  /// through next to the charged total (same treatment as the day cells).
+  Widget _buildStayTotal(BuildContext context, NightlyPricesState state) {
+    final totals = state.selectedRangeTotals;
+    if (totals == null) return const SizedBox.shrink();
+    final hasDiscount = totals.effective < totals.original;
+    // Rose used for discounted amounts, matching NightlyPriceCell.
+    const discountColor = Color(0xFFE11D48);
+    final formatter = NumberFormat.decimalPattern();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                context.tr('propertyDetails.calendarStayTotal'),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.neutral500,
+                ),
+              ),
+              const SizedBox(width: 6),
+              if (hasDiscount) ...[
+                Text(
+                  '${state.currency} ${formatter.format(totals.original.round())}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.neutral400,
+                    decoration: TextDecoration.lineThrough,
+                    decorationColor: AppColors.neutral400,
+                  ),
+                ),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                '${state.currency} ${formatter.format(totals.effective.round())}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: hasDiscount ? discountColor : AppColors.charcoal,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFooter(BuildContext context, NightlyPricesState state) {
     final cubit = context.read<NightlyPricesCubit>();
     final locale = Localizations.localeOf(context).toLanguageTag();
@@ -291,6 +342,7 @@ class _NightlyPricesCalendarScreenState
                 ),
               ),
             ),
+            if (state.hasCompleteRange) _buildStayTotal(context, state),
             const SizedBox(height: 12),
             Row(
               children: [

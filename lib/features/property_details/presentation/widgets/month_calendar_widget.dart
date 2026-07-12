@@ -4,6 +4,7 @@ import 'package:houseiana_mobile_app/core/models/nightly_price_model.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/nightly_price_cell.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:intl/intl.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class MonthCalendarWidget extends StatelessWidget {
   final DateTime month;
@@ -98,6 +99,10 @@ class MonthCalendarWidget extends StatelessWidget {
   }
 
   Widget _buildGrid(BuildContext context) {
+    if (isLoading && prices == null) {
+      return _buildLoadingSkeleton();
+    }
+
     final firstDay = DateTime(month.year, month.month, 1);
     final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
     // Monday-first: leading blanks = (weekday - 1) mod 7
@@ -116,65 +121,85 @@ class MonthCalendarWidget extends StatelessWidget {
       }
     }
 
-    return Stack(
-      children: [
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 7,
-            childAspectRatio: 0.78,
-          ),
-          itemCount: totalCells,
-          itemBuilder: (context, index) {
-            if (index < leading) return const SizedBox.shrink();
-            final dayNum = index - leading + 1;
-            if (dayNum > daysInMonth) return const SizedBox.shrink();
-            final date = DateTime(month.year, month.month, dayNum);
-            final priceEntry = priceMap[dayNum];
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        childAspectRatio: 0.78,
+      ),
+      itemCount: totalCells,
+      itemBuilder: (context, index) {
+        if (index < leading) return const SizedBox.shrink();
+        final dayNum = index - leading + 1;
+        if (dayNum > daysInMonth) return const SizedBox.shrink();
+        final date = DateTime(month.year, month.month, dayNum);
+        final priceEntry = priceMap[dayNum];
 
-            final isPast = date.isBefore(todayOnly);
-            final isToday = date.isAtSameMomentAs(todayOnly);
-            final outsideWindow = _isOutsideWindow(date);
-            final isBooked = bookedDates.contains(date);
+        final isPast = date.isBefore(todayOnly);
+        final isToday = date.isAtSameMomentAs(todayOnly);
+        final outsideWindow = _isOutsideWindow(date);
+        final isBooked = bookedDates.contains(date);
 
-            final rangeState = _rangeState(date);
+        final rangeState = _rangeState(date);
 
-            return NightlyPriceCell(
-              date: date,
-              price: priceEntry?.effectivePrice,
-              isSpecialPrice: priceEntry?.isSpecialPrice ?? false,
-              originalPrice:
-                  (priceEntry?.hasDiscount ?? false) ? priceEntry!.price : null,
-              discountPercent: priceEntry?.discountPercent,
-              rangeState: rangeState,
-              isToday: isToday,
-              isPast: isPast,
-              isOutsideWindow: outsideWindow,
-              isBooked: isBooked,
-              currency: currency,
-              onTap: () => onDayTap(date),
-            );
-          },
+        return NightlyPriceCell(
+          date: date,
+          price: priceEntry?.effectivePrice,
+          isSpecialPrice: priceEntry?.isSpecialPrice ?? false,
+          originalPrice:
+              (priceEntry?.hasDiscount ?? false) ? priceEntry!.price : null,
+          discountPercent: priceEntry?.discountPercent,
+          rangeState: rangeState,
+          isToday: isToday,
+          isPast: isPast,
+          isOutsideWindow: outsideWindow,
+          isBooked: isBooked,
+          currency: currency,
+          onTap: () => onDayTap(date),
+        );
+      },
+    );
+  }
+
+  /// Skeleton mirroring the price-calendar grid (7 columns of day-number +
+  /// price bars) shown while the month's nightly prices load the first time.
+  Widget _buildLoadingSkeleton() {
+    return Skeletonizer(
+      containersColor: AppColors.skeletonBaseColor,
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 7,
+          childAspectRatio: 0.78,
         ),
-        if (isLoading && prices == null)
-          Positioned.fill(
-            child: Container(
-              color: Colors.white.withValues(alpha: 0.6),
-              child: const Center(
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.primaryColor,
-                  ),
-                ),
+        itemCount: 35,
+        itemBuilder: (context, index) => Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 18,
+              height: 13,
+              decoration: BoxDecoration(
+                color: AppColors.neutral200,
+                borderRadius: BorderRadius.circular(4),
               ),
             ),
-          ),
-      ],
+            const SizedBox(height: 6),
+            Container(
+              width: 30,
+              height: 10,
+              decoration: BoxDecoration(
+                color: AppColors.neutral200,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -69,20 +69,21 @@ class ClerkService {
       ),
     );
 
-    final logInterceptor = LogInterceptor(
-      request: true,
-      requestHeader: true,
-      requestBody: true,
-      responseHeader: true,
-      responseBody: true,
-      error: true,
-      logPrint: (Object object) {
-        debugPrint(object.toString());
-      },
-    );
-    _frontendDio.interceptors.add(logInterceptor);
-    _backendDio.interceptors.add(logInterceptor);
-
+    if (kDebugMode) {
+      final logInterceptor = LogInterceptor(
+        request: true,
+        requestHeader: true,
+        requestBody: true,
+        responseHeader: true,
+        responseBody: true,
+        error: true,
+        logPrint: (Object object) {
+          debugPrint(object.toString());
+        },
+      );
+      _frontendDio.interceptors.add(logInterceptor);
+      _backendDio.interceptors.add(logInterceptor);
+    }
   }
 
   // ── Initialize Client ─────────────────────────────────────────────────────

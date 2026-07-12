@@ -5,6 +5,7 @@ import 'package:houseiana_mobile_app/core/models/property_model.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/host_dashboard_cubit.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/host_dashboard_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class HostReviewsScreen extends StatelessWidget {
   const HostReviewsScreen({super.key});
@@ -45,8 +46,11 @@ class _HostReviewsView extends StatelessWidget {
       body: BlocBuilder<HostDashboardCubit, HostDashboardState>(
         builder: (context, state) {
           if (state is HostDashboardLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryColor),
+            return const TileListSkeleton(
+              itemCount: 6,
+              leadingSize: 48,
+              showTrailing: true,
+              padding: EdgeInsets.all(24),
             );
           }
 

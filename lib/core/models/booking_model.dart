@@ -51,6 +51,10 @@ class BookingModel extends Equatable {
   /// Nights count as returned by `/api/bookings/list` (`nights`); when absent
   /// the count is derived from [checkIn]/[checkOut].
   final int? apiNights;
+  /// Payment state from the backend (`paymentStatus`): `PAID`, `PENDING`,
+  /// `FAILED`, `REFUNDED`, `PARTIALLY_REFUNDED` (mirrors the web
+  /// `PaymentStatus` enum). Null when the endpoint sends no payment info.
+  final String? paymentStatus;
 
   const BookingModel({
     required this.id,
@@ -74,6 +78,7 @@ class BookingModel extends Equatable {
     this.guestName,
     this.notes,
     this.apiNights,
+    this.paymentStatus,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -117,7 +122,22 @@ class BookingModel extends Equatable {
       apiNights: json['nights'] is int
           ? json['nights'] as int
           : int.tryParse('${json['nights'] ?? ''}'),
+      paymentStatus: _parsePaymentStatus(json),
     );
+  }
+
+  /// Normalizes the backend payment info: prefers the `paymentStatus` string,
+  /// falling back to boolean `isPaid`/`paid` flags. Returns null when the
+  /// response carries no payment information at all (the UI then hides the
+  /// payment indicator instead of showing a hardcoded "Paid").
+  static String? _parsePaymentStatus(Map<String, dynamic> json) {
+    final raw = json['paymentStatus'] ?? json['payment_status'];
+    if (raw is String && raw.trim().isNotEmpty) {
+      return raw.trim().toUpperCase().replaceAll(' ', '_');
+    }
+    final paid = json['isPaid'] ?? json['paid'];
+    if (paid == true) return 'PAID';
+    return null;
   }
 
   Map<String, dynamic> toJson() => {
@@ -134,6 +154,7 @@ class BookingModel extends Equatable {
         'propertyTitle': propertyTitle,
         'unitName': unitName,
         'bookingCode': bookingCode,
+        'paymentStatus': paymentStatus,
       };
 
   int get nights => checkOut.difference(checkIn).inDays;
@@ -164,12 +185,16 @@ class BookingModel extends Equatable {
         .join(' ');
   }
 
-  /// Guest name for the reservation card; falls back to the booking reference
-  /// when the backend supplies no guest name.
+  /// Guest name for the reservation card. The backend substitutes an
+  /// id-derived `Booking #XXXX` when the guest has no name — that (or an
+  /// absent name) is replaced with the real [bookingCodeFormatted] reference.
   String get guestDisplayName {
-    if (guestName != null && guestName!.isNotEmpty) return guestName!;
-    final ref = bookingRefShort;
-    return ref.isEmpty ? '' : 'Booking $ref';
+    final name = guestName?.trim() ?? '';
+    final isBackendFallback =
+        name.isEmpty || name.toLowerCase().startsWith('booking #');
+    if (!isBackendFallback) return name;
+    final code = bookingCodeFormatted;
+    return code.isEmpty ? '' : 'Booking $code';
   }
 
   /// Currency code shown next to the total (web defaults to EGP).
@@ -199,7 +224,8 @@ class BookingModel extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, propertyId, checkIn, checkOut, status];
+  List<Object?> get props =>
+      [id, propertyId, checkIn, checkOut, status, paymentStatus, bookingCode];
 }
 
 class PropertySummary extends Equatable {

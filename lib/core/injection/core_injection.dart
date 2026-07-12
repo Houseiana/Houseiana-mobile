@@ -10,6 +10,8 @@ import 'package:houseiana_mobile_app/core/network/api/lang_interceptor.dart';
 import 'package:houseiana_mobile_app/core/network/connection_checker.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/core/services/cache_service.dart';
+import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
+import 'package:houseiana_mobile_app/core/services/lookups_cache.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/host_service.dart';
@@ -25,6 +27,9 @@ Future<void> initCore() async {
   // Session & Core Services
   sl.registerLazySingleton(() => UserSession(sl()));
   sl.registerLazySingleton(() => CacheService(sl<SharedPreferences>()));
+  sl.registerLazySingleton(
+    () => LookupsCache(sl<CacheService>(), sl<SharedPreferences>()),
+  );
   sl.registerLazySingleton(() => ClerkService(sl<SharedPreferences>()));
   sl.registerLazySingleton(
     () => AccountPrivacyService(sl<ClerkService>(), sl<UserSession>()),
@@ -60,8 +65,18 @@ Future<void> initCore() async {
   );
 
   // API Services
-  sl.registerLazySingleton(() => PropertyService(sl()));
-  sl.registerLazySingleton(() => UserService(sl(), sl<CacheService>()));
-  sl.registerLazySingleton(() => HostService(dio: sl()));
+  sl.registerLazySingleton(() => PropertyService(sl(), sl<LookupsCache>()));
+  sl.registerLazySingleton(() => FavoritesNotifier());
+  sl.registerLazySingleton(
+    () => UserService(
+      sl(),
+      sl<CacheService>(),
+      sl<LookupsCache>(),
+      sl<FavoritesNotifier>(),
+    ),
+  );
+  sl.registerLazySingleton(
+    () => HostService(dio: sl(), lookups: sl<LookupsCache>()),
+  );
   sl.registerLazySingleton(() => SupportService(dio: sl()));
 }

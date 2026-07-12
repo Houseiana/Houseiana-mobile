@@ -6,6 +6,7 @@ import 'package:houseiana_mobile_app/core/models/user_model.dart';
 import 'package:houseiana_mobile_app/features/profile/cubit/payment_methods_cubit.dart';
 import 'package:houseiana_mobile_app/features/profile/cubit/payment_methods_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class PaymentMethodsScreen extends StatefulWidget {
   const PaymentMethodsScreen({super.key});
@@ -54,7 +55,12 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         },
         builder: (context, state) {
           if (state is PaymentMethodsLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const TileListSkeleton(
+              itemCount: 4,
+              leadingSize: 48,
+              showTrailing: true,
+              padding: EdgeInsets.all(24),
+            );
           }
 
           if (state is PaymentMethodsError) {

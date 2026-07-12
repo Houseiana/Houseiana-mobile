@@ -4,6 +4,7 @@ import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 import 'package:houseiana_mobile_app/features/host/presentation/screens/wizard/step_01_property_type_screen.dart';
 import 'package:houseiana_mobile_app/features/host/presentation/screens/wizard/step_03_location_screen.dart';
 import 'package:houseiana_mobile_app/features/host/presentation/screens/wizard/step_04_basics_screen.dart';
@@ -101,9 +102,7 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
         if (state.isHydrating) {
           return const Scaffold(
             backgroundColor: Colors.white,
-            body: Center(
-              child: CircularProgressIndicator(color: AppColors.primaryColor),
-            ),
+            body: FormSkeleton(fieldCount: 6, showButton: false),
           );
         }
 

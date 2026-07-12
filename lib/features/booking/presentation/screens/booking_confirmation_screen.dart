@@ -6,6 +6,7 @@ import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/models/booking_model.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class BookingConfirmationScreen extends StatefulWidget {
   const BookingConfirmationScreen({super.key});
@@ -220,10 +221,10 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
           children: [
             Expanded(
               child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primaryColor,
-                      ),
+                  ? const DetailsPageSkeleton(
+                      heroHeight: 120,
+                      circularHero: true,
+                      sectionCount: 2,
                     )
                   : SingleChildScrollView(
                       padding: const EdgeInsets.all(24),

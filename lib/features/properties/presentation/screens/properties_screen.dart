@@ -1,7 +1,10 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
+import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
@@ -30,7 +33,6 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   final _scrollController = ScrollController();
 
   List<Map<String, dynamic>> _properties = [];
-  Set<String> _favoriteIds = {};
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _hasMore = true;
@@ -73,6 +75,16 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   /// while the request was in flight (last-requested query wins).
   int _querySeq = 0;
 
+  /// Aborts the in-flight query when a newer one starts or the screen is
+  /// disposed. [_querySeq] still guards ORDERING of responses; the token just
+  /// stops wasted bandwidth/parsing on results that would be dropped anyway.
+  CancelToken? _queryToken;
+
+  CancelToken _nextQueryToken() {
+    _queryToken?.cancel();
+    return _queryToken = CancelToken();
+  }
+
   /// True while a marker's preview card is shown on the map. Used to lift the
   /// bottom "List" toggle so it doesn't collide with the (taller) preview card.
   bool _hasMapSelection = false;
@@ -86,6 +98,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
 
   @override
   void dispose() {
+    _queryToken?.cancel();
     _searchController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
@@ -110,26 +123,34 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       _filterLocation = location;
     });
 
-    final searchPage = await _propertyService.searchProperties(
-      PropertySearchParams(
-        location: location ?? _filterLocation,
-        minPrice: _minPrice,
-        maxPrice: _maxPrice,
-        minBedrooms: _minBedrooms,
-        beds: _beds,
-        minBathrooms: _minBathrooms,
-        amenities: _amenities,
-        sortBy: _sortBy,
-        lat: _lat,
-        lng: _lng,
-        radiusKm: _radiusKm,
-        page: 1,
-        limit: _pageLimit,
-      ),
-      userId: _session.userId,
-    );
-    final props = searchPage.properties;
-    final propertyMaps = props.map((property) => property.toJson()).toList();
+    final PropertySearchPage searchPage;
+    try {
+      searchPage = await _propertyService.searchProperties(
+        PropertySearchParams(
+          location: location ?? _filterLocation,
+          minPrice: _minPrice,
+          maxPrice: _maxPrice,
+          minBedrooms: _minBedrooms,
+          beds: _beds,
+          minBathrooms: _minBathrooms,
+          amenities: _amenities,
+          sortBy: _sortBy,
+          lat: _lat,
+          lng: _lng,
+          radiusKm: _radiusKm,
+          page: 1,
+          limit: _pageLimit,
+        ),
+        userId: _session.userId,
+        cancelToken: _nextQueryToken(),
+      );
+    } on RequestCancelledException {
+      // Superseded by a newer query or the screen was disposed.
+      return;
+    }
+    // Already normalized maps (PropertyService runs the model round-trip,
+    // off the UI isolate for big pages).
+    final propertyMaps = searchPage.properties;
 
     Set<String> favIds = {};
     if (_session.isLoggedIn) {
@@ -142,11 +163,13 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
 
     // A newer query started while this was in flight — drop this result.
     if (!mounted || seq != _querySeq) return;
+    // Hearts read the app-wide notifier; this list is the user's FULL
+    // favourites, so replace-seed it.
+    if (_session.isLoggedIn) sl<FavoritesNotifier>().seed(favIds);
     setState(() {
       _properties = propertyMaps;
-      _favoriteIds = favIds;
       _isLoading = false;
-      _hasMore = props.length >= _pageLimit;
+      _hasMore = propertyMaps.length >= _pageLimit;
       _totalCount = searchPage.total;
     });
   }
@@ -157,24 +180,32 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
     setState(() => _isLoadingMore = true);
 
     final nextPage = _currentPage + 1;
-    final morePage = await _propertyService.searchProperties(
-      PropertySearchParams(
-        location: _filterLocation,
-        minPrice: _minPrice,
-        maxPrice: _maxPrice,
-        minBedrooms: _minBedrooms,
-        beds: _beds,
-        minBathrooms: _minBathrooms,
-        amenities: _amenities,
-        sortBy: _sortBy,
-        lat: _lat,
-        lng: _lng,
-        radiusKm: _radiusKm,
-        page: nextPage,
-        limit: _pageLimit,
-      ),
-      userId: _session.userId,
-    );
+    final PropertySearchPage morePage;
+    try {
+      morePage = await _propertyService.searchProperties(
+        PropertySearchParams(
+          location: _filterLocation,
+          minPrice: _minPrice,
+          maxPrice: _maxPrice,
+          minBedrooms: _minBedrooms,
+          beds: _beds,
+          minBathrooms: _minBathrooms,
+          amenities: _amenities,
+          sortBy: _sortBy,
+          lat: _lat,
+          lng: _lng,
+          radiusKm: _radiusKm,
+          page: nextPage,
+          limit: _pageLimit,
+        ),
+        userId: _session.userId,
+        // The CURRENT query's token: a new query cancels this stale page.
+        cancelToken: _queryToken,
+      );
+    } on RequestCancelledException {
+      if (mounted) setState(() => _isLoadingMore = false);
+      return;
+    }
     if (!mounted) return;
     // The query this page belongs to was replaced while the request was in
     // flight — drop the page, but release the flag so the new list can paginate.
@@ -182,16 +213,15 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       setState(() => _isLoadingMore = false);
       return;
     }
-    final more = morePage.properties;
-    final moreMaps = more.map((property) => property.toJson()).toList();
+    final moreMaps = morePage.properties;
 
     setState(() {
-      if (more.isEmpty) {
+      if (moreMaps.isEmpty) {
         _hasMore = false;
       } else {
         _properties.addAll(moreMaps);
         _currentPage = nextPage;
-        _hasMore = more.length >= _pageLimit;
+        _hasMore = moreMaps.length >= _pageLimit;
       }
       if (morePage.total != null) {
         _totalCount = morePage.total;
@@ -205,18 +235,16 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       showSignInToSaveFavoritesSheet(context);
       return;
     }
-    final isFav = _favoriteIds.contains(propertyId);
-    setState(() {
-      if (isFav) {
-        _favoriteIds.remove(propertyId);
-      } else {
-        _favoriteIds.add(propertyId);
-      }
-    });
-    await _userService.toggleFavorite(
-      userId: _session.userId!,
-      propertyId: propertyId,
-    );
+    // No setState: UserService flips the FavoritesNotifier optimistically
+    // (and rolls back on failure), so only the tapped heart repaints.
+    try {
+      await _userService.toggleFavorite(
+        userId: _session.userId!,
+        propertyId: propertyId,
+      );
+    } catch (_) {
+      // Rollback already handled by the notifier; nothing to show here.
+    }
   }
 
   String _extractImage(Map<String, dynamic> p) {
@@ -427,15 +455,15 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
           limit: _pageLimit,
         ),
         userId: _session.userId,
+        cancelToken: _nextQueryToken(),
       );
       // A newer query started while this was in flight — drop this result.
       if (!mounted || seq != _querySeq) return;
-      final props = searchPage.properties;
-      final maps = props.map((property) => property.toJson()).toList();
+      final maps = searchPage.properties;
       setState(() {
         _properties = maps;
         _isAreaSearching = false;
-        _hasMore = props.length >= _pageLimit;
+        _hasMore = maps.length >= _pageLimit;
         _totalCount = searchPage.total;
       });
     } catch (_) {
@@ -649,7 +677,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       bathrooms: _extractCount(p, const ['bathrooms', 'bathroomCount']),
       isGuestFavorite:
           (p['isGuestFavorite'] ?? p['guestFavorite'] ?? false) == true,
-      isFavorite: _favoriteIds.contains(id),
+      propertyId: id,
       onTap: () => Navigator.pushNamed(
         context,
         Routes.propertyDetails,

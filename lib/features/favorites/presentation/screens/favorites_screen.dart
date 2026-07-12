@@ -204,6 +204,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           height: 180,
                           width: double.infinity,
                           fit: BoxFit.cover,
+                          memCacheWidth: 800,
                           placeholder: (context, url) => Container(
                             width: double.infinity,
                             height: 180,

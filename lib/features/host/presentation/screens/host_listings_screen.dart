@@ -10,6 +10,7 @@ import 'package:houseiana_mobile_app/features/host/presentation/widgets/host_lis
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:houseiana_mobile_app/core/models/property_model.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart';
 
 class HostListingsScreen extends StatelessWidget {
   const HostListingsScreen({super.key});
@@ -301,9 +302,7 @@ class _HostListingsViewState extends State<_HostListingsView> {
           }
 
           if (state is HostListingsLoading && state is! HostListingsLoaded) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryColor),
-            );
+            return const ListSkeletonLoader();
           }
 
           if (state is HostListingsLoaded) {

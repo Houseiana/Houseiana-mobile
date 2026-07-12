@@ -6,6 +6,7 @@ import 'package:houseiana_mobile_app/core/models/notification_model.dart';
 import 'package:houseiana_mobile_app/features/notifications/cubit/notifications_cubit.dart';
 import 'package:houseiana_mobile_app/features/notifications/cubit/notifications_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -54,8 +55,12 @@ class NotificationsScreen extends StatelessWidget {
       body: BlocBuilder<NotificationsCubit, NotificationsState>(
         builder: (context, state) {
           if (state is NotificationsLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryColor),
+            return const TileListSkeleton(
+              itemCount: 8,
+              leadingSize: 48,
+              leadingCircle: true,
+              tileHeight: 84,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
             );
           }
 

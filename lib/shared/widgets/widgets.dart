@@ -19,6 +19,7 @@ export 'skeletons/property_skeleton.dart';
 export 'skeletons/list_skeleton.dart';
 export 'skeletons/trip_skeleton.dart';
 export 'skeletons/message_skeleton.dart';
+export 'skeletons/page_skeletons.dart';
 
 // ============================================
 // Empty States

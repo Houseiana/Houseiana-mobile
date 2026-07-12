@@ -1,23 +1,37 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:houseiana_mobile_app/core/config/app_config.dart';
+import 'package:houseiana_mobile_app/core/services/lookups_cache.dart';
 
 /// Backend-backed payment service.
 class PaymentService {
   final Dio _dio;
+  final LookupsCache? _lookups;
 
-  PaymentService({Dio? dio})
-      : _dio = dio ??
+  PaymentService({Dio? dio, LookupsCache? lookups})
+      : _lookups = lookups,
+        _dio = dio ??
             Dio(BaseOptions(
               baseUrl: AppConfig.backendApiUrl,
               connectTimeout: const Duration(seconds: 30),
               receiveTimeout: const Duration(seconds: 30),
             ));
 
+  static const String _paymentMethodLookup = '/api/Lookups/payment-method';
+
   Future<Map<String, dynamic>> fetchPaymentMethods() async {
     try {
-      final response = await _dio.get('/api/Lookups/payment-method');
-      final raw = response.data;
+      // Short TTL — this lookup gates the payment flow, so stale data must
+      // age out quickly.
+      fetch() async => (await _dio.get(_paymentMethodLookup)).data;
+      final lookups = _lookups;
+      final raw = lookups != null
+          ? await lookups.getOrFetch(
+              _paymentMethodLookup,
+              fetch,
+              ttl: const Duration(hours: 1),
+            )
+          : await fetch();
       final body = raw is Map<String, dynamic> ? raw : <String, dynamic>{};
       final list = body['data'];
       if (body['success'] == true && list is List) {

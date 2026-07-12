@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/property_details_state.dart';
 
@@ -6,6 +8,16 @@ class PropertyDetailsCubit extends Cubit<PropertyDetailsState> {
   final PropertyService _propertyService;
 
   PropertyDetailsCubit(this._propertyService) : super(PropertyDetailsInitial());
+
+  /// Aborts the in-flight details request when the screen is popped
+  /// mid-load (the cubit closes with it).
+  final CancelToken _cancelToken = CancelToken();
+
+  @override
+  Future<void> close() {
+    _cancelToken.cancel();
+    return super.close();
+  }
 
   Future<void> getPropertyDetails(
     String id, {
@@ -20,13 +32,17 @@ class PropertyDetailsCubit extends Cubit<PropertyDetailsState> {
         userId: userId,
         checkIn: checkIn,
         checkOut: checkOut,
+        cancelToken: _cancelToken,
       );
       if (property != null) {
         emit(PropertyDetailsLoaded(property: property));
       } else {
         emit(const PropertyDetailsError(message: 'propertyDetails.propertyNotFound'));
       }
+    } on RequestCancelledException {
+      return; // screen popped mid-load — nothing to show
     } catch (e) {
+      if (isClosed) return;
       emit(PropertyDetailsError(message: e.toString()));
     }
   }

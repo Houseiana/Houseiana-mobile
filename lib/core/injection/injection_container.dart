@@ -24,8 +24,8 @@ Future<void> init() async {
   initChat();
   initI18n();
   initProperties();
-  await initHost();
-  await initNotifications();
-  await initProfile();
+  initHost();
+  initNotifications();
+  initProfile();
   initSupport();
 }

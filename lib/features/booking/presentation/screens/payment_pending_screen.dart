@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
@@ -205,19 +206,7 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
                     ),
                     const SizedBox(height: 16),
                     if (_isLoading)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Center(
-                          child: SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primaryColor,
-                            ),
-                          ),
-                        ),
-                      )
+                      const _PaymentDetailsSkeleton()
                     else ...[
                       _buildDetailRow(
                           '${context.tr('booking.transactionId')}:',
@@ -364,6 +353,45 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Skeleton for the payment-details rows (label + value bars), matching
+/// the four detail rows shown once the booking loads.
+class _PaymentDetailsSkeleton extends StatelessWidget {
+  const _PaymentDetailsSkeleton();
+
+  Widget _bar(double width) {
+    return Container(
+      height: 14,
+      width: width,
+      decoration: BoxDecoration(
+        color: AppColors.neutral200,
+        borderRadius: BorderRadius.circular(4),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer(
+      containersColor: AppColors.skeletonBaseColor,
+      child: Column(
+        children: List.generate(
+          4,
+          (index) => Padding(
+            padding: EdgeInsets.only(top: index == 0 ? 0 : 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _bar(100),
+                _bar(80),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -7,6 +7,7 @@ import 'package:houseiana_mobile_app/core/models/property_model.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class CountryScreen extends StatefulWidget {
   const CountryScreen({super.key});
@@ -168,10 +169,10 @@ class _CountryScreenState extends State<CountryScreen> {
             _buildHeader(filtered.length),
             Expanded(
               child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primaryColor,
-                      ),
+                  ? const GridSkeleton(
+                      itemCount: 6,
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.82,
                     )
                   : _error != null
                       ? _MessageState(

@@ -312,6 +312,7 @@ class _SavedHomeCard extends StatelessWidget {
                           height: 190,
                           width: double.infinity,
                           fit: BoxFit.cover,
+                          memCacheWidth: 800,
                           placeholder: (context, url) => Container(
                             height: 190,
                             width: double.infinity,

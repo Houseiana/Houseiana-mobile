@@ -7,6 +7,7 @@ import 'package:houseiana_mobile_app/features/chat/data/models/chat_message.dart
 import 'package:houseiana_mobile_app/features/chat/presentation/cubit/chat_cubit.dart';
 import 'package:houseiana_mobile_app/features/chat/presentation/cubit/chat_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/message_skeleton.dart';
 
 class ChatConversationScreen extends StatefulWidget {
   final Map<String, dynamic>? conversation;
@@ -194,10 +195,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               },
               builder: (context, state) {
                 if (state is ChatLoading || state is ChatInitial) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                        color: AppColors.primaryColor),
-                  );
+                  return const ChatSkeletonLoader();
                 }
 
                 final messages = state is ChatMessagesLoaded

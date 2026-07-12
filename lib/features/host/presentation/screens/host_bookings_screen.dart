@@ -8,6 +8,7 @@ import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/host_bookings_cubit.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/host_bookings_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class HostBookingsScreen extends StatefulWidget {
   const HostBookingsScreen({super.key});
@@ -88,9 +89,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
       if (state is HostBookingsError) {
         return _buildErrorState(context, message: state.message);
       }
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primaryColor),
-      );
+      return const StatsPageSkeleton(statCount: 4, blockCount: 3);
     }
 
     return Column(
@@ -98,9 +97,10 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
         _buildHeader(context, loaded),
         Expanded(
           child: isRefreshing
-              ? const Center(
-                  child:
-                      CircularProgressIndicator(color: AppColors.primaryColor),
+              ? const TileListSkeleton(
+                  itemCount: 4,
+                  tileHeight: 170,
+                  padding: EdgeInsets.fromLTRB(16, 4, 16, 24),
                 )
               : loaded.bookings.isEmpty
                   ? _buildEmptyState(context)
@@ -524,8 +524,10 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 74,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      // Min height instead of a fixed one: the 2-line label + value can exceed
+      // 74px at large OS accessibility font scales.
+      constraints: const BoxConstraints(minHeight: 74),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -535,29 +537,36 @@ class _StatCard extends StatelessWidget {
         children: [
           Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                     color: AppColors.neutral500,
+                    height: 1.2,
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.charcoal,
-                    height: 1,
+                // Scale long values (e.g. "EGP 2,265,080") down instead of
+                // cutting them to "EGP 2,...".
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.charcoal,
+                      height: 1,
+                    ),
                   ),
                 ),
               ],
@@ -661,7 +670,7 @@ class _BookingCard extends StatelessWidget {
   String _propertyName(BuildContext context) {
     final name = booking.displayUnitName;
     if (name != null && name.isNotEmpty) return name;
-    final ref = booking.bookingRefShort;
+    final ref = booking.bookingCodeFormatted;
     return ref.isEmpty ? context.tr('property.untitled') : 'Booking $ref';
   }
 
@@ -714,12 +723,16 @@ class _BookingCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                booking.bookingRefShort,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFFC0C6D0),
+              Expanded(
+                child: Text(
+                  booking.bookingCodeFormatted,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFFC0C6D0),
+                  ),
                 ),
               ),
             ],
@@ -893,22 +906,7 @@ class _BookingCard extends StatelessWidget {
                       color: AppColors.charcoal,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check,
-                          size: 11, color: Color(0xFF00BC7D)),
-                      const SizedBox(width: 2),
-                      Text(
-                        context.tr('host.paid'),
-                        style: const TextStyle(
-                          fontSize: 9,
-                          color: Color(0xFF00BC7D),
-                        ),
-                      ),
-                    ],
-                  ),
+                  ..._buildPaymentIndicator(context),
                 ],
               ),
             ],
@@ -976,6 +974,59 @@ class _BookingCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Payment indicator under the price, driven by the backend `paymentStatus`
+  /// (`PAID` / `PENDING` / `FAILED` / `REFUNDED` / `PARTIALLY_REFUNDED`).
+  /// Renders nothing when the response carries no payment info — the old
+  /// hardcoded "Paid" showed on unpaid and cancelled bookings alike.
+  List<Widget> _buildPaymentIndicator(BuildContext context) {
+    final String? key;
+    final IconData icon;
+    final Color color;
+    switch (booking.paymentStatus) {
+      case 'PAID':
+        key = 'host.paid';
+        icon = Icons.check;
+        color = const Color(0xFF00BC7D);
+        break;
+      case 'PENDING':
+        key = 'host.paymentPending';
+        icon = Icons.schedule;
+        color = const Color(0xFFF59E0B);
+        break;
+      case 'FAILED':
+        key = 'host.paymentFailed';
+        icon = Icons.close;
+        color = const Color(0xFFEF4444);
+        break;
+      case 'REFUNDED':
+        key = 'host.refunded';
+        icon = Icons.undo;
+        color = const Color(0xFF2B7FFF);
+        break;
+      case 'PARTIALLY_REFUNDED':
+        key = 'host.partiallyRefunded';
+        icon = Icons.undo;
+        color = const Color(0xFF2B7FFF);
+        break;
+      default:
+        return const [];
+    }
+    return [
+      const SizedBox(height: 2),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 2),
+          Text(
+            context.tr(key),
+            style: TextStyle(fontSize: 9, color: color),
+          ),
+        ],
+      ),
+    ];
   }
 
   Future<void> _showDeclineDialog(BuildContext context) async {

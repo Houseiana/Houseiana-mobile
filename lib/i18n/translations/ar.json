@@ -676,6 +676,7 @@
     "calendarSelectCheckOut": "اختر تاريخ المغادرة",
     "calendarNightStay": "إقامة {n} ليلة",
     "calendarApproxPrices": "أسعار تقريبية بـ {currency} لإقامة ليلة واحدة",
+    "calendarStayTotal": "إجمالي الإقامة:",
     "propertyNotFound": "العقار غير موجود"
   },
   "review": {
@@ -1279,6 +1280,10 @@
     "nights": "ليالٍ",
     "guestLabel": "ضيف",
     "paid": "مدفوع",
+    "paymentPending": "بانتظار الدفع",
+    "paymentFailed": "فشل الدفع",
+    "refunded": "مسترد",
+    "partiallyRefunded": "مسترد جزئيًا",
     "approve": "موافقة",
     "searchByGuestName": "ابحث باسم الضيف...",
     "noBookingsFound": "لا توجد حجوزات",

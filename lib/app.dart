@@ -15,6 +15,11 @@ import 'package:houseiana_mobile_app/i18n/locale_cubit.dart';
 class HouseianaApp extends StatelessWidget {
   const HouseianaApp({super.key});
 
+  // Built once per process — ThemeData construction is not free and the root
+  // rebuilds on every locale change.
+  static final ThemeData _lightTheme = lightTheme();
+  static final ThemeData _darkTheme = darkTheme();
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -28,8 +33,8 @@ class HouseianaApp extends StatelessWidget {
             navigatorKey: navigatorKey,
             title: AppStrings.appName,
             debugShowCheckedModeBanner: false,
-            theme: lightTheme(),
-            darkTheme: darkTheme(),
+            theme: _lightTheme,
+            darkTheme: _darkTheme,
             themeMode: ThemeMode.light,
             locale: Locale(locale.code),
             supportedLocales: const [

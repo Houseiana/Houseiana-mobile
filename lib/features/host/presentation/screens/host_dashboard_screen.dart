@@ -10,6 +10,7 @@ import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/host_dashboard_cubit.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/host_dashboard_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class HostDashboardScreen extends StatelessWidget {
   const HostDashboardScreen({super.key});
@@ -70,11 +71,7 @@ class _HostDashboardView extends StatelessWidget {
           body: !session.isLoggedIn || isLoginError
               ? _buildLoginRequired(context)
               : state is HostDashboardLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primaryColor,
-                      ),
-                    )
+                  ? const StatsPageSkeleton()
                   : state is HostDashboardError
                       ? _buildErrorState(
                           context,

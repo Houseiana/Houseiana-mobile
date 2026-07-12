@@ -3,7 +3,7 @@ import 'package:houseiana_mobile_app/core/services/firestore_notification_servic
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/features/notifications/cubit/notifications_cubit.dart';
 
-Future<void> initNotifications() async {
+void initNotifications() {
   sl.registerLazySingleton(() => FirestoreNotificationService());
   sl.registerFactory(() => NotificationsCubit(
         sl<FirestoreNotificationService>(),
