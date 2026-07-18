@@ -1,14 +1,18 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
+import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
-import 'package:houseiana_mobile_app/core/models/property_model.dart';
+import 'package:houseiana_mobile_app/core/models/country_option.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
-import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/features/country/presentation/widgets/destination_message_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
+/// First level of the Country tab: countries from `GET /api/lookups/country`.
+/// Tapping a country opens its destination regions (RegionCategory), which in
+/// turn drill into villages (region-villages) and finally the stays list
+/// filtered by `villageId`.
 class CountryScreen extends StatefulWidget {
   const CountryScreen({super.key});
 
@@ -19,12 +23,22 @@ class CountryScreen extends StatefulWidget {
 class _CountryScreenState extends State<CountryScreen> {
   final _searchController = TextEditingController();
   final _propertyService = sl<PropertyService>();
-  final _session = sl<UserSession>();
 
   String _searchQuery = '';
   bool _isLoading = true;
   String? _error;
-  List<_CountryGroup> _countries = [];
+  List<CountryOption> _countries = [];
+
+  /// Flag emoji per stable country lookup id (1 = Qatar, 2 = Egypt,
+  /// 3 = Bahrain). Names are localized by the backend, so the emoji must key
+  /// off the id — same stable-id contract as the other lookups.
+  static const Map<int, String> _flagsById = {
+    1: '🇶🇦',
+    2: '🇪🇬',
+    3: '🇧🇭',
+  };
+
+  static String flagFor(int countryId) => _flagsById[countryId] ?? '🌍';
 
   @override
   void initState() {
@@ -38,122 +52,40 @@ class _CountryScreenState extends State<CountryScreen> {
     super.dispose();
   }
 
-  Future<void> _loadCountries() async {
+  /// [force] (pull-to-refresh) bypasses the 24h lookups cache and keeps the
+  /// current list on screen instead of flashing the skeleton.
+  Future<void> _loadCountries({bool force = false}) async {
     setState(() {
-      _isLoading = true;
+      if (!force) _isLoading = true;
       _error = null;
     });
 
     try {
-      final properties = await _propertyService.getProperties(
-        userId: _session.userId,
-        page: 1,
-        limit: 120,
-      );
-
+      final countries = await _propertyService.getCountries(force: force);
       if (!mounted) return;
       setState(() {
-        _countries = _buildCountryGroups(properties);
+        _countries = countries;
         _isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        // ServerException has no toString() override — read `.message` or the
+        // UI shows the literal "Instance of 'ServerException'".
+        _error = e is ServerException && e.message.trim().isNotEmpty
+            ? e.message
+            : e.toString();
         _isLoading = false;
       });
     }
   }
 
-  List<_CountryGroup> _buildCountryGroups(List<PropertyModel> properties) {
-    final countries = <String, _CountryGroup>{};
-
-    for (final property in properties) {
-      final countryName = _extractCountryName(property);
-      if (countryName.isEmpty) continue;
-
-      final cityName = (property.city ?? '').trim().isNotEmpty
-          ? property.city!.trim()
-          : _extractCityFromLocation(property.displayLocation);
-      if (cityName.isEmpty) continue;
-
-      final countryKey = countryName.toLowerCase();
-      final existingCountry = countries[countryKey] ??
-          _CountryGroup(
-            name: countryName,
-            imageUrl: property.firstImageUrl,
-            propertyCount: 0,
-            cities: const [],
-          );
-
-      final cityMap = {
-        for (final city in existingCountry.cities) city.name.toLowerCase(): city
-      };
-      final cityKey = cityName.toLowerCase();
-      final existingCity = cityMap[cityKey];
-      cityMap[cityKey] = existingCity == null
-          ? _CityGroup(
-              name: cityName,
-              imageUrl: property.firstImageUrl,
-              propertyCount: 1,
-            )
-          : existingCity.copyWith(
-              propertyCount: existingCity.propertyCount + 1,
-              imageUrl: existingCity.imageUrl.isNotEmpty
-                  ? existingCity.imageUrl
-                  : property.firstImageUrl,
-            );
-
-      countries[countryKey] = existingCountry.copyWith(
-        propertyCount: existingCountry.propertyCount + 1,
-        imageUrl: existingCountry.imageUrl.isNotEmpty
-            ? existingCountry.imageUrl
-            : property.firstImageUrl,
-        cities: cityMap.values.toList()
-          ..sort((a, b) {
-            final byCount = b.propertyCount.compareTo(a.propertyCount);
-            return byCount != 0 ? byCount : a.name.compareTo(b.name);
-          }),
-      );
-    }
-
-    final list = countries.values.toList()
-      ..sort((a, b) {
-        final byCount = b.propertyCount.compareTo(a.propertyCount);
-        return byCount != 0 ? byCount : a.name.compareTo(b.name);
-      });
-    return list;
-  }
-
-  String _extractCountryName(PropertyModel property) {
-    final fromCountryData = (property.countryData?['name'] ??
-            property.countryData?['countryName'] ??
-            property.countryData?['title'])
-        ?.toString()
-        .trim();
-    if (fromCountryData != null && fromCountryData.isNotEmpty) {
-      return fromCountryData;
-    }
-
-    final location = property.displayLocation;
-    final parts = location.split(',').map((part) => part.trim()).toList();
-    if (parts.length > 1 && parts.last.isNotEmpty) return parts.last;
-    return '';
-  }
-
-  String _extractCityFromLocation(String location) {
-    final parts = location.split(',').map((part) => part.trim()).toList();
-    if (parts.isEmpty) return '';
-    return parts.first;
-  }
-
-  List<_CountryGroup> get _filtered {
+  List<CountryOption> get _filtered {
     if (_searchQuery.isEmpty) return _countries;
     final query = _searchQuery.toLowerCase();
-    return _countries.where((country) {
-      return country.name.toLowerCase().contains(query) ||
-          country.cities.any((city) => city.name.toLowerCase().contains(query));
-    }).toList();
+    return _countries
+        .where((c) => c.name.toLowerCase().contains(query))
+        .toList();
   }
 
   @override
@@ -169,43 +101,44 @@ class _CountryScreenState extends State<CountryScreen> {
             _buildHeader(filtered.length),
             Expanded(
               child: _isLoading
-                  ? const GridSkeleton(
-                      itemCount: 6,
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.82,
+                  ? const TileListSkeleton(
+                      itemCount: 4,
+                      leadingCircle: true,
+                      leadingSize: 52,
+                      tileHeight: 84,
                     )
                   : _error != null
-                      ? _MessageState(
+                      ? DestinationMessageState(
                           icon: Icons.error_outline,
-                          title: context.tr('country.unableToLoadDestinations'),
+                          title:
+                              context.tr('country.unableToLoadDestinations'),
                           message: _error!,
                           actionLabel: context.tr('common.retry'),
                           onAction: _loadCountries,
                         )
                       : filtered.isEmpty
-                          ? _MessageState(
+                          ? DestinationMessageState(
                               icon: Icons.search_off_outlined,
-                              title: context.tr('country.noDestinationsFound'),
+                              title:
+                                  context.tr('country.noDestinationsFound'),
                               message: _searchQuery.isEmpty
-                                  ? context.tr('country.noDestinationsEmptyDescription')
-                                  : context.tr('country.noDestinationsSearchDescription'),
+                                  ? context
+                                      .tr('country.noCountriesDescription')
+                                  : context.tr(
+                                      'country.noCountriesSearchDescription'),
                             )
                           : RefreshIndicator(
                               color: AppColors.primaryColor,
-                              onRefresh: _loadCountries,
-                              child: GridView.builder(
+                              onRefresh: () => _loadCountries(force: true),
+                              child: ListView.separated(
+                                physics:
+                                    const AlwaysScrollableScrollPhysics(),
                                 padding: const EdgeInsets.all(16),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  mainAxisSpacing: 14,
-                                  crossAxisSpacing: 14,
-                                  childAspectRatio: 0.82,
-                                ),
                                 itemCount: filtered.length,
-                                itemBuilder: (_, i) => _CountryCard(
-                                  country: filtered[i],
-                                ),
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 12),
+                                itemBuilder: (_, i) =>
+                                    _CountryCard(country: filtered[i]),
                               ),
                             ),
             ),
@@ -230,23 +163,29 @@ class _CountryScreenState extends State<CountryScreen> {
               color: AppColors.charcoal,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            visibleCount == 1
-                ? context.tr('country.destinationSingular', args: {'count': visibleCount})
-                : context.tr('country.destinations', args: {'count': visibleCount}),
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.neutral600,
+          // Guarded so the subtitle never reads "0 countries" while the
+          // skeleton is loading (or after a failed load).
+          if (!_isLoading && _error == null) ...[
+            const SizedBox(height: 4),
+            Text(
+              visibleCount == 1
+                  ? context.tr('country.countrySingular',
+                      args: {'count': visibleCount})
+                  : context.tr('country.countriesCount',
+                      args: {'count': visibleCount}),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.neutral600,
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 14),
           TextField(
             controller: _searchController,
             onChanged: (value) => setState(() => _searchQuery = value.trim()),
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
-              hintText: context.tr('country.searchCountryCity'),
+              hintText: context.tr('country.searchCountry'),
               hintStyle: const TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral400,
@@ -293,7 +232,7 @@ class _CountryScreenState extends State<CountryScreen> {
 }
 
 class _CountryCard extends StatelessWidget {
-  final _CountryGroup country;
+  final CountryOption country;
 
   const _CountryCard({required this.country});
 
@@ -303,23 +242,16 @@ class _CountryCard extends StatelessWidget {
       onTap: () {
         Navigator.pushNamed(
           context,
-          Routes.cityList,
+          Routes.regionList,
           arguments: {
+            'countryId': country.id,
             'countryName': country.name,
-            'countryFlag': '',
-            'cities': country.cities
-                .map(
-                  (city) => {
-                    'name': city.name,
-                    'properties': city.propertyCount.toString(),
-                    'image': city.imageUrl,
-                  },
-                )
-                .toList(),
+            'countryFlag': _CountryScreenState.flagFor(country.id),
           },
         );
       },
       child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -331,36 +263,30 @@ class _CountryCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(16)),
-                child: country.imageUrl.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: country.imageUrl,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          width: double.infinity,
-                          color: const Color(0xFFF0F0F0),
-                        ),
-                        errorWidget: (context, url, error) => _imageFallback(),
-                      )
-                    : _imageFallback(),
+            Container(
+              width: 52,
+              height: 52,
+              decoration: const BoxDecoration(
+                color: AppColors.neutral100,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                _CountryScreenState.flagFor(country.id),
+                style: const TextStyle(fontSize: 26),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            const SizedBox(width: 14),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     country.name,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
                     ),
@@ -368,159 +294,23 @@ class _CountryCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.home_outlined,
-                        size: 12,
-                        color: AppColors.neutral600,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          context.tr('country.propertyCountValue', args: {'count': country.propertyCount}),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppColors.neutral600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right,
-                        size: 14,
-                        color: AppColors.neutral400,
-                      ),
-                    ],
+                  Text(
+                    context.tr('country.exploreDestinations'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.neutral600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _imageFallback() {
-    return Container(
-      width: double.infinity,
-      color: AppColors.neutral200,
-      child: const Icon(
-        Icons.public,
-        size: 40,
-        color: AppColors.neutral400,
-      ),
-    );
-  }
-}
-
-class _CountryGroup {
-  final String name;
-  final String imageUrl;
-  final int propertyCount;
-  final List<_CityGroup> cities;
-
-  const _CountryGroup({
-    required this.name,
-    required this.imageUrl,
-    required this.propertyCount,
-    required this.cities,
-  });
-
-  _CountryGroup copyWith({
-    String? imageUrl,
-    int? propertyCount,
-    List<_CityGroup>? cities,
-  }) {
-    return _CountryGroup(
-      name: name,
-      imageUrl: imageUrl ?? this.imageUrl,
-      propertyCount: propertyCount ?? this.propertyCount,
-      cities: cities ?? this.cities,
-    );
-  }
-}
-
-class _CityGroup {
-  final String name;
-  final String imageUrl;
-  final int propertyCount;
-
-  const _CityGroup({
-    required this.name,
-    required this.imageUrl,
-    required this.propertyCount,
-  });
-
-  _CityGroup copyWith({
-    String? imageUrl,
-    int? propertyCount,
-  }) {
-    return _CityGroup(
-      name: name,
-      imageUrl: imageUrl ?? this.imageUrl,
-      propertyCount: propertyCount ?? this.propertyCount,
-    );
-  }
-}
-
-class _MessageState extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String message;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  const _MessageState({
-    required this.icon,
-    required this.title,
-    required this.message,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 52, color: AppColors.neutral500),
-            const SizedBox(height: 14),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.charcoal,
-              ),
+            const Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: AppColors.neutral400,
             ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.neutral600,
-                height: 1.5,
-              ),
-            ),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 18),
-              ElevatedButton(
-                onPressed: onAction,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
-                ),
-                child: Text(actionLabel!),
-              ),
-            ],
           ],
         ),
       ),

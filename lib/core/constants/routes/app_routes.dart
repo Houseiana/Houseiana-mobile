@@ -392,16 +392,27 @@ class AppRoutes {
           settings,
         );
 
-      // ==================== Country Cities ====================
-      case Routes.cityList:
+      // ==================== Country tab drill-down ====================
+      case Routes.regionList:
         final args = settings.arguments as Map<String, dynamic>?;
         return _buildRoute(
-          CityListScreen(
+          RegionListScreen(
+            countryId: args?['countryId'] is int
+                ? args!['countryId'] as int
+                : int.tryParse(args?['countryId']?.toString() ?? '') ?? 0,
             countryName: args?['countryName']?.toString() ?? '',
             countryFlag: args?['countryFlag']?.toString() ?? '',
-            cities: (args?['cities'] as List<dynamic>? ?? [])
-                .map((e) => Map<String, String>.from(e as Map))
-                .toList(),
+          ),
+          settings,
+        );
+      case Routes.villageList:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          VillageListScreen(
+            regionId: args?['regionId'] is int
+                ? args!['regionId'] as int
+                : int.tryParse(args?['regionId']?.toString() ?? '') ?? 0,
+            regionName: args?['regionName']?.toString() ?? '',
           ),
           settings,
         );

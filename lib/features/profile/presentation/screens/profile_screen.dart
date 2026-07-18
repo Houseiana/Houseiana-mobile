@@ -48,16 +48,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoggedIn = sl<UserSession>().isLoggedIn;
+    final scaffold = _buildScaffold(context, isLoggedIn);
     // The tab stays mounted in the shell's lazy IndexedStack, so initState
     // no longer re-runs per visit — re-backfill the profile name silently
-    // whenever this tab becomes visible again.
+    // whenever this tab becomes visible again. The BottomNavCubit only lives
+    // inside the shell, though; this screen is also reachable as its own route
+    // (e.g. from the dashboard), where attaching the listener would throw
+    // ProviderNotFound — skip it when the cubit is absent.
+    if (!_hasBottomNav(context)) return scaffold;
     return BlocListener<BottomNavCubit, BottomNavState>(
       listenWhen: (prev, next) =>
           prev.index != BottomNavCubit.profileTab &&
           next.index == BottomNavCubit.profileTab,
       listener: (_, __) => _refreshProfile(),
-      child: _buildScaffold(context, isLoggedIn),
+      child: scaffold,
     );
+  }
+
+  /// Whether a [BottomNavCubit] is available above this screen — true when it
+  /// is mounted as a bottom-nav tab, false when pushed as a standalone route.
+  bool _hasBottomNav(BuildContext context) {
+    try {
+      context.read<BottomNavCubit>();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Widget _buildScaffold(BuildContext context, bool isLoggedIn) {

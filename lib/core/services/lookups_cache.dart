@@ -26,19 +26,30 @@ class LookupsCache {
 
   static const Duration defaultTtl = Duration(hours: 24);
 
+  /// The active app language (`ar`/`en`) — same source `LangInterceptor` reads.
+  /// Some Lookups endpoints (RegionCategory, region-villages, country) only
+  /// localize via a `lang` QUERY param and ignore the header; services append
+  /// this value there so the response language always matches the cache key.
+  String get activeLang => _prefs.getString(_localeKey) == 'ar' ? 'ar' : 'en';
+
   String _key(String endpoint) =>
       'lookup_${endpoint}_${_prefs.getString(_localeKey) ?? 'en'}';
 
   /// Returns the cached JSON for [endpoint], or invokes [fetch], caches the
   /// non-null result, and returns it. Errors from [fetch] propagate so callers
-  /// keep their existing fallbacks.
+  /// keep their existing fallbacks. [force] skips the cache read (but still
+  /// stores the fresh result) — used by pull-to-refresh so the gesture
+  /// actually hits the network instead of no-oping against the 24h TTL.
   Future<dynamic> getOrFetch(
     String endpoint,
     Future<dynamic> Function() fetch, {
     Duration ttl = defaultTtl,
+    bool force = false,
   }) async {
-    final cached = _cache.getJson<Object>(_key(endpoint));
-    if (cached != null) return cached;
+    if (!force) {
+      final cached = _cache.getJson<Object>(_key(endpoint));
+      if (cached != null) return cached;
+    }
 
     final response = await fetch();
     if (response != null) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
+import 'package:houseiana_mobile_app/core/utils/number_input.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
@@ -187,6 +188,7 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                       child: TextField(
                         controller: _basePriceController,
                         keyboardType: TextInputType.number,
+                        inputFormatters: const [WesternDigitsInputFormatter()],
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 48,
@@ -200,7 +202,8 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                           hintText: '0',
                         ),
                         onChanged: (v) {
-                          cubit.updateStepData({'basePrice': double.tryParse(v) ?? 0.0});
+                          cubit.updateStepData(
+                              {'basePrice': double.tryParse(v.toWesternDigits()) ?? 0.0});
                         },
                       ),
                     ),
@@ -266,7 +269,7 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
             title: context.tr('wizard.wizardPricingCleaningFeeTitle'),
             subtitle: context.tr('wizard.wizardPricingCleaningFeeSubtitle'),
             controller: _cleaningFeeController,
-            onChanged: (v) => cubit.updateStepData({'cleaningFee': double.tryParse(v) ?? 0.0}),
+            onChanged: (v) => cubit.updateStepData({'cleaningFee': double.tryParse(v.toWesternDigits()) ?? 0.0}),
           ),
           const SizedBox(height: 16),
           _buildWeekendSurgeCard(context),
@@ -276,7 +279,7 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
             title: context.tr('wizard.wizardPricingElectricalFeeTitle'),
             subtitle: context.tr('wizard.wizardPricingElectricalFeeSubtitle'),
             controller: _electricalFeeController,
-            onChanged: (v) => cubit.updateStepData({'electricalFee': double.tryParse(v) ?? 0.0}),
+            onChanged: (v) => cubit.updateStepData({'electricalFee': double.tryParse(v.toWesternDigits()) ?? 0.0}),
           ),
           const SizedBox(height: 16),
           _buildFeeCard(
@@ -284,7 +287,7 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
             title: context.tr('wizard.wizardPricingWaterFeeTitle'),
             subtitle: context.tr('wizard.wizardPricingWaterFeeSubtitle'),
             controller: _waterFeeController,
-            onChanged: (v) => cubit.updateStepData({'waterFee': double.tryParse(v) ?? 0.0}),
+            onChanged: (v) => cubit.updateStepData({'waterFee': double.tryParse(v.toWesternDigits()) ?? 0.0}),
           ),
           const SizedBox(height: 40),
         ],
@@ -372,6 +375,7 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                           child: TextField(
                             controller: controller,
                             keyboardType: TextInputType.number,
+                            inputFormatters: const [WesternDigitsInputFormatter()],
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,

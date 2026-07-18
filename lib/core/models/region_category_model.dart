@@ -1,9 +1,12 @@
-/// A home destination category from `GET /api/Lookups/RegionCategory`.
+/// A destination REGION from `GET /api/Lookups/RegionCategory`.
 ///
 /// The backend returns `{ success, data: [{ id, name, propertyCount, photo }] }`.
-/// [name] is localized by the backend per the `lang` request header. On the home
-/// the chosen [id] is sent to `/api/property-search` as `featuredRegionId` (the
-/// in-place chip filter); drilling into a region sends it as `villageId`.
+/// [name] localizes via the `lang` QUERY param only (the `lang` header is
+/// ignored by this controller). On the home the chosen [id] is sent to
+/// `/api/property-search` as `featuredRegionId` (the in-place chip filter);
+/// on the Country tab it is sent to `GET /api/Lookups/region-villages` as
+/// `regionId` to list the region's villages. Region ids (18–28…) are a
+/// DIFFERENT id space than village ids — never send one as `villageId`.
 class RegionCategory {
   final int id;
   final String name;

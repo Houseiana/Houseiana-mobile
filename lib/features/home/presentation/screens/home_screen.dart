@@ -7,6 +7,7 @@ import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/models/region_category_model.dart';
 import 'package:houseiana_mobile_app/core/services/cache_service.dart';
 import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
+import 'package:houseiana_mobile_app/core/services/lookups_cache.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
@@ -67,7 +68,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadCategories() async {
     // Cache-first: serve the chips from cache when present, fetch on a miss.
-    final cached = _cache.getJson<List>(HomeCache.categories);
+    // The key is locale-suffixed — a language switch resolves to a different
+    // entry, so the chips can't get stuck in the previous language.
+    final categoriesKey = HomeCache.categoriesKey(sl<LookupsCache>().activeLang);
+    final cached = _cache.getJson<List>(categoriesKey);
     if (cached != null) {
       final cats = cached
           .whereType<Map>()
@@ -86,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final cats = await _propertyService.getRegionCategories();
       await _cache.setJson(
-        HomeCache.categories,
+        categoriesKey,
         [for (final c in cats) c.toJson()],
         ttl: HomeCache.categoriesTtl,
       );

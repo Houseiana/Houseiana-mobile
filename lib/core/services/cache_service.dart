@@ -146,8 +146,11 @@ class HomeCache {
   /// Prefix covering the cached favourite-id sets (one entry per user).
   static const String favPrefix = 'home_fav_';
 
-  /// The cached region-category chips (independent of user/filter).
-  static const String categories = 'home_categories';
+  /// Cache key for the region-category chips (independent of user/filter).
+  /// Keyed per app language: the backend localizes names via `?lang=`, so
+  /// each locale caches its own copy — otherwise a language switch would show
+  /// the old language's names for up to [categoriesTtl].
+  static String categoriesKey(String lang) => 'home_categories_$lang';
 
   /// Cache key for the home list under a given featured-region filter.
   /// `null` (the "All" chip) maps to a stable literal key.

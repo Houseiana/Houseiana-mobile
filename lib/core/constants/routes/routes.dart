@@ -22,7 +22,8 @@ import 'package:houseiana_mobile_app/features/auth/presentation/screens/forgot_p
 import 'package:houseiana_mobile_app/features/auth/presentation/screens/reset_password_screen.dart';
 
 // Country & Cities
-import 'package:houseiana_mobile_app/features/country/presentation/screens/city_list_screen.dart';
+import 'package:houseiana_mobile_app/features/country/presentation/screens/region_list_screen.dart';
+import 'package:houseiana_mobile_app/features/country/presentation/screens/village_list_screen.dart';
 
 // Main Navigation
 import 'package:houseiana_mobile_app/features/bottom_nav/presentation/screen/bottom_nav.dart';
@@ -226,8 +227,9 @@ class Routes {
   static const String privacyPolicy = '/privacy-policy';
   static const String terms = '/terms';
 
-  // Country Cities
-  static const String cityList = '/city-list';
+  // Country tab drill-down (country → regions → villages)
+  static const String regionList = '/region-list';
+  static const String villageList = '/village-list';
 
   // Other
   static const String favorites = '/favorites';

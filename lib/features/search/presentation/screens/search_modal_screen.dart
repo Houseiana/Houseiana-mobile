@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/services/places_service.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
@@ -20,6 +23,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
   final _locationController = TextEditingController();
   final _propertyService = sl<PropertyService>();
   final _session = sl<UserSession>();
+  final _placesService = PlacesService();
 
   DateTime? _checkIn;
   DateTime? _checkOut;
@@ -37,6 +41,17 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
   /// free-text destination instead. Null → plain `location` text search.
   int? _selectedRegionId;
 
+  // ── Google Places suggestions (web parity: ExpandedSearch "Where" field) ────
+  // Typing a destination surfaces real place selections from Google Places
+  // Autocomplete (e.g. "Sidi Bishr", "Sidi Gaber") the user can pick, instead
+  // of only matching regions already in the catalog. Picking one runs a
+  // free-text `location` search — exactly like the web.
+  Timer? _placesDebounce;
+  String? _placesSessionToken;
+  int _placesSeq = 0;
+  List<PlacePrediction> _placePredictions = [];
+  bool _isLoadingPlaces = false;
+
   int get _totalGuests => _adults + _children + _infants;
 
   @override
@@ -47,6 +62,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
 
   @override
   void dispose() {
+    _placesDebounce?.cancel();
     _locationController.dispose();
     super.dispose();
   }
@@ -109,6 +125,61 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
       return byCount != 0 ? byCount : a.name.compareTo(b.name);
     });
     return items;
+  }
+
+  /// Handles typing in the "Where" field. Typing a free-text destination drops
+  /// any region the user had tapped (so the search runs by raw text), and
+  /// kicks off a debounced Google Places lookup so real place selections appear
+  /// as they type — mirroring the web `ExpandedSearch` autocomplete.
+  void _onLocationChanged(String value) {
+    _placesDebounce?.cancel();
+    // Bump on EVERY keystroke (not just when a fetch fires) so a slow response
+    // for an earlier query can't land after a newer keystroke and overwrite the
+    // loading state / predictions — the cause of a false "no matches" flash.
+    _placesSeq++;
+    final seq = _placesSeq;
+    final query = value.trim();
+    if (query.isEmpty) {
+      setState(() {
+        _selectedRegionId = null;
+        _placePredictions = [];
+        _isLoadingPlaces = false;
+      });
+      return;
+    }
+    setState(() {
+      _selectedRegionId = null;
+      _isLoadingPlaces = true;
+    });
+    _placesDebounce = Timer(const Duration(milliseconds: 350), () {
+      _fetchPlacePredictions(query, seq);
+    });
+  }
+
+  Future<void> _fetchPlacePredictions(String query, int seq) async {
+    if (!mounted || seq != _placesSeq) return;
+    _placesSessionToken ??= _placesService.newSessionToken();
+    try {
+      final lang = Localizations.localeOf(context).languageCode;
+      final results = await _placesService.autocomplete(
+        query,
+        language: lang,
+        sessionToken: _placesSessionToken,
+      );
+      // Drop superseded responses (rapid typing) so stale suggestions can't win.
+      if (!mounted || seq != _placesSeq) return;
+      setState(() {
+        _placePredictions = results;
+        _isLoadingPlaces = false;
+      });
+    } catch (_) {
+      if (mounted && seq == _placesSeq) {
+        setState(() {
+          _placePredictions = [];
+          _isLoadingPlaces = false;
+        });
+      }
+    }
   }
 
   String _formatDate(DateTime? date) {
@@ -298,11 +369,12 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
   }
 
   Widget _buildWhereExpanded() {
-    final query = _locationController.text.trim().toLowerCase();
-    final filtered = _destinations.where((destination) {
-      if (query.isEmpty) return true;
-      return destination.name.toLowerCase().contains(query);
-    }).toList();
+    final query = _locationController.text.trim();
+    final lower = query.toLowerCase();
+    final regionMatches = _destinations
+        .where((d) => lower.isEmpty || d.name.toLowerCase().contains(lower))
+        .toList();
+    final isBrowsing = query.isEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,9 +384,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
           child: TextField(
             controller: _locationController,
             autofocus: _activeStep == 0,
-            // Typing a free-text destination overrides any region the user had
-            // tapped, so drop the region scope and search by the raw text.
-            onChanged: (_) => setState(() => _selectedRegionId = null),
+            onChanged: _onLocationChanged,
             decoration: InputDecoration(
               hintText: context.tr('search.searchDestinations'),
               hintStyle: const TextStyle(
@@ -336,64 +406,187 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-          child: Text(
-            context.tr('search.availableDestinations'),
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-              color: AppColors.neutral400,
+
+        // Browsing (empty field): the catalog regions with real stay counts —
+        // tapping one drills into that exact region (id-scoped search).
+        if (isBrowsing) ...[
+          _sectionHeader(context.tr('search.availableDestinations')),
+          if (_isLoadingLocations)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Column(
+                children: [
+                  TileSkeletonItem(leadingSize: 36, height: 56),
+                  SizedBox(height: 8),
+                  TileSkeletonItem(leadingSize: 36, height: 56),
+                  SizedBox(height: 8),
+                  TileSkeletonItem(leadingSize: 36, height: 56),
+                  SizedBox(height: 8),
+                  TileSkeletonItem(leadingSize: 36, height: 56),
+                ],
+              ),
+            )
+          else if (_locationError != null)
+            _InlineMessage(
+              icon: Icons.error_outline,
+              title: context.tr('search.unableToLoadDestinations'),
+              message: _locationError!,
+              actionLabel: context.tr('common.retry'),
+              onAction: _loadLiveDestinations,
+            )
+          else if (regionMatches.isEmpty)
+            _InlineMessage(
+              icon: Icons.search_off_outlined,
+              title: context.tr('search.noMatchingDestinations'),
+              message: context.tr('search.noMatchingDestinationsDescription'),
+            )
+          else
+            ...regionMatches.take(10).map(_destinationTile),
+        ]
+
+        // Typing: matching catalog regions first (guaranteed listings + counts),
+        // then Google Places selections (web parity — any destination pickable).
+        else ...[
+          if (regionMatches.isNotEmpty) ...[
+            _sectionHeader(context.tr('search.availableDestinations')),
+            ...regionMatches.take(6).map(_destinationTile),
+          ],
+          if (_isLoadingPlaces)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Column(
+                children: [
+                  TileSkeletonItem(leadingSize: 36, height: 56),
+                  SizedBox(height: 8),
+                  TileSkeletonItem(leadingSize: 36, height: 56),
+                ],
+              ),
+            )
+          else if (_placePredictions.isNotEmpty) ...[
+            _sectionHeader(context.tr('search.suggestedDestinations')),
+            ..._placePredictions.take(6).map(_placePredictionTile),
+          ],
+          if (!_isLoadingPlaces &&
+              regionMatches.isEmpty &&
+              _placePredictions.isEmpty)
+            _InlineMessage(
+              icon: Icons.search_off_outlined,
+              title: context.tr('search.noMatchingDestinations'),
+              message: context.tr('search.noMatchingDestinationsDescription'),
             ),
-          ),
-        ),
-        if (_isLoadingLocations)
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: Column(
-              children: [
-                TileSkeletonItem(leadingSize: 36, height: 56),
-                SizedBox(height: 8),
-                TileSkeletonItem(leadingSize: 36, height: 56),
-                SizedBox(height: 8),
-                TileSkeletonItem(leadingSize: 36, height: 56),
-                SizedBox(height: 8),
-                TileSkeletonItem(leadingSize: 36, height: 56),
-              ],
-            ),
-          )
-        else if (_locationError != null)
-          _InlineMessage(
-            icon: Icons.error_outline,
-            title: context.tr('search.unableToLoadDestinations'),
-            message: _locationError!,
-            actionLabel: context.tr('common.retry'),
-            onAction: _loadLiveDestinations,
-          )
-        else if (filtered.isEmpty)
-          _InlineMessage(
-            icon: Icons.search_off_outlined,
-            title: context.tr('search.noMatchingDestinations'),
-            message: context.tr('search.noMatchingDestinationsDescription'),
-          )
-        else
-          ...filtered.take(10).map(_destinationTile),
+        ],
         const SizedBox(height: 8),
       ],
     );
   }
 
+  Widget _sectionHeader(String text) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+          color: AppColors.neutral400,
+        ),
+      ),
+    );
+  }
+
+  /// A single Google Places suggestion. Picking it searches by free text
+  /// (`location` = the place name) with no region scope — the web behaviour.
+  Widget _placePredictionTile(PlacePrediction prediction) {
+    final title = prediction.mainText.isNotEmpty
+        ? prediction.mainText
+        : prediction.description;
+
+    return InkWell(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        _placesDebounce?.cancel();
+        _placesSeq++; // invalidate any in-flight fetch
+        _placesSessionToken = null; // picking a place ends the billing session
+        setState(() {
+          _locationController.text = title;
+          _selectedRegionId = null;
+          _placePredictions = [];
+          _isLoadingPlaces = false;
+          _activeStep = 1;
+        });
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.location_on_outlined,
+                size: 18,
+                color: AppColors.charcoal,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.charcoal,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (prediction.secondaryText.isNotEmpty)
+                    Text(
+                      prediction.secondaryText,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.neutral600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _destinationTile(_LiveDestination destination) {
     return InkWell(
-      onTap: () => setState(() {
-        // Scope the upcoming search to this exact region via its id (like the
-        // home "See All"), which guarantees the results match the stay count
-        // shown here. The name only fills the field for display.
-        _locationController.text = destination.name;
-        _selectedRegionId = destination.regionId;
-        _activeStep = 1;
-      }),
+      onTap: () {
+        // Setting the field programmatically does NOT fire onChanged, so cancel
+        // and invalidate any pending Places fetch here too (mirrors the Places
+        // tile / Clear-all) — otherwise a scheduled autocomplete would still
+        // fire and write stale suggestions over this region pick.
+        _placesDebounce?.cancel();
+        _placesSeq++;
+        setState(() {
+          // Scope the upcoming search to this exact region via its id (like the
+          // home "See All"), which guarantees the results match the stay count
+          // shown here. The name only fills the field for display.
+          _locationController.text = destination.name;
+          _selectedRegionId = destination.regionId;
+          _placePredictions = [];
+          _isLoadingPlaces = false;
+          _activeStep = 1;
+        });
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
@@ -627,16 +820,22 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => setState(() {
-              _locationController.clear();
-              _selectedRegionId = null;
-              _checkIn = null;
-              _checkOut = null;
-              _adults = 0;
-              _children = 0;
-              _infants = 0;
-              _activeStep = 0;
-            }),
+            onTap: () {
+              _placesDebounce?.cancel();
+              _placesSeq++; // invalidate any in-flight fetch
+              setState(() {
+                _locationController.clear();
+                _selectedRegionId = null;
+                _placePredictions = [];
+                _isLoadingPlaces = false;
+                _checkIn = null;
+                _checkOut = null;
+                _adults = 0;
+                _children = 0;
+                _infants = 0;
+                _activeStep = 0;
+              });
+            },
             child: Text(
               context.tr('search.clearAll'),
               style: const TextStyle(

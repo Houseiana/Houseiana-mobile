@@ -76,15 +76,43 @@ class _Step01PropertyTypeScreenState extends State<Step01PropertyTypeScreen> {
     }
   }
 
-  IconData _getIconForType(String typeName) {
+  // Icon for a property type, keyed off the stable lookup `id` (1–13). The
+  // backend localizes the `name` field (Arabic returns منزل / فيلا / …), so the
+  // old name-substring matching found no English keyword in Arabic and returned
+  // Icons.category for every card. Ids are language-independent, so the icon is
+  // now correct in every locale — same pattern as the other lookup-id contracts
+  // (payment method, host sort, amenities). Falls back to English-name matching
+  // for any id the backend adds later.
+  IconData _iconForType(Map<String, dynamic> type) {
+    switch (type['id']?.toString()) {
+      case '1':  return Icons.apartment;        // Apartment / Condo
+      case '2':  return Icons.house;            // House
+      case '3':  return Icons.villa;            // Villa
+      case '4':  return Icons.meeting_room;     // Studio / Loft
+      case '5':  return Icons.home_work;        // Townhouse
+      case '6':  return Icons.house_siding;     // Guesthouse / Annex
+      case '7':  return Icons.apartment;        // Serviced Apartment
+      case '8':  return Icons.hotel;            // Aparthotel
+      case '9':  return Icons.cabin;            // Cabin / Chalet
+      case '10': return Icons.agriculture;      // Farm Stay
+      case '11': return Icons.sailing;          // Houseboat
+      case '12': return Icons.holiday_village;  // Casa
+      case '13': return Icons.category;         // Other
+    }
+    return _iconForName(type['name']?.toString() ?? '');
+  }
+
+  IconData _iconForName(String typeName) {
     final lowerName = typeName.toLowerCase();
     if (lowerName.contains('apartment') || lowerName.contains('condo')) return Icons.apartment;
     if (lowerName.contains('houseboat')) return Icons.sailing;
     if (lowerName.contains('townhouse')) return Icons.home_work;
+    // Check guesthouse/annex before the generic `house` match — otherwise
+    // "Guesthouse" contains "house" and grabs the plain house icon.
+    if (lowerName.contains('guesthouse') || lowerName.contains('annex')) return Icons.house_siding;
     if (lowerName.contains('house')) return Icons.house;
     if (lowerName.contains('villa')) return Icons.villa;
     if (lowerName.contains('studio') || lowerName.contains('loft')) return Icons.meeting_room;
-    if (lowerName.contains('guesthouse') || lowerName.contains('annex')) return Icons.house_siding;
     if (lowerName.contains('aparthotel')) return Icons.hotel;
     if (lowerName.contains('cabin') || lowerName.contains('chalet')) return Icons.cabin;
     if (lowerName.contains('farm')) return Icons.agriculture;
@@ -129,7 +157,7 @@ class _Step01PropertyTypeScreenState extends State<Step01PropertyTypeScreen> {
               itemBuilder: (context, index) {
                 final type = displayTypes[index];
                 final isSelected = !_isLoading && currentType == type['id'];
-                final icon = _getIconForType(type['name']!);
+                final icon = _iconForType(type);
 
                 return GestureDetector(
                   onTap: _isLoading

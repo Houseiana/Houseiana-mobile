@@ -134,10 +134,17 @@ class EndPoints {
   static const String propertyAdminStatusLookup = '/api/Lookups/PropertyAdminStatus';
   static const String propertySortingLookup = '/api/Lookups/PropertySorting';
   // GET /api/Lookups/RegionCategory → [{ id, name, propertyCount, photo }]
-  // Home destination categories. The chosen id is sent to /api/property-search
-  // as `featuredRegionId` for the in-place home filter, or as `villageId` when
-  // drilling into a region's full listing.
+  // Destination REGIONS (Sidi Abdel Rahman, Ras El Hekma, …). The chosen id is
+  // sent to /api/property-search as `featuredRegionId` for the in-place home
+  // filter, or as `regionId` to GET /api/Lookups/region-villages to list the
+  // region's villages (Country tab drill-down). Names localize via the `lang`
+  // QUERY param only — the `lang` header is ignored by this controller.
   static const String regionCategoryLookup = '/api/Lookups/RegionCategory';
+  // GET /api/Lookups/region-villages?regionId={id} → [{ id, name, propertyCount }]
+  // Villages inside a RegionCategory region. The chosen village id is what
+  // /api/property-search expects as `villageId`. Localizes via `lang` query
+  // param (header ignored). No params → empty list.
+  static const String regionVillagesLookup = '/api/Lookups/region-villages';
   // GET /api/Lookups/ReasonBlockProperty → [{ id, name }] used for calendar blocking.
   static const String reasonBlockPropertyLookup =
       '/api/Lookups/ReasonBlockProperty';

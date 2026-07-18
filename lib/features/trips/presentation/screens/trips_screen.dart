@@ -108,13 +108,31 @@ class _TripsScreenState extends State<TripsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final scaffold = _buildScaffold(context);
+    // The BottomNavCubit only lives inside the bottom-nav shell. This screen is
+    // also reachable as its own route (e.g. from the dashboard / profile menu),
+    // where there is no shell above it — attaching the "refresh on tab revisit"
+    // listener there throws ProviderNotFound. Skip it when the cubit is absent;
+    // initState already loads the trips for the standalone case.
+    if (!_hasBottomNav(context)) return scaffold;
     return BlocListener<BottomNavCubit, BottomNavState>(
       listenWhen: (prev, next) =>
           prev.index != BottomNavCubit.tripsTab &&
           next.index == BottomNavCubit.tripsTab,
       listener: (_, __) => _refreshVisibleTab(),
-      child: _buildScaffold(context),
+      child: scaffold,
     );
+  }
+
+  /// Whether a [BottomNavCubit] is available above this screen — true when it
+  /// is mounted as a bottom-nav tab, false when pushed as a standalone route.
+  bool _hasBottomNav(BuildContext context) {
+    try {
+      context.read<BottomNavCubit>();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Widget _buildScaffold(BuildContext context) {
@@ -139,13 +157,22 @@ class _TripsScreenState extends State<TripsScreen>
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
                 indicatorColor: AppColors.primaryColor,
+                indicatorWeight: 3,
+                indicatorSize: TabBarIndicatorSize.label,
+                dividerColor: Colors.transparent,
                 labelColor: AppColors.charcoal,
-                unselectedLabelColor: AppColors.neutral600,
+                unselectedLabelColor: AppColors.neutral400,
                 labelStyle: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
                 ),
-                tabs: [for (final tab in _tabs) Tab(text: tab.label)],
+                unselectedLabelStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                tabs: [
+                  for (final tab in _tabs) Tab(text: _localizedTabLabel(tab))
+                ],
               ),
       ),
       body: _loadingTabs || _tabController == null
@@ -175,7 +202,7 @@ class _TripsScreenState extends State<TripsScreen>
               height: MediaQuery.of(context).size.height * 0.6,
               child: _buildEmptyState(
                 context.tr('trips.noTrips'),
-                tab.label,
+                _localizedTabLabel(tab),
               ),
             ),
           ],
@@ -700,6 +727,31 @@ class _TripsScreenState extends State<TripsScreen>
             size: 50, color: AppColors.neutral400),
       ),
     );
+  }
+
+  /// The `BookingStatus` lookup returns English names ("Upcoming", "Past",
+  /// "Cancelled", "Need to Pay", "Awaiting Approval") regardless of the `lang`
+  /// header, so we localize the tab labels client-side. Falls back to the raw
+  /// lookup name for any status we don't recognize (keeps forward-compat).
+  String _localizedTabLabel(TripFilterTab tab) {
+    final normalized = tab.label.toUpperCase().replaceAll(RegExp(r'[\s_-]'), '');
+    switch (normalized) {
+      case 'UPCOMING':
+        return context.tr('trips.upcoming');
+      case 'PAST':
+      case 'COMPLETED':
+        return context.tr('trips.past');
+      case 'CANCELLED':
+      case 'CANCELED':
+        return context.tr('trips.cancelled');
+      case 'NEEDTOPAY':
+        return context.tr('trips.needToPay');
+      case 'AWAITINGAPPROVAL':
+      case 'PENDING':
+        return context.tr('trips.awaitingApproval');
+      default:
+        return tab.label;
+    }
   }
 
   Widget _buildEmptyState(String title, String subtitle) {

@@ -37,9 +37,9 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
   double? _minRating;
   dynamic _regionId;
 
-  /// Region category id from `/api/Lookups/RegionCategory`, sent to the search
-  /// API as `villageId` when this screen is opened by drilling into a region
-  /// (e.g. the home "See All").
+  /// Village id from `/api/Lookups/region-villages`, sent to the search API
+  /// as `villageId` (Country tab: village tap). Distinct id space from the
+  /// RegionCategory region ids — the home "See All" passes `regionId` instead.
   dynamic _villageId;
   bool _mapView = false;
 

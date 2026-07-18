@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
+import 'package:houseiana_mobile_app/core/models/country_option.dart';
 import 'package:houseiana_mobile_app/core/models/nightly_price_model.dart';
 import 'package:houseiana_mobile_app/core/models/property_model.dart';
 import 'package:houseiana_mobile_app/core/models/region_category_model.dart';
+import 'package:houseiana_mobile_app/core/models/region_village_model.dart';
 import 'package:houseiana_mobile_app/core/models/review_model.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/end_points.dart';
@@ -32,10 +34,11 @@ class PropertySearchParams {
   final String? sortBy;
   final dynamic regionId;
 
-  /// Region category id from `/api/Lookups/RegionCategory`, sent to the search
-  /// endpoint as the `villageId` query param. Used when drilling INTO a region's
-  /// full listing (e.g. the home "See All" → search screen). Null means no
-  /// village filter.
+  /// Village id from `/api/Lookups/region-villages`, sent to the search
+  /// endpoint as the `villageId` query param (Country tab drill-down:
+  /// country → region → village → stays). Village ids live in a DIFFERENT id
+  /// space than the RegionCategory region ids — never send a region id here.
+  /// Null means no village filter.
   final int? villageId;
 
   /// Region category id from `/api/Lookups/RegionCategory`, sent to the search
@@ -447,20 +450,83 @@ class PropertyService {
     }
   }
 
-  /// Loads the home destination categories from `/api/Lookups/RegionCategory`.
-  /// The backend returns `{ success, data: [{ id, name, propertyCount, photo }] }`
-  /// with names already localized via the `lang` request header. On the home,
-  /// the chosen id is sent to the search endpoint as `featuredRegionId` (in-place
-  /// filter); when drilling into a region it is sent as `villageId`.
-  Future<List<RegionCategory>> getRegionCategories() async {
+  /// Loads the destination regions from `/api/Lookups/RegionCategory`.
+  /// The backend returns `{ success, data: [{ id, name, propertyCount, photo }] }`.
+  /// Names localize via the `lang` QUERY param only — the `lang` header is
+  /// ignored by this controller (verified against prod), so it is passed
+  /// explicitly here. On the home the chosen id is sent to the search endpoint
+  /// as `featuredRegionId` (in-place filter); on the Country tab it is sent to
+  /// `region-villages` as `regionId` to list the region's villages.
+  Future<List<RegionCategory>> getRegionCategories({bool force = false}) async {
+    final lang = _lookups.activeLang;
     try {
       final response = await _lookups.getOrFetch(
-        EndPoints.regionCategoryLookup,
-        () => _api.get(EndPoints.regionCategoryLookup),
+        // lang is embedded in the cache key (on top of the cache's own locale
+        // suffix) to bust older entries cached before the ?lang= fix, which
+        // hold English names under the Arabic key.
+        '${EndPoints.regionCategoryLookup}?lang=$lang',
+        () => _api.get(
+          EndPoints.regionCategoryLookup,
+          queryParameters: {'lang': lang},
+        ),
+        force: force,
       );
       return _extractList(response)
           .map(RegionCategory.fromJson)
           .where((c) => c.id > 0 && c.name.isNotEmpty)
+          .toList();
+    } catch (e) {
+      throw ServerException.msg(e.toString());
+    }
+  }
+
+  /// Loads the countries from `/api/lookups/country` →
+  /// `{ success, data: [{ id, name }] }`, localized via the `lang` query
+  /// param. Sorted by id so the order is stable across locales (the backend
+  /// orders alphabetically per language). Drives the Country tab's first level.
+  Future<List<CountryOption>> getCountries({bool force = false}) async {
+    final lang = _lookups.activeLang;
+    try {
+      final response = await _lookups.getOrFetch(
+        '${EndPoints.countriesLookup}?lang=$lang',
+        () => _api.get(
+          EndPoints.countriesLookup,
+          queryParameters: {'lang': lang},
+        ),
+        force: force,
+      );
+      return _extractList(response)
+          .map(CountryOption.fromJson)
+          .where((c) => c.id > 0 && c.name.isNotEmpty)
+          .toList()
+        ..sort((a, b) => a.id.compareTo(b.id));
+    } catch (e) {
+      throw ServerException.msg(e.toString());
+    }
+  }
+
+  /// Loads the villages of a destination region from
+  /// `GET /api/Lookups/region-villages?regionId={regionId}` →
+  /// `{ success, data: [{ id, name, propertyCount }] }` (already ordered by
+  /// property count desc). [regionId] is a RegionCategory id; each returned
+  /// village id is what `/api/property-search` expects as `villageId`.
+  Future<List<RegionVillage>> getRegionVillages(
+    int regionId, {
+    bool force = false,
+  }) async {
+    final lang = _lookups.activeLang;
+    try {
+      final response = await _lookups.getOrFetch(
+        '${EndPoints.regionVillagesLookup}?regionId=$regionId&lang=$lang',
+        () => _api.get(
+          EndPoints.regionVillagesLookup,
+          queryParameters: {'regionId': regionId, 'lang': lang},
+        ),
+        force: force,
+      );
+      return _extractList(response)
+          .map(RegionVillage.fromJson)
+          .where((v) => v.id > 0 && v.name.isNotEmpty)
           .toList();
     } catch (e) {
       throw ServerException.msg(e.toString());
