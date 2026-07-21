@@ -64,6 +64,7 @@ class ListingWizardState extends Equatable {
     bool clearError = false,
     bool clearBasePriceError = false,
     bool clearPublishedListingId = false,
+    bool clearOriginalData = false,
   }) {
     return ListingWizardState(
       currentStep: currentStep ?? this.currentStep,
@@ -81,7 +82,8 @@ class ListingWizardState extends Equatable {
           ? null
           : (basePriceError ?? this.basePriceError),
       data: data ?? this.data,
-      originalData: originalData ?? this.originalData,
+      originalData:
+          clearOriginalData ? null : (originalData ?? this.originalData),
     );
   }
 

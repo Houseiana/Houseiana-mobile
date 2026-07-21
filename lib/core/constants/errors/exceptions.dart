@@ -10,6 +10,12 @@ class ServerException implements Exception {
       );
 
   String get message => exceptionModel.message;
+
+  // Many call sites interpolate the caught error straight into a user-facing
+  // string ('Failed …: $e'); without this the user sees
+  // "Instance of 'ServerException'" instead of the backend's actual reason.
+  @override
+  String toString() => exceptionModel.message;
 }
 
 /// Thrown when a request was aborted via a `CancelToken` (screen disposed or
@@ -30,10 +36,16 @@ class CacheException implements Exception {
   final String message;
 
   const CacheException({required this.message});
+
+  @override
+  String toString() => message;
 }
 
 class NetworkException implements Exception {
   final String message;
 
   const NetworkException({this.message = 'No internet connection'});
+
+  @override
+  String toString() => message;
 }

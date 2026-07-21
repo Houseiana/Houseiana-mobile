@@ -60,8 +60,8 @@ class _VillageListScreenState extends State<VillageListScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        // ServerException has no toString() override — read `.message` or the
-        // UI shows the literal "Instance of 'ServerException'".
+        // Prefer the typed `.message` (ServerException.toString() also returns
+        // it, but the explicit read doesn't depend on that).
         _error = e is ServerException && e.message.trim().isNotEmpty
             ? e.message
             : e.toString();

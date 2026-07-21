@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/services/host_service.dart';
 import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_state.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart'
@@ -61,7 +62,7 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
     final newBasePrice = (data['basePrice'] as num?)?.toDouble();
     final shouldClearBasePriceError = state.basePriceError != null &&
         newBasePrice != null &&
-        newBasePrice >= 1000;
+        newBasePrice >= 100;
     emit(state.copyWith(
       clearBasePriceError: shouldClearBasePriceError,
       data: state.data.copyWith(
@@ -163,6 +164,33 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
     emit(state.copyWith(error: error));
   }
 
+  /// Hardcoded English fallbacks minted by the HTTP layers themselves
+  /// (HostService._mapDioException / DioConsumer) when the response body has
+  /// no usable text. They explain nothing and never localize — swap them for
+  /// the localized fallback key instead of showing them raw in Arabic UI.
+  static const _genericHttpMessages = {
+    'Server error',
+    'Server error occurred',
+    'Unexpected error occurred',
+    'Connection timed out',
+    'Connection timeout',
+    'No internet connection',
+    'Request cancelled',
+  };
+
+  /// User-facing message for a failed wizard call: prefer the backend's own
+  /// error text (it says WHY — e.g. beds exceeding max guests); otherwise fall
+  /// back to a translation key that the wizard shell resolves via context.tr.
+  String _userFacingError(Object e, String fallbackKey) {
+    if (e is ServerException) {
+      final msg = e.message.trim();
+      if (msg.isNotEmpty && !_genericHttpMessages.contains(msg)) {
+        return msg;
+      }
+    }
+    return fallbackKey;
+  }
+
   void clearError() {
     emit(state.copyWith(clearError: true));
   }
@@ -232,67 +260,87 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
     );
   }
 
+  /// Backend rejects a draft whose beds exceed max guests — caught client-side
+  /// with a clear message instead of a raw server error. Exemption: a listing
+  /// loaded for EDIT whose (legacy) beds/guests came from the server unchanged
+  /// — /api/properties/modify only sends changed fields, so the pair is never
+  /// re-validated, and blocking would trap the host on the Basics step.
+  /// Shared by [validateStepForContinue] and the Basics screen's inline
+  /// warning so both surfaces always agree.
+  bool get bedsExceedGuests {
+    final beds = state.data.beds ?? 0;
+    final guests = state.data.maxGuests ?? 0;
+    if (beds <= guests) return false;
+    final original = state.originalData;
+    final unchangedLegacyPair = original != null &&
+        state.data.beds == original.beds &&
+        state.data.maxGuests == original.maxGuests;
+    return !unchangedLegacyPair;
+  }
+
   String? validateStepForContinue(int step) {
     switch (step) {
       case 0:
         if (state.data.propertyType == null) {
-          return 'Property Type is required.';
+          return 'wizard.validationPropertyTypeRequired';
         }
         break;
       case 1: // Location
         if (state.data.address == null || state.data.address!.isEmpty) {
-          return 'Address is required.';
+          return 'wizard.validationAddressRequired';
         }
         if (state.data.city == null || state.data.city!.isEmpty) {
-          return 'City is required.';
+          return 'wizard.validationCityRequired';
         }
         break;
       case 2: // Basics
         if ((state.data.maxGuests ?? 0) < 1) {
-          return 'Number of guests is required.';
+          return 'wizard.validationGuestsRequired';
         }
         if ((state.data.bedrooms ?? 0) < 1) {
-          return 'Number of bedrooms is required.';
+          return 'wizard.validationBedroomsRequired';
         }
         if ((state.data.beds ?? 0) < 1) {
-          return 'Number of beds is required.';
+          return 'wizard.validationBedsRequired';
+        }
+        if (bedsExceedGuests) {
+          return 'wizard.validationBedsExceedGuests';
         }
         if ((state.data.bathrooms ?? 0) < 1) {
-          return 'Number of bathrooms is required.';
+          return 'wizard.validationBathroomsRequired';
         }
         if (state.data.totalArea == null || state.data.totalArea! < 25 || state.data.totalArea! > 3000) {
-          return 'Total area must be between 25 and 3000 m².';
+          return 'wizard.validationTotalArea';
         }
         break;
       case 3: // Amenities — optional (web parity: no minimum selection required)
         break;
       case 4: // House Rules
         if (state.data.checkInTime == null || state.data.checkInTime!.isEmpty) {
-          return 'Check-in time is required.';
+          return 'wizard.validationCheckInRequired';
         }
         if (state.data.checkOutTime == null || state.data.checkOutTime!.isEmpty) {
-          return 'Check-out time is required.';
+          return 'wizard.validationCheckOutRequired';
         }
         break;
       case 5: // Photos
         if (state.data.photos.length < 5) {
-          final remaining = 5 - state.data.photos.length;
-          return 'Please upload at least 5 photos. Add $remaining more to continue.';
+          return 'wizard.validationPhotosMin';
         }
         break;
       case 6: // Title, Description & Highlights
         if (state.data.title == null || state.data.title!.trim().isEmpty) {
-          return 'Title is required.';
+          return 'wizard.validationTitleRequired';
         }
         if (state.data.description == null ||
             state.data.description!.trim().isEmpty) {
-          return 'Description is required.';
+          return 'wizard.validationDescriptionRequired';
         }
         // Highlights are optional (web parity) — no minimum-selection requirement.
         break;
       case 7: // Pricing (shifted)
-        if (state.data.basePrice == null || state.data.basePrice! < 1000) {
-          return 'Minimum base price is 1000 EGP.';
+        if (state.data.basePrice == null || state.data.basePrice! < 100) {
+          return 'wizard.validationMinBasePrice';
         }
         break;
       case 10: // Settings / Contact Info — Primary phone (WhatsApp) is required
@@ -302,14 +350,14 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
         final egyptMobile = RegExp(r'^1[0-25]\d{8}$');
         final primaryPhone = (state.data.primaryPhone ?? '').trim();
         if (primaryPhone.isEmpty) {
-          return 'Primary phone number (WhatsApp) is required.';
+          return 'wizard.validationPrimaryPhoneRequired';
         }
         if (!egyptMobile.hasMatch(primaryPhone)) {
-          return 'Enter a valid Egyptian mobile number (10 digits, e.g. 1012345678).';
+          return 'wizard.validationPrimaryPhoneInvalid';
         }
         final emergencyPhone = (state.data.emergencyPhone ?? '').trim();
         if (emergencyPhone.isNotEmpty && !egyptMobile.hasMatch(emergencyPhone)) {
-          return 'Enter a valid emergency mobile number (10 digits) or leave it empty.';
+          return 'wizard.validationEmergencyPhoneInvalid';
         }
         break;
     }
@@ -320,13 +368,19 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
     emit(ListingWizardState.initial());
   }
 
-  /// Loads an existing property into the wizard for EDITING: prefill from
-  /// GET /api/properties/{id}, then save through POST /api/properties/modify —
-  /// which carries only the fields the host actually changed (diffed against
-  /// the loaded snapshot stored in [ListingWizardState.originalData]). Seeds
-  /// [draftId] so every subsequent save/publish targets this property, records
-  /// the baseline for diffing, and lands on the saved step (or the review step
-  /// if unknown).
+  /// Loads an existing property into the wizard: prefill from
+  /// GET /api/properties/{id}, seed [draftId] so every subsequent save/publish
+  /// targets this property, and land on the saved step (or the review step if
+  /// unknown). The wizard mode is decided by what came back:
+  ///
+  /// - Still a DRAFT → continue the CREATE flow ([originalData] stays null):
+  ///   each "Continue" keeps saving through POST /api/properties/draft with an
+  ///   advancing `stepDraft`, and the final button publishes via `stepDraft`
+  ///   13. Routing a draft through EDIT mode (/modify diffs) never sends
+  ///   `stepDraft` 13, so the unit would stay a draft forever.
+  /// - Already published → EDIT mode ([originalData] = baseline snapshot):
+  ///   saves diff against the snapshot and POST only the changed fields to
+  ///   /api/properties/modify.
   Future<void> loadForEdit(String propertyId) async {
     emit(state.copyWith(isHydrating: true, draftId: propertyId, clearError: true));
     try {
@@ -346,10 +400,23 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
           ? (stepDraft - 1).clamp(editMinStep, state.totalSteps - 1)
           : state.totalSteps - 1; // jump to Review when the step is unknown
 
+      // Draft detection: publishing IS the stepDraft-13 save, so a stepDraft
+      // below 13 means the unit has never been published and must continue
+      // the create flow — regardless of status (covers DRAFT and also
+      // ACTION_REQUIRED units that were never completed, which the listings
+      // card funnels into the same "complete your listing" path). A missing
+      // stepDraft → EDIT mode, the safe default for a published listing.
+      final status =
+          (raw['status'] ?? '').toString().toLowerCase().replaceAll(' ', '');
+      final isDraft =
+          status == 'draft' || (stepDraft != null && stepDraft < 13);
+
       emit(state.copyWith(
         data: data,
-        // Baseline snapshot for edit-mode diffing (also marks EDIT mode).
-        originalData: data,
+        // Baseline snapshot for edit-mode diffing (also marks EDIT mode) —
+        // published listings only, never a draft being continued.
+        originalData: isDraft ? null : data,
+        clearOriginalData: isDraft,
         draftId: propertyId,
         currentStep: initialStep,
         minStep: editMinStep,
@@ -359,7 +426,7 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
       // ignore: avoid_print
       print('[ListingWizardCubit.loadForEdit] error: $e');
       emit(state.copyWith(isHydrating: false));
-      setError('Failed to load property for editing: $e');
+      setError(_userFacingError(e, 'wizard.loadForEditFailed'));
     }
   }
 
@@ -404,7 +471,10 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
 
       final payload = state.data.toApiMap(
         hostId: hostId,
-        currentStep: state.currentStep,
+        // stepDraft 13 is the publish marker, owned exclusively by
+        // publishListing() — a draft save from the review step (Save & Exit)
+        // must never finalize the listing.
+        currentStep: state.currentStep.clamp(0, state.totalSteps - 2),
         propertyId: safePropertyId,
       );
 
@@ -439,7 +509,7 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
       // ignore: avoid_print
       print('[ListingWizardCubit.saveDraft] error: $e');
       draftSaveFailed();
-      setError('Failed to save draft: $e');
+      setError(_userFacingError(e, 'wizard.draftSaveFailed'));
       return false;
     }
   }
@@ -504,7 +574,7 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
       // ignore: avoid_print
       print('[ListingWizardCubit._modifyListing] error: $e');
       draftSaveFailed();
-      setError('Failed to save changes: $e');
+      setError(_userFacingError(e, 'wizard.saveChangesFailed'));
       return false;
     }
   }
@@ -593,7 +663,7 @@ class ListingWizardCubit extends Cubit<ListingWizardState> {
     } catch (e) {
       // ignore: avoid_print
       print('[ListingWizardCubit.publishListing] error: $e');
-      publishingFailed('Failed to publish listing: $e');
+      publishingFailed(_userFacingError(e, 'wizard.publishFailed'));
     }
   }
 

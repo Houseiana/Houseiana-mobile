@@ -4,6 +4,7 @@ import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/end_points.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exception_model.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
+import 'package:houseiana_mobile_app/core/network/api/server_error_message.dart';
 import 'package:houseiana_mobile_app/core/network/api/status_code.dart';
 
 class DioConsumer implements ApiConsumer {
@@ -175,16 +176,9 @@ class DioConsumer implements ApiConsumer {
   /// 'int' of 'index'` whenever [data] was not a Map — masking the real error.
   String _messageFromResponse(DioException e) {
     final status = e.response?.statusCode ?? 0;
-    final data = e.response?.data;
 
-    if (data is Map) {
-      final msg = data['message'] ?? data['error'] ?? data['title'];
-      if (msg != null && msg.toString().trim().isNotEmpty) {
-        return msg.toString();
-      }
-    } else if (data is String && data.trim().isNotEmpty) {
-      return data.trim();
-    }
+    final fromBody = serverErrorMessageFromBody(e.response?.data);
+    if (fromBody != null) return fromBody;
 
     if (status == 401) {
       return 'Your session has expired. Please sign in again.';

@@ -241,7 +241,7 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    basePriceError,
+                    context.tr(basePriceError),
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,

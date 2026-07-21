@@ -85,6 +85,11 @@ class _Step04BasicsScreenState extends State<Step04BasicsScreen> {
             icon: Icons.single_bed_outlined,
             label: context.tr('wizard.beds'),
             subLabel: context.tr('wizard.totalSleepingSpots'),
+            // Backend constraint: beds may not exceed max guests. Warn inline
+            // as soon as it happens instead of failing the draft save later.
+            warning: cubit.bedsExceedGuests
+                ? context.tr('wizard.validationBedsExceedGuests')
+                : null,
             value: data.beds ?? 1,
             onDec: () => cubit.updateStepData({'beds': (data.beds ?? 1) - 1}),
             onInc: () => cubit.updateStepData({'beds': (data.beds ?? 1) + 1}),
@@ -126,6 +131,7 @@ class _Step04BasicsScreenState extends State<Step04BasicsScreen> {
     required int value,
     required VoidCallback onDec,
     required VoidCallback onInc,
+    String? warning,
   }) {
     return Row(
       children: [
@@ -157,6 +163,17 @@ class _Step04BasicsScreenState extends State<Step04BasicsScreen> {
                   color: AppColors.neutral600,
                 ),
               ),
+              if (warning != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  warning,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.error,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

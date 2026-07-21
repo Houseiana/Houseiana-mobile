@@ -5,6 +5,7 @@ import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/models/booking_model.dart';
 import 'package:houseiana_mobile_app/core/models/host_listings_response_model.dart';
 import 'package:houseiana_mobile_app/core/models/property_model.dart';
+import 'package:houseiana_mobile_app/core/network/api/server_error_message.dart';
 import 'package:houseiana_mobile_app/core/services/lookups_cache.dart';
 
 import '../network/api/end_points.dart';
@@ -561,12 +562,10 @@ class HostService {
   ServerException _mapDioException(DioException e) {
     String message = 'Server error';
     if (e.response != null) {
-      final data = e.response?.data;
-      if (data is Map<String, dynamic>) {
-        message = data['message']?.toString() ??
-            data['error']?.toString() ??
-            'Server error';
-      }
+      // Shared extractor: also understands ValidationProblemDetails bodies
+      // ({errors: {...}, title, detail}) — the shape the wizard's draft
+      // endpoint returns for rules like "beds must not exceed max guests".
+      message = serverErrorMessageFromBody(e.response?.data) ?? 'Server error';
     } else {
       switch (e.type) {
         case DioExceptionType.connectionTimeout:

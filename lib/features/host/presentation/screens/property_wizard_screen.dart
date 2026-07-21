@@ -78,9 +78,11 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
         // Success (publishedListingId) is owned by the review step's dialog to
         // avoid a double-navigation / double-snackbar race.
         if (state.error != null) {
+          // tr() passthrough: translation keys resolve, backend messages
+          // (dynamic text) fall through unchanged.
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.error!),
+              content: Text(context.tr(state.error!)),
               backgroundColor: AppColors.error,
             ),
           );
@@ -295,7 +297,7 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(validationError),
+                              content: Text(context.tr(validationError)),
                               backgroundColor: AppColors.error,
                             ),
                           );
@@ -335,8 +337,11 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
                       ),
                     )
                   : Text(
+                      // Mode comes from the hydrated state, not the incoming
+                      // id: a draft opened for continuation still CREATES
+                      // (publishes); only a published listing EDITS.
                       isLast
-                          ? context.tr(widget.isEditing
+                          ? context.tr(state.originalData != null
                               ? 'wizard.editList'
                               : 'wizard.createList')
                           : context.tr('wizard.wizardContinue'),
@@ -352,11 +357,15 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
   void _showExitDialog(BuildContext context) {
     // Mode-aware copy: in edit mode the listing already exists (it is NOT a
     // draft), and this X path does not save — so warn about discarding unsaved
-    // changes rather than falsely claiming a draft was saved.
+    // changes rather than falsely claiming a draft was saved. Mode is read
+    // from the hydrated state (originalData set ⇔ editing a published
+    // listing) so a draft being continued keeps the draft copy.
+    final isEditMode =
+        context.read<ListingWizardCubit>().state.originalData != null;
     final titleKey =
-        widget.isEditing ? 'wizard.exitEditTitle' : 'wizard.exitWizardTitle';
+        isEditMode ? 'wizard.exitEditTitle' : 'wizard.exitWizardTitle';
     final descKey =
-        widget.isEditing ? 'wizard.exitEditDesc' : 'wizard.exitWizardDesc';
+        isEditMode ? 'wizard.exitEditDesc' : 'wizard.exitWizardDesc';
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
