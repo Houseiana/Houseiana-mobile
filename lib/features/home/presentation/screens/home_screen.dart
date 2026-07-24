@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
+import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/models/region_category_model.dart';
@@ -14,6 +15,7 @@ import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/features/bottom_nav/presentation/cubit/cubit.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
+import 'package:houseiana_mobile_app/shared/widgets/empty_state/empty_state_widget.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart';
 import 'package:houseiana_mobile_app/core/utils/discount_utils.dart';
 import 'package:houseiana_mobile_app/shared/widgets/cards/property_card_v2.dart';
@@ -39,6 +41,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Map<String, dynamic>> _properties = [];
   List<CityPropertyGroup> _cityGroups = [];
+
+  /// Translation key describing why the last API load failed, or null when it
+  /// succeeded. Only reached on a cache miss — a cache hit still renders
+  /// instantly without touching the network.
+  String? _loadErrorKey;
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _hasMore = true;
@@ -156,6 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // ── Cache miss (or forced refresh) → fetch from the API. ──
     setState(() {
       _isLoading = true;
+      _loadErrorKey = null;
       _currentPage = 1;
       _hasMore = true;
     });
@@ -173,15 +181,24 @@ class _HomeScreenState extends State<HomeScreen> {
       params,
       userId: _session.userId,
     );
-    final favsFuture = _session.isLoggedIn
-        ? _userService.getFavorites(_session.userId!)
-        : Future.value(const <Map<String, dynamic>>[]);
+    final favsFuture = _loadFavoriteIds();
 
-    final page = await pageFuture;
-    final favIds = (await favsFuture)
-        .map((f) => (f['propertyId'] ?? f['id'] ?? '').toString())
-        .where((id) => id.isNotEmpty)
-        .toSet();
+    final GroupedPropertiesPage page;
+    try {
+      page = await pageFuture;
+    } catch (e) {
+      // The listings call failed (the backend cold start blows the receive
+      // timeout on the first request of a session). Without this the exception
+      // escaped and home sat on its skeleton forever.
+      await favsFuture; // never throws — just don't leave it dangling
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _loadErrorKey = loadErrorKeyFor(e);
+      });
+      return;
+    }
+    final favIds = await favsFuture;
 
     // ── Write-through: cache the fresh response for the next visit. ──
     await _cache.setJson(
@@ -192,9 +209,12 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       ttl: HomeCache.listTtl,
     );
-    await _cache.setJson(favKey, favIds.toList(), ttl: HomeCache.favTtl);
-
-    if (_session.isLoggedIn) sl<FavoritesNotifier>().seed(favIds);
+    // null = the favourites call failed; caching an empty list (and seeding it)
+    // would wrongly clear every heart.
+    if (favIds != null) {
+      await _cache.setJson(favKey, favIds.toList(), ttl: HomeCache.favTtl);
+      sl<FavoritesNotifier>().seed(favIds);
+    }
     if (mounted) {
       setState(() {
         _cityGroups = page.groups;
@@ -202,6 +222,21 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoading = false;
         _hasMore = page.hasMore;
       });
+    }
+  }
+
+  /// The signed-in user's favourite ids, or null when they can't be fetched —
+  /// a favourites hiccup must not take the listings down with it.
+  Future<Set<String>?> _loadFavoriteIds() async {
+    if (!_session.isLoggedIn) return null;
+    try {
+      final favs = await _userService.getFavorites(_session.userId!);
+      return favs
+          .map((f) => (f['propertyId'] ?? f['id'] ?? '').toString())
+          .where((id) => id.isNotEmpty)
+          .toSet();
+    } catch (_) {
+      return null;
     }
   }
 
@@ -235,10 +270,18 @@ class _HomeScreenState extends State<HomeScreen> {
       featuredRegionId: _selectedFeaturedRegionId,
       isSorted: true,
     );
-    final page = await _propertyService.searchPropertiesGrouped(
-      params,
-      userId: _session.userId,
-    );
+    final GroupedPropertiesPage page;
+    try {
+      page = await _propertyService.searchPropertiesGrouped(
+        params,
+        userId: _session.userId,
+      );
+    } catch (_) {
+      // Release the flag (and keep `_hasMore`) so scrolling again retries the
+      // same page instead of the spinner sticking forever.
+      if (mounted) setState(() => _isLoadingMore = false);
+      return;
+    }
 
     if (mounted) {
       setState(() {
@@ -919,6 +962,21 @@ class _HomeScreenState extends State<HomeScreen> {
           itemCount: 4,
           showSearchBar: false,
           showCategories: false,
+        ),
+      );
+    }
+
+    // A failed load with nothing cached to fall back on — offer a retry rather
+    // than the "no properties" copy, which would blame the catalogue for a
+    // network failure. Pull-to-refresh works here too.
+    if (_loadErrorKey != null && _properties.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: ErrorStateWidget(
+            message: context.tr(_loadErrorKey!),
+            onRetry: () => _loadData(forceRefresh: true),
+          ),
         ),
       );
     }

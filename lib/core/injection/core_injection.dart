@@ -6,7 +6,9 @@ import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/dio_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/app_interceptors.dart';
 import 'package:houseiana_mobile_app/core/network/api/auth_interceptor.dart';
+import 'package:houseiana_mobile_app/core/network/api/backend_dio.dart';
 import 'package:houseiana_mobile_app/core/network/api/lang_interceptor.dart';
+import 'package:houseiana_mobile_app/core/network/api/retry_interceptor.dart';
 import 'package:houseiana_mobile_app/core/network/connection_checker.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/core/services/cache_service.dart';
@@ -35,8 +37,10 @@ Future<void> initCore() async {
     () => AccountPrivacyService(sl<ClerkService>(), sl<UserSession>()),
   );
 
-  // Dio — with interceptors attached at creation
-  final dio = Dio();
+  // Dio — base options + interceptors attached at creation. The options live
+  // here (not only in DioConsumer, which is registered lazily) so services that
+  // resolve the shared client directly still get the backend timeouts.
+  final dio = Dio(backendBaseOptions());
   sl.registerLazySingleton<Dio>(() => dio);
 
   // Interceptors
@@ -48,11 +52,14 @@ Future<void> initCore() async {
     () => LangInterceptor(sl<SharedPreferences>()),
   );
 
-  // Attach interceptors to Dio
+  // Attach interceptors to Dio. Retry goes last so the auth interceptor still
+  // gets first refusal on 401s; it only acts on "the server never answered"
+  // failures (cold start / timeout), which no interceptor above handles.
   dio.interceptors.addAll([
     sl<AppInterceptors>(),
     sl<LangInterceptor>(),
     sl<AuthInterceptor>(),
+    const RetryInterceptor(),
   ]);
 
   // API Consumer

@@ -82,6 +82,43 @@ class NightlyPricesCubit extends Cubit<NightlyPricesState> {
   }
 
   void tapDay(DateTime day) {
+    _applyDayTap(day);
+    _refreshQuote();
+  }
+
+  /// Quotes the selected range through `/availability` so the footer can show
+  /// the same breakdown the reserve step charges — the nightly grid alone knows
+  /// nothing about the cleaning or service fees. Cleared whenever the selection
+  /// stops being a complete range; a response that arrives after the guest has
+  /// moved on is dropped rather than shown against the wrong dates.
+  void _refreshQuote() {
+    final ci = state.checkIn;
+    final co = state.checkOut;
+    if (ci == null || co == null) {
+      emit(state.copyWith(clearQuote: true, quoteLoading: false));
+      return;
+    }
+    emit(state.copyWith(clearQuote: true, quoteLoading: true));
+    _loadQuote(ci, co);
+  }
+
+  Future<void> _loadQuote(DateTime checkIn, DateTime checkOut) async {
+    Map<String, dynamic>? avail;
+    try {
+      avail = await _service.getAvailability(
+        propertyId,
+        checkIn: checkIn.toIso8601String(),
+        checkOut: checkOut.toIso8601String(),
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('[NightlyPrices] availability error: $e');
+    }
+    if (isClosed) return;
+    if (state.checkIn != checkIn || state.checkOut != checkOut) return;
+    emit(state.copyWith(quote: avail, quoteLoading: false));
+  }
+
+  void _applyDayTap(DateTime day) {
     final d = DateTime(day.year, day.month, day.day);
     final today = DateTime.now();
     final todayOnly = DateTime(today.year, today.month, today.day);
@@ -123,7 +160,12 @@ class NightlyPricesCubit extends Cubit<NightlyPricesState> {
   }
 
   void clearSelection() {
-    emit(state.copyWith(clearCheckIn: true, clearCheckOut: true));
+    emit(state.copyWith(
+      clearCheckIn: true,
+      clearCheckOut: true,
+      clearQuote: true,
+      quoteLoading: false,
+    ));
   }
 
   Future<void> retryMonth(DateTime month) async {

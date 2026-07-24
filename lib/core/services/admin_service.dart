@@ -1,19 +1,13 @@
 import 'package:dio/dio.dart';
-import 'package:houseiana_mobile_app/core/config/app_config.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
+import 'package:houseiana_mobile_app/core/network/api/backend_dio.dart';
 
 /// Service for admin panel operations.
 /// Handles admin-only operations like user management, property review, support tickets.
 class AdminService {
   final Dio _dio;
 
-  AdminService({Dio? dio})
-      : _dio = dio ??
-            Dio(BaseOptions(
-              baseUrl: AppConfig.backendApiUrl,
-              connectTimeout: const Duration(seconds: 30),
-              receiveTimeout: const Duration(seconds: 30),
-            ));
+  AdminService({Dio? dio}) : _dio = dio ?? buildBackendDio();
 
   /// GET /api/admin/dashboard
   /// Fetches admin dashboard statistics.

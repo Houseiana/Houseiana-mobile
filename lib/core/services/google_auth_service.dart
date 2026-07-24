@@ -1,6 +1,6 @@
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
-import 'package:houseiana_mobile_app/core/config/app_config.dart';
+import 'package:houseiana_mobile_app/core/network/api/backend_dio.dart';
 import 'package:dio/dio.dart';
 
 class GoogleAuthService {
@@ -12,12 +12,7 @@ class GoogleAuthService {
             GoogleSignIn(
               scopes: <String>['email', 'profile'],
             ),
-        _dio = dio ??
-            Dio(BaseOptions(
-              baseUrl: AppConfig.backendApiUrl,
-              connectTimeout: const Duration(seconds: 30),
-              receiveTimeout: const Duration(seconds: 30),
-            ));
+        _dio = dio ?? buildBackendDio();
 
   Future<Map<String, dynamic>> signInWithGoogle() async {
     try {

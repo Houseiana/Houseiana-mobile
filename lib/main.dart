@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:houseiana_mobile_app/app.dart';
 import 'package:houseiana_mobile_app/bloc_observer.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart' as di;
+import 'package:houseiana_mobile_app/core/network/api/api_warmup.dart';
 import 'package:houseiana_mobile_app/core/services/fcm_service.dart';
 
 import 'firebase_options.dart';
@@ -40,6 +41,12 @@ void main() async {
     return false;
   });
   await Future.wait([firebaseReady, di.init()]);
+
+  // The API scales to zero, so the first call of a session pays a ~31s cold
+  // start. Fire one throwaway request now (nothing awaits it) so the container
+  // boots while the user is still on the splash/home screen instead of when
+  // they open Search.
+  ApiWarmup.ping();
 
   // Set up BLoC observer for debugging (debug builds only — it stringifies
   // every state emit, which is pure overhead in release)

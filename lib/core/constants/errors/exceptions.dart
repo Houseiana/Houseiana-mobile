@@ -1,4 +1,5 @@
 import 'package:houseiana_mobile_app/core/constants/errors/exception_model.dart';
+import 'package:houseiana_mobile_app/core/network/api/status_code.dart';
 
 class ServerException implements Exception {
   final ExceptionModel exceptionModel;
@@ -30,6 +31,20 @@ class RequestCancelledException extends ServerException {
             message: 'Request cancelled',
           ),
         );
+}
+
+/// Translation key explaining why a load failed, for retry/error states.
+///
+/// A timeout gets its own copy: the backend cold-starts (see `backend_dio.dart`),
+/// so it is a *slow* failure rather than a broken one and "try again" genuinely
+/// works — telling the user the server is being slow beats a generic error.
+/// Callers render it with `context.tr(...)`.
+String loadErrorKeyFor(Object error) {
+  if (error is ServerException &&
+      error.exceptionModel.statusCode == StatusCode.requestTimeout) {
+    return 'common.slowServer';
+  }
+  return 'common.loadFailed';
 }
 
 class CacheException implements Exception {

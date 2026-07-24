@@ -90,6 +90,8 @@
     "loading": "جارٍ التحميل...",
     "error": "حدث خطأ",
     "errorOccurred": "حدث خطأ ما",
+    "slowServer": "الخادم يستغرق وقتاً أطول من المعتاد للرد. يرجى المحاولة مرة أخرى.",
+    "loadFailed": "تعذّر تحميل النتائج. تحقق من اتصالك وحاول مرة أخرى.",
     "retry": "إعادة المحاولة",
     "tryAgain": "حاول مرة أخرى",
     "cancel": "إلغاء",
@@ -463,6 +465,7 @@
     "under2": "أقل من سنتين",
     "cleaningFee": "رسوم التنظيف",
     "serviceFee": "رسوم الخدمة",
+    "platformFee": "رسوم المنصة",
     "discount": "الخصم",
     "totalUsd": "الإجمالي",
     "priceByNightsTemplate": "{price} × {nights} ليالٍ",
@@ -677,6 +680,9 @@
     "calendarNightStay": "إقامة {n} ليلة",
     "calendarApproxPrices": "أسعار تقريبية بـ {currency} لإقامة ليلة واحدة",
     "calendarStayTotal": "إجمالي الإقامة:",
+    "priceDetailsHint": "اختر تواريخك لعرض السعر الكامل شاملاً رسوم الخدمة.",
+    "priceDetailsUnavailable": "تعذّر تحميل تفاصيل السعر لهذه التواريخ.",
+    "datesNotAvailable": "هذا العقار غير متاح في التواريخ المختارة.",
     "propertyNotFound": "العقار غير موجود"
   },
   "review": {

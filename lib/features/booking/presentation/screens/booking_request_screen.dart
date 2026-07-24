@@ -169,6 +169,13 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   /// from the gross subtotal so the row's arithmetic always adds up.
   double get _grossNightly => _nights > 0 ? _grossSubtotal / _nights : 0;
 
+  /// Nightly rate in the property header row. Once the availability quote for
+  /// the selected dates has loaded it is the rate that quote is built from, so
+  /// the header can never contradict the price breakdown below it; the price
+  /// handed over from the previous screen only fills the gap while it loads.
+  double get _headerNightly =>
+      _availSubtotal != null && _nights > 0 ? _grossNightly : _pricePerNight;
+
   /// Currency code for price display (e.g. EGP). Matches the web, which
   /// prefixes amounts with the currency code instead of a `$` sign and treats
   /// a missing OR empty currency as `EGP` (`property.currency || 'EGP'`).
@@ -524,7 +531,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                     const SizedBox(width: 3),
                     Text(
                       context.tr('booking.pricePerNightFormat',
-                          args: {'price': _money(_pricePerNight)}),
+                          args: {'price': _money(_headerNightly)}),
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,

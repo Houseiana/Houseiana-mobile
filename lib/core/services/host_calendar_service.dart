@@ -1,18 +1,12 @@
 import 'package:dio/dio.dart';
-import 'package:houseiana_mobile_app/core/config/app_config.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
+import 'package:houseiana_mobile_app/core/network/api/backend_dio.dart';
 
 /// Service for host calendar and availability management.
 class HostCalendarService {
   final Dio _dio;
 
-  HostCalendarService({Dio? dio})
-      : _dio = dio ??
-            Dio(BaseOptions(
-              baseUrl: AppConfig.backendApiUrl,
-              connectTimeout: const Duration(seconds: 30),
-              receiveTimeout: const Duration(seconds: 30),
-            ));
+  HostCalendarService({Dio? dio}) : _dio = dio ?? buildBackendDio();
 
   /// GET /api/properties/{propertyId}/calendar
   /// Fetches the availability calendar for a property.

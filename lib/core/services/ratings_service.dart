@@ -1,19 +1,13 @@
 import 'package:dio/dio.dart';
-import 'package:houseiana_mobile_app/core/config/app_config.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
+import 'package:houseiana_mobile_app/core/network/api/backend_dio.dart';
 
 /// Service for property ratings and reviews.
 /// Handles submitting and fetching property reviews.
 class RatingsService {
   final Dio _dio;
 
-  RatingsService({Dio? dio})
-      : _dio = dio ??
-            Dio(BaseOptions(
-              baseUrl: AppConfig.backendApiUrl,
-              connectTimeout: const Duration(seconds: 30),
-              receiveTimeout: const Duration(seconds: 30),
-            ));
+  RatingsService({Dio? dio}) : _dio = dio ?? buildBackendDio();
 
   /// GET /api/ratings/property/{propertyId}
   /// Fetches all reviews for a property.

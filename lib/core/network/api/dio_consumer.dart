@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
+import 'package:houseiana_mobile_app/core/network/api/backend_dio.dart';
 import 'package:houseiana_mobile_app/core/network/api/end_points.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exception_model.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
@@ -18,9 +19,11 @@ class DioConsumer implements ApiConsumer {
       // Serialize list query params as repeated keys (e.g. amenities=1&amenities=2)
       // to match the web backend contract (PropertyAPI.publicSearchFilter).
       ..listFormat = ListFormat.multi
-      ..sendTimeout = const Duration(seconds: 30)
-      ..receiveTimeout = const Duration(seconds: 30)
-      ..connectTimeout = const Duration(seconds: 30);
+      // Single source of truth for the timeout window — sized for the backend's
+      // cold start, see `backend_dio.dart`.
+      ..sendTimeout = apiSendTimeout
+      ..receiveTimeout = apiReceiveTimeout
+      ..connectTimeout = apiConnectTimeout;
 
     // Attach auth token if provided.
     if (authToken != null && authToken!.isNotEmpty) {

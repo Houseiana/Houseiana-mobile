@@ -231,10 +231,10 @@ class ErrorStateWidget extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Title
-            const Text(
-              'Something went wrong',
+            Text(
+              context.tr('common.errorOccurred'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,

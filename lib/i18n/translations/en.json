@@ -90,6 +90,8 @@
     "loading": "Loading...",
     "error": "An error occurred",
     "errorOccurred": "Something went wrong",
+    "slowServer": "The server is taking longer than usual to respond. Please try again.",
+    "loadFailed": "We couldn't load the results. Check your connection and try again.",
     "retry": "Retry",
     "tryAgain": "Try Again",
     "cancel": "Cancel",
@@ -463,6 +465,7 @@
     "under2": "Under 2",
     "cleaningFee": "Cleaning fee",
     "serviceFee": "Service fee",
+    "platformFee": "Platform fee",
     "discount": "Discount",
     "totalUsd": "Total",
     "priceByNightsTemplate": "{price} × {nights} nights",
@@ -677,6 +680,9 @@
     "calendarNightStay": "{n}-night stay",
     "calendarApproxPrices": "Approximate prices in {currency} for a 1-night stay",
     "calendarStayTotal": "Stay total:",
+    "priceDetailsHint": "Pick your dates to see the full price, including the service fee.",
+    "priceDetailsUnavailable": "Price details couldn't be loaded for these dates.",
+    "datesNotAvailable": "This property is not available for the selected dates.",
     "propertyNotFound": "Property not found"
   },
   "review": {

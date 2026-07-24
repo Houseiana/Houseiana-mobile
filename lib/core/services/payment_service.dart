@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
-import 'package:houseiana_mobile_app/core/config/app_config.dart';
+import 'package:houseiana_mobile_app/core/network/api/backend_dio.dart';
 import 'package:houseiana_mobile_app/core/services/lookups_cache.dart';
 
 /// Backend-backed payment service.
@@ -10,12 +10,7 @@ class PaymentService {
 
   PaymentService({Dio? dio, LookupsCache? lookups})
       : _lookups = lookups,
-        _dio = dio ??
-            Dio(BaseOptions(
-              baseUrl: AppConfig.backendApiUrl,
-              connectTimeout: const Duration(seconds: 30),
-              receiveTimeout: const Duration(seconds: 30),
-            ));
+        _dio = dio ?? buildBackendDio();
 
   static const String _paymentMethodLookup = '/api/Lookups/payment-method';
 

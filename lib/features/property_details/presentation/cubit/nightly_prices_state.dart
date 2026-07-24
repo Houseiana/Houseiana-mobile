@@ -15,6 +15,12 @@ class NightlyPricesState extends Equatable {
   final String? fatalError;
   final Set<DateTime> bookedDates;
 
+  /// Raw `/property-search/{id}/availability` response for the selected range —
+  /// the only source of the cleaning / service fees and the stay total. Null
+  /// until a complete range is picked (or when the quote failed).
+  final Map<String, dynamic>? quote;
+  final bool quoteLoading;
+
   const NightlyPricesState({
     this.pricesByMonth = const {},
     this.loadingMonths = const {},
@@ -28,6 +34,8 @@ class NightlyPricesState extends Equatable {
     this.initialized = false,
     this.fatalError,
     this.bookedDates = const {},
+    this.quote,
+    this.quoteLoading = false,
   });
 
   factory NightlyPricesState.initial(DateTime month, String currency) =>
@@ -85,9 +93,12 @@ class NightlyPricesState extends Equatable {
     bool? initialized,
     String? fatalError,
     Set<DateTime>? bookedDates,
+    Map<String, dynamic>? quote,
+    bool? quoteLoading,
     bool clearCheckIn = false,
     bool clearCheckOut = false,
     bool clearFatalError = false,
+    bool clearQuote = false,
   }) {
     return NightlyPricesState(
       pricesByMonth: pricesByMonth ?? this.pricesByMonth,
@@ -102,6 +113,8 @@ class NightlyPricesState extends Equatable {
       initialized: initialized ?? this.initialized,
       fatalError: clearFatalError ? null : (fatalError ?? this.fatalError),
       bookedDates: bookedDates ?? this.bookedDates,
+      quote: clearQuote ? null : (quote ?? this.quote),
+      quoteLoading: quoteLoading ?? this.quoteLoading,
     );
   }
 
@@ -119,5 +132,7 @@ class NightlyPricesState extends Equatable {
         initialized,
         fatalError,
         bookedDates,
+        quote,
+        quoteLoading,
       ];
 }

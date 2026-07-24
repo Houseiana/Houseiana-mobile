@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/property_details_cubit.dart';
@@ -16,6 +17,7 @@ import 'package:houseiana_mobile_app/features/property_details/presentation/scre
 import 'package:houseiana_mobile_app/features/property_details/presentation/screens/photo_gallery_screen.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/screens/reviews_screen.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/hosted_by_widget.dart';
+import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/price_details_section.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/things_to_know_widget.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
@@ -36,6 +38,7 @@ class PropertyDetailsScreen extends StatefulWidget {
 
 class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   final _session = sl<UserSession>();
+  final _propertyService = sl<PropertyService>();
   final _pageController = PageController();
   final _scrollController = ScrollController();
   int _currentPage = 0;
@@ -44,6 +47,17 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   double? _lng;
   bool _isFavorite = false;
   bool _didInit = false;
+
+  /// Dates the guest picked for this stay, and the `/availability` quote for
+  /// them. The web keeps the check-in / checkout inputs inside the booking card
+  /// and prices the stay from that endpoint; mobile picks the dates in the
+  /// nightly-prices calendar and keeps them here so the same breakdown — cleaning
+  /// fee, service fee, discount, total — can render on this screen instead of
+  /// only appearing at the reserve step.
+  DateTime? _checkIn;
+  DateTime? _checkOut;
+  Map<String, dynamic>? _availability;
+  bool _availabilityLoading = false;
 
   @override
   void initState() {
@@ -56,12 +70,23 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   Future<void> _init() async {
     if (_didInit) return;
     _didInit = true;
+
+    // The row the tapped card was rendered from. It carries the calendar-aware
+    // nightly price the user just saw outside, which the details endpoint does
+    // not return — the cubit prefers it so both surfaces show one price.
+    final args = ModalRoute.of(context)?.settings.arguments;
+    Map<String, dynamic>? passed;
+    if (args is Map && args['property'] is Map) {
+      passed = Map<String, dynamic>.from(args['property'] as Map);
+    }
+
     if (widget.propertyIdToLoad != null &&
         widget.propertyIdToLoad!.isNotEmpty) {
       final cubit = context.read<PropertyDetailsCubit>();
       await cubit.getPropertyDetails(
             widget.propertyIdToLoad!,
             userId: _session.userId,
+            listRow: passed,
           );
       await cubit.loadRatings(widget.propertyIdToLoad!);
       if (mounted) {
@@ -72,12 +97,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       }
     }
     if (!mounted) return;
-    final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is Map) {
-      final passed = args['property'] as Map<String, dynamic>?;
-      if (passed != null) {
-        _resolveCoordinates(passed);
-      }
+    if (passed != null) {
+      _resolveCoordinates(passed);
     }
   }
 
@@ -86,6 +107,49 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     _pageController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Opens the nightly-prices calendar and keeps the chosen range on this
+  /// screen, then quotes it. Returns false when the guest backed out.
+  Future<bool> _pickStayDates(PropertyModel property) async {
+    final result = await Navigator.pushNamed<Map<String, DateTime>>(
+      context,
+      Routes.nightlyPricesCalendar,
+      arguments: {
+        'propertyId': property.id,
+        'currency': property.currency ?? 'EGP',
+      },
+    );
+    if (!mounted || result == null) return false;
+    setState(() {
+      _checkIn = result['checkIn'];
+      _checkOut = result['checkOut'];
+      _availability = null;
+      _availabilityLoading = true;
+    });
+    await _loadAvailability(property.id);
+    return true;
+  }
+
+  /// Quotes the selected range through `/property-search/{id}/availability` —
+  /// the only endpoint that knows the fees, so the breakdown never guesses.
+  Future<void> _loadAvailability(String propertyId) async {
+    if (_checkIn == null || _checkOut == null) return;
+    try {
+      final avail = await _propertyService.getAvailability(
+        propertyId,
+        checkIn: _checkIn!.toIso8601String(),
+        checkOut: _checkOut!.toIso8601String(),
+      );
+      if (!mounted) return;
+      setState(() {
+        _availability = avail;
+        _availabilityLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _availabilityLoading = false);
+    }
   }
 
   Future<void> _resolveCoordinates(Map<String, dynamic> property) async {
@@ -449,6 +513,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     _buildAmenitiesSection(amenities),
                     const _SectionDivider(),
                   ],
+                  _buildPriceDetailsSection(state.property),
+                  const _SectionDivider(),
                   ThingsToKnowWidget(
                     checkInTime: checkInTime,
                     checkOutTime: checkOutTime,
@@ -1468,6 +1534,20 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     );
   }
 
+  /// The price breakdown card — see [PriceDetailsSection]. It lives here rather
+  /// than in the bottom bar because it only has numbers once the guest picks
+  /// dates, which they do through the same calendar the Reserve button opens.
+  Widget _buildPriceDetailsSection(PropertyModel property) {
+    return PriceDetailsSection(
+      currency: property.currency ?? 'EGP',
+      checkIn: _checkIn,
+      checkOut: _checkOut,
+      availability: _availability,
+      isLoading: _availabilityLoading,
+      onPickDates: () => _pickStayDates(property),
+    );
+  }
+
   Widget _buildBottomBar(double price, PropertyModel property) {
     final isInstant = property.instantBook ?? false;
     final currency = property.currency ?? 'EGP';
@@ -1666,15 +1746,12 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     }
     final propertyId = property.id;
     final propertyJson = property.toJson();
-    final result = await Navigator.pushNamed<Map<String, DateTime>>(
-      context,
-      Routes.nightlyPricesCalendar,
-      arguments: {
-        'propertyId': propertyId,
-        'currency': property.currency ?? 'EGP',
-      },
-    );
-    if (!mounted || result == null) return;
+    // Dates already chosen in the price-details section carry straight through
+    // instead of asking for them a second time.
+    if (_checkIn == null || _checkOut == null) {
+      final picked = await _pickStayDates(property);
+      if (!mounted || !picked) return;
+    }
     Navigator.pushNamed(
       context,
       Routes.bookingRequest,
@@ -1683,8 +1760,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
         'property': propertyJson,
         'price': property.displayPrice,
         'title': property.displayTitle,
-        'checkIn': result['checkIn']!.toIso8601String(),
-        'checkOut': result['checkOut']!.toIso8601String(),
+        'checkIn': _checkIn!.toIso8601String(),
+        'checkOut': _checkOut!.toIso8601String(),
       },
     );
   }

@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:houseiana_mobile_app/core/config/app_config.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
+import 'package:houseiana_mobile_app/core/network/api/backend_dio.dart';
 import 'package:houseiana_mobile_app/core/models/booking_model.dart';
 import 'package:houseiana_mobile_app/core/models/host_listings_response_model.dart';
 import 'package:houseiana_mobile_app/core/models/property_model.dart';
@@ -16,12 +16,7 @@ class HostService {
 
   HostService({Dio? dio, LookupsCache? lookups})
       : _lookups = lookups,
-        _dio = dio ??
-            Dio(BaseOptions(
-              baseUrl: AppConfig.backendApiUrl,
-              connectTimeout: const Duration(seconds: 30),
-              receiveTimeout: const Duration(seconds: 30),
-            )) {
+        _dio = dio ?? buildBackendDio() {
     if (kDebugMode && !_dio.interceptors.any((i) => i is LogInterceptor)) {
       _dio.interceptors.add(LogInterceptor(
         request: true,

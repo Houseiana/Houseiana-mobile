@@ -14,6 +14,7 @@ import 'package:houseiana_mobile_app/features/properties/presentation/widgets/pr
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/cards/property_list_card.dart';
 import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
+import 'package:houseiana_mobile_app/shared/widgets/empty_state/empty_state_widget.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart' show ListSkeletonLoader;
 
 class PropertiesScreen extends StatefulWidget {
@@ -89,6 +90,12 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   /// bottom "List" toggle so it doesn't collide with the (taller) preview card.
   bool _hasMapSelection = false;
 
+  /// Translation key describing why the last full load failed, or null when it
+  /// succeeded. Without this a failed request (the backend cold start blows the
+  /// receive timeout on the first call of a session) left the screen on its
+  /// skeleton forever with no way back — now it shows a retry state.
+  String? _loadErrorKey;
+
   @override
   void initState() {
     super.initState();
@@ -118,6 +125,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
     final seq = ++_querySeq;
     setState(() {
       _isLoading = true;
+      _loadErrorKey = null;
       _currentPage = 1;
       _hasMore = true;
       _filterLocation = location;
@@ -147,31 +155,72 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
     } on RequestCancelledException {
       // Superseded by a newer query or the screen was disposed.
       return;
+    } catch (e) {
+      // Timeout / server error — surface a retry instead of an endless
+      // skeleton (and never let the exception escape into the zone).
+      if (!mounted || seq != _querySeq) return;
+      setState(() {
+        _isLoading = false;
+        _loadErrorKey = loadErrorKeyFor(e);
+      });
+      // Previous results are still on screen (a failed refresh), and the error
+      // state would hide them — report the failure in a snack bar instead.
+      if (_properties.isNotEmpty) {
+        _showErrorSnack(_loadErrorKey!,
+            onRetry: () => _loadData(location: _filterLocation));
+      }
+      return;
     }
     // Already normalized maps (PropertyService runs the model round-trip,
     // off the UI isolate for big pages).
     final propertyMaps = searchPage.properties;
 
-    Set<String> favIds = {};
-    if (_session.isLoggedIn) {
-      final favs = await _userService.getFavorites(_session.userId!);
-      favIds = favs
-          .map((f) => (f['propertyId'] ?? f['id'] ?? '').toString())
-          .where((id) => id.isNotEmpty)
-          .toSet();
-    }
+    final favIds = await _loadFavoriteIds();
 
     // A newer query started while this was in flight — drop this result.
     if (!mounted || seq != _querySeq) return;
     // Hearts read the app-wide notifier; this list is the user's FULL
-    // favourites, so replace-seed it.
-    if (_session.isLoggedIn) sl<FavoritesNotifier>().seed(favIds);
+    // favourites, so replace-seed it (null = the call failed, keep what we had).
+    if (favIds != null) sl<FavoritesNotifier>().seed(favIds);
     setState(() {
       _properties = propertyMaps;
       _isLoading = false;
       _hasMore = propertyMaps.length >= _pageLimit;
       _totalCount = searchPage.total;
     });
+  }
+
+  /// The signed-in user's favourite ids, or null when they can't be fetched —
+  /// a favourites hiccup must not take the listings down with it, and an empty
+  /// set would wrongly clear every heart.
+  Future<Set<String>?> _loadFavoriteIds() async {
+    if (!_session.isLoggedIn) return null;
+    try {
+      final favs = await _userService.getFavorites(_session.userId!);
+      return favs
+          .map((f) => (f['propertyId'] ?? f['id'] ?? '').toString())
+          .where((id) => id.isNotEmpty)
+          .toSet();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _showErrorSnack(String messageKey, {required VoidCallback onRetry}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(context.tr(messageKey)),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(
+            label: context.tr('common.retry'),
+            onPressed: onRetry,
+          ),
+        ),
+      );
   }
 
   Future<void> _loadMore() async {
@@ -204,6 +253,15 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       );
     } on RequestCancelledException {
       if (mounted) setState(() => _isLoadingMore = false);
+      return;
+    } catch (e) {
+      if (!mounted) return;
+      // Keep `_hasMore` so scrolling again (or the snack bar's retry) picks the
+      // same page up — only the loading flag is released.
+      setState(() => _isLoadingMore = false);
+      if (seq == _querySeq) {
+        _showErrorSnack(loadErrorKeyFor(e), onRetry: _loadMore);
+      }
       return;
     }
     if (!mounted) return;
@@ -305,14 +363,19 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
             Expanded(
               child: _isLoading
                   ? const ListSkeletonLoader(showSearchBar: false, showCategories: false)
-                  // Map view wins over the empty state: panning to a region with
-                  // no listings must keep the map on-screen so the user can pan
-                  // back out (the map shows its own "no properties here" hint).
-                  : _isMapView
-                      ? _buildMapView()
-                      : _properties.isEmpty
-                          ? _buildEmptyState()
-                          : _buildListView(),
+                  // A failed load with nothing to fall back on: offer a retry.
+                  // (With results still on screen the failure went to a snack
+                  // bar instead — see [_loadData].)
+                  : _loadErrorKey != null && _properties.isEmpty
+                      ? _buildErrorState()
+                      // Map view wins over the empty state: panning to a region with
+                      // no listings must keep the map on-screen so the user can pan
+                      // back out (the map shows its own "no properties here" hint).
+                      : _isMapView
+                          ? _buildMapView()
+                          : _properties.isEmpty
+                              ? _buildEmptyState()
+                              : _buildListView(),
             ),
           ],
         ),
@@ -466,9 +529,13 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
         _hasMore = maps.length >= _pageLimit;
         _totalCount = searchPage.total;
       });
-    } catch (_) {
+    } catch (e) {
+      // A newer pan already superseded this one (cancellations land here too):
+      // stay quiet. Otherwise tell the user the area search failed instead of
+      // silently dropping the spinner and leaving the old pins in place.
       if (!mounted || seq != _querySeq) return;
       setState(() => _isAreaSearching = false);
+      _showErrorSnack(loadErrorKeyFor(e), onRetry: _searchThisArea);
     }
   }
 
@@ -729,6 +796,25 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
             color: Color(0xFF1D242B),
           ),
         ),
+      ),
+    );
+  }
+
+  /// Shown when a load failed and there is nothing to display. Pull-to-refresh
+  /// works here too, so the user isn't forced onto the button.
+  Widget _buildErrorState() {
+    return RefreshIndicator(
+      onRefresh: () => _loadData(location: _filterLocation),
+      color: AppColors.primaryColor,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(height: MediaQuery.sizeOf(context).height * 0.12),
+          ErrorStateWidget(
+            message: context.tr(_loadErrorKey!),
+            onRetry: () => _loadData(location: _filterLocation),
+          ),
+        ],
       ),
     );
   }

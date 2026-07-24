@@ -4,6 +4,7 @@ import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/models/nightly_price_model.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/nightly_prices_cubit.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/nightly_prices_state.dart';
+import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/availability_quote_rows.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/month_calendar_widget.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
@@ -234,9 +235,41 @@ class _NightlyPricesCalendarScreenState
     );
   }
 
-  /// Total for the selected stay, computed from the loaded nightly prices.
-  /// When any night is discounted the pre-discount total renders struck
-  /// through next to the charged total (same treatment as the day cells).
+  /// What the selected stay costs. Prefers the `/availability` quote — the only
+  /// source that knows the cleaning and service fees, so the guest sees the same
+  /// breakdown here as on the details screen and at the reserve step. Falls back
+  /// to the nights-only total summed from the grid while it loads or if it
+  /// fails.
+  Widget _buildStaySummary(BuildContext context, NightlyPricesState state) {
+    if (state.quoteLoading) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 10),
+        child: Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+    if (state.quote != null) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: AvailabilityQuoteRows(
+          availability: state.quote,
+          currency: state.currency,
+          nightsFallback: state.checkOut!.difference(state.checkIn!).inDays,
+          compact: true,
+        ),
+      );
+    }
+    return _buildStayTotal(context, state);
+  }
+
+  /// Nights-only total, summed from the loaded nightly prices. When any night is
+  /// discounted the pre-discount total renders struck through next to the
+  /// charged total (same treatment as the day cells).
   Widget _buildStayTotal(BuildContext context, NightlyPricesState state) {
     final totals = state.selectedRangeTotals;
     if (totals == null) return const SizedBox.shrink();
@@ -321,17 +354,21 @@ class _NightlyPricesCalendarScreenState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Text(
-                context.tr('propertyDetails.calendarApproxPrices',
-                    args: {'currency': state.currency}),
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.neutral500,
+            // The "approximate prices per night" note explains the grid; once a
+            // real quote for the range is on screen it would only contradict it.
+            if (state.quote == null) ...[
+              Center(
+                child: Text(
+                  context.tr('propertyDetails.calendarApproxPrices',
+                      args: {'currency': state.currency}),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.neutral500,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
+              const SizedBox(height: 8),
+            ],
             Center(
               child: Text(
                 summary,
@@ -342,7 +379,7 @@ class _NightlyPricesCalendarScreenState
                 ),
               ),
             ),
-            if (state.hasCompleteRange) _buildStayTotal(context, state),
+            if (state.hasCompleteRange) _buildStaySummary(context, state),
             const SizedBox(height: 12),
             Row(
               children: [

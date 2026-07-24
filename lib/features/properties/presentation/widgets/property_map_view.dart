@@ -50,6 +50,18 @@ class _PropertyMapViewState extends State<PropertyMapView> {
   final Map<String, BitmapDescriptor> _iconCache = {};
   static const int _iconCacheCap = 200;
 
+  /// How many marker bitmaps are generated at once. Cover photos are 240–400KB
+  /// JPEGs on plain blob storage (no resizing service), so an unbounded
+  /// `Future.wait` over a full page meant ~20 simultaneous downloads *and*
+  /// full-resolution decodes on the UI isolate — the GC storm behind
+  /// "the map loads way too much data".
+  static const int _iconConcurrency = 4;
+
+  /// Cheap stand-in shown while a property's real photo marker is still being
+  /// generated, and used for markers whose photo fails to load.
+  static final BitmapDescriptor _pendingIcon =
+      BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
+
   /// Monotonic guard: a slow _buildMarkers pass must not overwrite the
   /// markers of a newer one during rapid pans.
   int _buildSeq = 0;
@@ -125,60 +137,83 @@ class _PropertyMapViewState extends State<PropertyMapView> {
     return '';
   }
 
+  String _idOf(Map<String, dynamic> p) =>
+      (p['id'] ?? p['_id'] ?? p['propertyId'] ?? '').toString();
+
+  /// Cache key for a property's marker bitmap. A changed photo URL busts it.
+  String _iconKey(Map<String, dynamic> p) => '${_idOf(p)}|${_extractImage(p)}';
+
+  /// Markers themselves are cheap — recreated every pass so `onTap` closes over
+  /// the CURRENT property map; only the bitmap descriptors are cached.
+  Marker _marker(Map<String, dynamic> p, BitmapDescriptor icon) => Marker(
+        markerId: MarkerId(_idOf(p)),
+        position: LatLng(_readLat(p)!, _readLng(p)!),
+        icon: icon,
+        onTap: () => _setSelected(p),
+      );
+
+  /// Places every marker immediately — cached bitmaps as-is, a plain pin for
+  /// the rest — then upgrades the pins to photo markers a few at a time.
+  ///
+  /// The old version awaited the whole page before showing a single marker,
+  /// with every cover photo downloading and decoding at once.
   Future<void> _buildMarkers() async {
     final seq = ++_buildSeq;
-    setState(() => _buildingMarkers = true);
-    final geo = _geoProperties;
-    final newMarkers = <Marker>{};
+    final geo = _geoProperties.where((p) => _idOf(p).isNotEmpty).toList();
 
-    await Future.wait(
-      geo.map((p) async {
-        final id = (p['id'] ?? p['_id'] ?? p['propertyId'] ?? '').toString();
-        if (id.isEmpty) return;
-        final lat = _readLat(p)!;
-        final lng = _readLng(p)!;
-        final imageUrl = _extractImage(p);
+    final placed = <Marker>{};
+    final pending = <Map<String, dynamic>>[];
+    for (final p in geo) {
+      final icon = _iconCache[_iconKey(p)];
+      placed.add(_marker(p, icon ?? _pendingIcon));
+      if (icon == null) pending.add(p);
+    }
 
-        // Incremental: only cache misses pay the Canvas/PNG generation cost.
-        // Failed loads cache the fallback pin too, so a broken image URL
-        // isn't re-fetched on every pan (a new URL busts the key).
-        final cacheKey = '$id|$imageUrl';
-        var icon = _iconCache[cacheKey];
-        if (icon == null) {
-          try {
-            icon = await _circularMarkerFromUrl(imageUrl);
-          } catch (_) {
-            icon = BitmapDescriptor.defaultMarkerWithHue(
-              BitmapDescriptor.hueYellow,
-            );
-          }
-          if (_iconCache.length >= _iconCacheCap) {
-            _iconCache.remove(_iconCache.keys.first);
-          }
-          _iconCache[cacheKey] = icon;
-        }
-
-        // Markers themselves are cheap — recreate them so onTap closes over
-        // the CURRENT property map; only the bitmap descriptors are cached.
-        newMarkers.add(
-          Marker(
-            markerId: MarkerId(id),
-            position: LatLng(lat, lng),
-            icon: icon,
-            onTap: () => _setSelected(p),
-          ),
-        );
-      }),
-    );
-
-    // A newer pass started while this one awaited — let it win.
     if (!mounted || seq != _buildSeq) return;
     setState(() {
       _markers
         ..clear()
-        ..addAll(newMarkers);
-      _buildingMarkers = false;
+        ..addAll(placed);
+      _buildingMarkers = pending.isNotEmpty;
     });
+    if (pending.isEmpty) return;
+
+    // Only cache misses pay the download + Canvas/PNG cost, and only
+    // [_iconConcurrency] of them at a time. Failed loads cache the pin too, so
+    // a broken URL isn't re-fetched on every pan.
+    for (var i = 0; i < pending.length; i += _iconConcurrency) {
+      final chunk = pending.skip(i).take(_iconConcurrency).toList();
+      final built = await Future.wait(chunk.map((p) async {
+        BitmapDescriptor icon;
+        try {
+          icon = await _circularMarkerFromUrl(_extractImage(p));
+        } catch (_) {
+          icon = _pendingIcon;
+        }
+        // Cached before the staleness check below: a bitmap built for a
+        // superseded pass is still the right bitmap for that property, and
+        // panning back must not pay to download and draw it twice.
+        if (_iconCache.length >= _iconCacheCap) {
+          _iconCache.remove(_iconCache.keys.first);
+        }
+        _iconCache[_iconKey(p)] = icon;
+        return MapEntry(p, icon);
+      }));
+
+      // A newer pass started while this chunk was in flight — let it win.
+      if (!mounted || seq != _buildSeq) return;
+      setState(() {
+        for (final entry in built) {
+          _markers.removeWhere(
+            (m) => m.markerId.value == _idOf(entry.key),
+          );
+          _markers.add(_marker(entry.key, entry.value));
+        }
+      });
+    }
+
+    if (!mounted || seq != _buildSeq) return;
+    setState(() => _buildingMarkers = false);
   }
 
   /// Selects (or, with null, dismisses) a property's preview card and notifies
@@ -193,13 +228,14 @@ class _PropertyMapViewState extends State<PropertyMapView> {
     await _fitToMarkers();
     if (!mounted) return;
     // `animateCamera`'s future completes when the move is *dispatched*, not when
-    // the camera comes to rest — so we can't read the final viewport yet. Wait
-    // out the animation (plus the initial-placement settle), THEN snapshot the
-    // rested viewport as the baseline. Until `_cameraSettled` flips, every idle
-    // (initial placement + the fit itself) is ignored, so neither one fires a
-    // spurious "search this area" on open; only genuine user pans do.
-    await Future.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
+    // the camera comes to rest — so we can't read the final viewport yet.
+    // [_onCameraIdle] normally snapshots the baseline off the first real rest;
+    // this is the fallback for the case where the fit never moves the camera and
+    // no further idle arrives. Until `_cameraSettled` flips, every idle (initial
+    // placement + the fit itself) is ignored, so neither fires a spurious
+    // "search this area" on open — only genuine user pans do.
+    await Future.delayed(const Duration(milliseconds: 1200));
+    if (!mounted || _cameraSettled) return;
     await _recordCurrentAreaAsLast();
     _cameraSettled = true;
   }
@@ -236,8 +272,19 @@ class _PropertyMapViewState extends State<PropertyMapView> {
   /// Fired by [GoogleMap.onCameraIdle] once the camera stops moving. Debounces
   /// and forwards the new visible region to [PropertyMapView.onAreaChanged].
   void _onCameraIdle() {
-    if (widget.onAreaChanged == null || !_cameraSettled) return;
+    if (widget.onAreaChanged == null) return;
     _areaDebounce?.cancel();
+    if (!_cameraSettled) {
+      // First rest after the initial fit: adopt it as the baseline instead of
+      // querying. Re-armed on every idle, so a multi-step fit settles on the
+      // LAST one — a fixed delay could snapshot a mid-animation viewport and
+      // make the next idle look like a user pan (one wasted search + its photos).
+      _areaDebounce = Timer(const Duration(milliseconds: 400), () async {
+        await _recordCurrentAreaAsLast();
+        if (mounted) _cameraSettled = true;
+      });
+      return;
+    }
     _areaDebounce = Timer(const Duration(milliseconds: 600), _emitArea);
   }
 
@@ -304,17 +351,38 @@ class _PropertyMapViewState extends State<PropertyMapView> {
     return _MapArea(lat: lat, lng: lng, radiusKm: radiusKm);
   }
 
+  /// How far the viewport must move (or how much it must grow/shrink), as a
+  /// fraction of the currently visible radius, before a re-query is worth it.
+  ///
+  /// This used to be a flat ~55m: at city zoom the smallest drag pulled a whole
+  /// new page of results — and with it a fresh 240–400KB cover photo per marker.
+  /// Scaling with the zoom level keeps "search as you move" responsive where the
+  /// user is looking closely and quiet when they're panning across a country.
+  static const double _areaChangeFraction = 0.25;
+
   /// Whether [area] differs enough from the last reported area to be worth a
   /// re-query — guards against firing on sub-pixel jitter or the fit-induced idle.
   bool _areaChanged(_MapArea area) {
     if (_lastLat == null || _lastLng == null || _lastRadiusKm == null) {
       return true;
     }
-    const coordThreshold = 0.0005; // ~55 m
-    final radiusThreshold = math.max(0.5, _lastRadiusKm! * 0.05);
-    return (area.lat - _lastLat!).abs() > coordThreshold ||
-        (area.lng - _lastLng!).abs() > coordThreshold ||
-        (area.radiusKm - _lastRadiusKm!).abs() > radiusThreshold;
+    // Floor keeps street-level zoom from re-querying on every nudge.
+    final thresholdKm = math.max(1.0, _lastRadiusKm! * _areaChangeFraction);
+    final movedKm = _distanceKm(_lastLat!, _lastLng!, area.lat, area.lng);
+    return movedKm > thresholdKm ||
+        (area.radiusKm - _lastRadiusKm!).abs() > thresholdKm;
+  }
+
+  /// Flat-earth distance in km — the viewport spans are small enough that the
+  /// error is irrelevant next to a 25% threshold, and it matches the same
+  /// `kmPerDegree` conversion [_computeArea] reports to the search API.
+  double _distanceKm(double lat1, double lng1, double lat2, double lng2) {
+    const kmPerDegree = 111.0;
+    final dLat = (lat2 - lat1) * kmPerDegree;
+    final dLng = (lng2 - lng1) *
+        kmPerDegree *
+        math.cos(((lat1 + lat2) / 2) * math.pi / 180).abs();
+    return math.sqrt(dLat * dLat + dLng * dLng);
   }
 
   @override
@@ -525,6 +593,9 @@ class _PreviewCard extends StatelessWidget {
                           width: 110,
                           height: 110,
                           fit: BoxFit.cover,
+                          // 110pt thumbnail of a multi-megapixel cover — decode
+                          // it small, like the list cards already do.
+                          memCacheWidth: 330,
                           placeholder: (context, url) => Container(
                             width: 110,
                             height: 110,
@@ -656,6 +727,11 @@ class _PreviewCard extends StatelessWidget {
   }
 }
 
+/// Pixel size the cover photo is decoded at for a marker. The bitmap is a
+/// 140px canvas with a 112px photo circle, so anything above this is thrown
+/// away by the draw call.
+const int _markerDecodeSize = 160;
+
 /// Renders the property's cover photo inside a yellow-ringed circle and
 /// returns it as a [BitmapDescriptor] suitable for a [Marker.icon].
 Future<BitmapDescriptor> _circularMarkerFromUrl(String url) async {
@@ -729,7 +805,17 @@ Future<ui.Image> _loadNetworkImage(String url) async {
   final completer = Completer<ui.Image>();
   // Cached provider: cards already downloaded most of these covers — reuse
   // the disk/memory cache instead of re-downloading per marker.
-  final provider = CachedNetworkImageProvider(url);
+  //
+  // `maxWidth/maxHeight` is the important part: covers are full-size JPEGs
+  // (240–400KB, several megapixels) served from blob storage with no resizing,
+  // and they were being decoded at FULL resolution — tens of MB of RGBA per
+  // marker — only to be painted into a 112px circle. The cache manager resizes
+  // the already-downloaded file once and reuses the small copy afterwards.
+  final provider = CachedNetworkImageProvider(
+    url,
+    maxWidth: _markerDecodeSize,
+    maxHeight: _markerDecodeSize,
+  );
   final stream = provider.resolve(ImageConfiguration.empty);
   late final ImageStreamListener listener;
   listener = ImageStreamListener(
