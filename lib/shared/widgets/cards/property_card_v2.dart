@@ -392,7 +392,10 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            '-${widget.discountPercent ?? ((1 - widget.price / widget.originalPrice!) * 100).round()}%',
+                            // The API's own percentage — `_hasDiscount`
+                            // guarantees it is set and > 0, so the badge is
+                            // never derived from the two prices.
+                            '-${widget.discountPercent}%',
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,

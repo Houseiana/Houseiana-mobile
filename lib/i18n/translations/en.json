@@ -771,7 +771,10 @@
     "bookAgain": "Book Again",
     "payNow": "Pay Now",
     "cancelledOn": "Cancelled on {date}",
-    "paymentDue": "Payment due: {date}"
+    "paymentDue": "Payment due: {date}",
+    "signInToView": "Sign in to view your trips",
+    "signInToViewDescription": "Sign in to see your upcoming stays,\npast bookings, and payments.",
+    "signIn": "Sign In"
   },
   "favorites": {
     "title": "Favorites",

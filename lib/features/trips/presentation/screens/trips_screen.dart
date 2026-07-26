@@ -52,6 +52,9 @@ class _TripsScreenState extends State<TripsScreen>
       setState(() => _loadingTabs = false);
       return;
     }
+    // Re-entrant when called again after a successful sign-in: show the
+    // skeleton while the tabs are being fetched.
+    if (!_loadingTabs) setState(() => _loadingTabs = true);
 
     final tabs = await _userService.getTripFilterTabs();
     if (!mounted) return;
@@ -101,9 +104,28 @@ class _TripsScreenState extends State<TripsScreen>
   /// cancellation), so re-fetch the active tab while keeping the current list
   /// on screen (the skeleton only shows when there is no cached data).
   void _refreshVisibleTab() {
+    if (!_session.isLoggedIn) return;
     final controller = _tabController;
-    if (!_session.isLoggedIn || controller == null || _tabs.isEmpty) return;
+    // Signed in from another tab while Trips stayed mounted (the shell's lazy
+    // IndexedStack keeps it alive) — the tabs were never fetched, so build them
+    // now instead of leaving the sign-in prompt on screen.
+    if (controller == null || _tabs.isEmpty) {
+      _init();
+      return;
+    }
     _loadTab(_tabs[controller.index], force: true);
+  }
+
+  /// Opens the login route and rebuilds this screen with the signed-in state
+  /// when the user comes back authenticated.
+  Future<void> _openLogin() async {
+    await Navigator.pushNamed(context, Routes.login);
+    if (!mounted) return;
+    if (_session.isLoggedIn) {
+      await _init();
+    } else {
+      setState(() {});
+    }
   }
 
   @override
@@ -136,6 +158,7 @@ class _TripsScreenState extends State<TripsScreen>
   }
 
   Widget _buildScaffold(BuildContext context) {
+    final isLoggedIn = _session.isLoggedIn;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -150,7 +173,7 @@ class _TripsScreenState extends State<TripsScreen>
           ),
         ),
         centerTitle: true,
-        bottom: _tabController == null
+        bottom: (!isLoggedIn || _tabController == null)
             ? null
             : TabBar(
                 controller: _tabController,
@@ -175,12 +198,74 @@ class _TripsScreenState extends State<TripsScreen>
                 ],
               ),
       ),
-      body: _loadingTabs || _tabController == null
-          ? const TripSkeletonList(itemCount: 4)
-          : TabBarView(
-              controller: _tabController,
-              children: [for (final tab in _tabs) _buildTabView(tab)],
+      body: !isLoggedIn
+          // Guests have no trips to load — show the same sign-in prompt used
+          // across the app instead of an endless skeleton.
+          ? _buildSignInPrompt()
+          : (_loadingTabs || _tabController == null
+              ? const TripSkeletonList(itemCount: 4)
+              : TabBarView(
+                  controller: _tabController,
+                  children: [for (final tab in _tabs) _buildTabView(tab)],
+                )),
+    );
+  }
+
+  Widget _buildSignInPrompt() {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.primaryColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.luggage_outlined,
+                  size: 40, color: AppColors.primaryColor),
             ),
+            const SizedBox(height: 24),
+            Text(
+              context.tr('trips.signInToView'),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.charcoal,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              context.tr('trips.signInToViewDescription'),
+              style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _openLogin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  foregroundColor: AppColors.charcoal,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: Text(
+                  context.tr('trips.signIn'),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

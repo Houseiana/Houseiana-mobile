@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:houseiana_mobile_app/core/utils/discount_utils.dart';
 
 class PropertyModel extends Equatable {
   final String id;
@@ -258,97 +257,20 @@ class PropertyModel extends Equatable {
         'allowMarriedOnly': allowMarriedOnly,
       };
 
-  /// Replaces only the nightly-price fields with a set resolved from a
-  /// calendar-aware source (the `/api/property-search` list row a card was
-  /// rendered from, or `/nightly-prices`). `/api/property-search/{id}` answers
-  /// with the listing's stored base price and ignores the host's calendar
-  /// pricing/discounts, so the details screen must not render it as-is — see
-  /// `PropertyDetailsCubit._resolveNightlyPricing`.
-  ///
-  /// `weeklyDiscount` / `smallBookingDiscount` are deliberately dropped: the
-  /// resolved [discountPercent] is the percentage that belongs to the resolved
-  /// price pair, and [effectiveDiscountPercent] would otherwise keep preferring
-  /// the stale listing-level values.
-  PropertyModel copyWithPricing({
-    required double? pricePerNight,
-    required double? priceWithoutDiscount,
-    required int? discountPercent,
-  }) {
-    return PropertyModel(
-      id: id,
-      title: title,
-      name: name,
-      description: description,
-      pricePerNight: pricePerNight,
-      price: pricePerNight,
-      basePrice: basePrice,
-      location: location,
-      city: city,
-      address: address,
-      cityData: cityData,
-      countryData: countryData,
-      photos: photos,
-      images: images,
-      coverPhoto: coverPhoto,
-      rating: rating,
-      reviewCount: reviewCount,
-      bedrooms: bedrooms,
-      bathrooms: bathrooms,
-      maxGuests: maxGuests,
-      amenities: amenities,
-      propertyType: propertyType,
-      hostId: hostId,
-      host: host,
-      fees: fees,
-      isFavourited: isFavourited,
-      isGuestFavorite: isGuestFavorite,
-      averageRating: averageRating,
-      reviewsCount: reviewsCount,
-      beds: beds,
-      minNights: minNights,
-      currency: currency,
-      priceWithoutDiscount: priceWithoutDiscount,
-      weeklyDiscount: null,
-      smallBookingDiscount: null,
-      discountPercent: discountPercent,
-      availabilityType: availabilityType,
-      instantBook: instantBook,
-      status: status,
-      viewCount: viewCount,
-      occupancyRate: occupancyRate,
-      revenueThisMonth: revenueThisMonth,
-      latitude: latitude,
-      longitude: longitude,
-      cancellationPolicy: cancellationPolicy,
-      checkInTime: checkInTime,
-      checkOutTime: checkOutTime,
-      allowSmoking: allowSmoking,
-      allowPets: allowPets,
-      allowEvents: allowEvents,
-      allowGuests: allowGuests,
-      allowMarriedOnly: allowMarriedOnly,
-    );
-  }
-
   String get displayTitle => title ?? name ?? 'Property';
   double get displayPrice => pricePerNight ?? price ?? basePrice ?? 0;
 
-  /// Effective discount percentage shown on cards, mirroring the web's
-  /// `weeklyDiscount || smallBookingDiscount || discountPercent || 0`
-  /// (first non-zero wins), reconciled against the price pair the payload
-  /// carries so the badge always describes the two prices on screen. 0 when no
+  /// Discount percentage for the badge, exactly as the backend declares it —
+  /// `weeklyDiscount || smallBookingDiscount || discountPercent || 0` (first
+  /// non-zero wins, web parity). It pairs with [displayPrice] (already
+  /// discounted) and [priceWithoutDiscount] (struck through). 0 when no
   /// discount applies.
   int get effectiveDiscountPercent {
     final weekly = weeklyDiscount ?? 0;
+    if (weekly > 0) return weekly.round();
     final small = smallBookingDiscount ?? 0;
-    final declared = weekly > 0
-        ? weekly.round()
-        : (small > 0 ? small.round() : (discountPercent ?? 0));
-    return reconcileDiscountPercent(
-      declared: declared,
-      original: priceWithoutDiscount,
-      current: displayPrice,
-    );
+    if (small > 0) return small.round();
+    return discountPercent ?? 0;
   }
   String get displayLocation {
     if (city != null && city!.isNotEmpty) {

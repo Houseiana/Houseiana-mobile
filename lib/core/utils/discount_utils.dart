@@ -1,12 +1,17 @@
-/// Web-parity discount helpers for property listing cards.
+/// Discount helpers for property listing cards.
 ///
-/// The web computes the effective discount percentage as
-/// `weeklyDiscount || smallBookingDiscount || discountPercent || 0`
-/// (first non-zero wins) and, when it is > 0, shows a red "-X%" badge plus a
-/// struck-through original price (`priceWithoutDiscount`) next to the
-/// discounted `pricePerNight`. These helpers read those fields off the raw
-/// property maps that the list / search / home / favorites screens pass around
-/// so every surface renders the discount identically.
+/// The backend already returns the three values a card needs, and they describe
+/// each other — verified against `/api/property-search` (home/search rows):
+///
+/// ```json
+/// "discountPercent": 30,        // the badge:            -30%
+/// "pricePerNight": 1400,        // price AFTER discount:  1400 EGP
+/// "priceWithoutDiscount": 2000  // price BEFORE discount: 2̶0̶0̶0̶ struck through
+/// ```
+///
+/// So nothing here computes a discount — these helpers only read those keys off
+/// the raw property maps that the home / list / search / favorites screens pass
+/// around, so every surface renders the same numbers the API returned.
 library;
 
 num _asNum(dynamic value) {
@@ -15,15 +20,12 @@ num _asNum(dynamic value) {
   return 0;
 }
 
-double? _asDouble(dynamic value) {
-  if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value);
-  return null;
-}
-
-/// Discount percentage exactly as the backend declares it, without looking at
-/// the prices: `weeklyDiscount || smallBookingDiscount || discountPercent || 0`.
-int declaredDiscountPercent(Map<String, dynamic> property) {
+/// Discount percentage for the badge, exactly as the backend declares it.
+///
+/// Mirrors the web's `weeklyDiscount || smallBookingDiscount || discountPercent
+/// || 0` (first non-zero wins); in production the first two are always null, so
+/// this resolves to `discountPercent`. Returns 0 when no discount applies.
+int effectiveDiscountPercent(Map<String, dynamic> property) {
   final weekly = _asNum(property['weeklyDiscount']);
   if (weekly > 0) return weekly.round();
   final small = _asNum(property['smallBookingDiscount']);
@@ -31,46 +33,6 @@ int declaredDiscountPercent(Map<String, dynamic> property) {
   final generic = _asNum(property['discountPercent']);
   return generic > 0 ? generic.round() : 0;
 }
-
-/// The badge percentage to render next to [original] → [current].
-///
-/// Normally this is the [declared] backend percentage. The backend can however
-/// return a percentage that does not describe the two prices it returned in the
-/// same payload — e.g. a per-night calendar price of 1400 discounted a further
-/// 20% to 1120 while `priceWithoutDiscount` stays at the listing base of 2000.
-/// Rendering "-20%" beside "2̶0̶0̶0̶ 1120" reads as a broken card, so when the
-/// numbers disagree by more than a rounding point the badge follows the two
-/// prices actually shown (here: -44%). When they agree — the normal case — the
-/// backend value is used verbatim.
-int reconcileDiscountPercent({
-  required int declared,
-  required double? original,
-  required double? current,
-}) {
-  if (original == null || current == null) return declared;
-  if (original <= 0 || current <= 0 || current >= original) return declared;
-  final implied = (((original - current) / original) * 100).round();
-  if (declared <= 0) return implied;
-  return (implied - declared).abs() > 1 ? implied : declared;
-}
-
-/// Nightly price a card renders, straight off the API keys
-/// (`pricePerNight` → `price` → `basePrice` → `nightlyPrice`).
-double? nightlyPrice(Map<String, dynamic> property) =>
-    _asDouble(property['pricePerNight']) ??
-    _asDouble(property['price']) ??
-    _asDouble(property['basePrice']) ??
-    _asDouble(property['nightlyPrice']);
-
-/// First non-zero discount percentage among weekly / small-booking / generic,
-/// reconciled against the price pair the same payload carries (see
-/// [reconcileDiscountPercent]). Returns 0 when no discount applies.
-int effectiveDiscountPercent(Map<String, dynamic> property) =>
-    reconcileDiscountPercent(
-      declared: declaredDiscountPercent(property),
-      original: originalNightlyPrice(property),
-      current: nightlyPrice(property),
-    );
 
 /// Pre-discount nightly price (`priceWithoutDiscount`) to render
 /// struck-through, or null when absent.

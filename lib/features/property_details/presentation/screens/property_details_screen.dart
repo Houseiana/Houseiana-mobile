@@ -71,9 +71,9 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     if (_didInit) return;
     _didInit = true;
 
-    // The row the tapped card was rendered from. It carries the calendar-aware
-    // nightly price the user just saw outside, which the details endpoint does
-    // not return — the cubit prefers it so both surfaces show one price.
+    // The row the tapped card was rendered from, when there is one. Used only
+    // to resolve coordinates for the map — the price on this page comes from
+    // the details endpoint's own keys.
     final args = ModalRoute.of(context)?.settings.arguments;
     Map<String, dynamic>? passed;
     if (args is Map && args['property'] is Map) {
@@ -86,7 +86,6 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       await cubit.getPropertyDetails(
             widget.propertyIdToLoad!,
             userId: _session.userId,
-            listRow: passed,
           );
       await cubit.loadRatings(widget.propertyIdToLoad!);
       if (mounted) {

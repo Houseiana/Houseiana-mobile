@@ -771,7 +771,10 @@
     "bookAgain": "احجز مرة أخرى",
     "payNow": "ادفع الآن",
     "cancelledOn": "أُلغي في {date}",
-    "paymentDue": "موعد الدفع: {date}"
+    "paymentDue": "موعد الدفع: {date}",
+    "signInToView": "سجّل الدخول لعرض رحلاتك",
+    "signInToViewDescription": "سجّل الدخول لمشاهدة إقاماتك القادمة\nوحجوزاتك السابقة ومدفوعاتك.",
+    "signIn": "تسجيل الدخول"
   },
   "favorites": {
     "title": "المفضلة",

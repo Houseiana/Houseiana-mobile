@@ -9,50 +9,21 @@ import 'package:houseiana_mobile_app/features/property_details/presentation/cubi
 import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/property_details_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Mirrors the live production contract for one real listing
-/// (`Luxury Nile View Apartment`), where the three endpoints disagree:
-///
-/// * `/api/property-search`            → 1400, was 2000, -30%  (calendar-aware)
-/// * `/api/property-search/{id}`       → 3000, was 3000, no discount (stored
-///                                       base price, ignores the calendar)
-/// * `/api/property-search/{id}/nightly-prices`
-///                                     → 2000 a night, 1400 on discounted days
+/// Serves the live `/api/property-search/{id}` shape for the Aswan listing.
 class _FakeApi implements ApiConsumer {
-  /// Days of the current month carrying a 30% discount (2000 → 1400).
-  final Set<int> discountDays;
+  final num pricePerNight;
+  final num priceWithoutDiscount;
+  final int? discountPercent;
 
-  int nightlyPricesCalls = 0;
-
-  _FakeApi({this.discountDays = const {}});
+  _FakeApi({
+    this.pricePerNight = 3000,
+    this.priceWithoutDiscount = 3000,
+    this.discountPercent,
+  });
 
   @override
   Future<dynamic> get(String path,
       {Map<String, dynamic>? queryParameters, CancelToken? cancelToken}) async {
-    if (path.endsWith('/nightly-prices')) {
-      nightlyPricesCalls++;
-      final page = (queryParameters?['page'] as num? ?? 1).toInt();
-      final now = DateTime.now();
-      final month = page; // page 1 = January (matches production)
-      final daysInMonth = DateTime(now.year, month + 1, 0).day;
-      return {
-        'success': true,
-        'data': [
-          for (var day = 1; day <= daysInMonth; day++)
-            {
-              'date': '${now.year}-${month.toString().padLeft(2, '0')}-'
-                  '${day.toString().padLeft(2, '0')}',
-              'price': 2000,
-              'isSpecialPrice': false,
-              'discountPercent':
-                  month == now.month && discountDays.contains(day) ? 30 : null,
-              'discountedPrice':
-                  month == now.month && discountDays.contains(day) ? 1400 : null,
-            },
-        ],
-        'page': page,
-        'totalPages': 12,
-      };
-    }
     if (path.startsWith('/api/property-search/')) {
       return {
         'success': true,
@@ -60,11 +31,11 @@ class _FakeApi implements ApiConsumer {
           'id': 'aswan-1',
           'title': 'Luxury Nile View Apartment',
           'currency': 'EGP',
-          'pricePerNight': 3000,
-          'priceWithoutDiscount': 3000,
-          'discountPercent': null,
           'weeklyDiscount': null,
           'smallBookingDiscount': null,
+          'discountPercent': discountPercent,
+          'pricePerNight': pricePerNight,
+          'priceWithoutDiscount': priceWithoutDiscount,
           'instantBook': true,
         },
       };
@@ -108,84 +79,76 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('property details nightly price', () {
-    test('uses the tapped card row, not the details payload base price',
-        () async {
-      final api = _FakeApi();
-      final cubit = await _cubit(api);
-
-      await cubit.getPropertyDetails('aswan-1', listRow: const {
-        'id': 'aswan-1',
-        'pricePerNight': 1400,
-        'priceWithoutDiscount': 2000,
-        'discountPercent': 30,
-      });
-
-      final state = cubit.state as PropertyDetailsLoaded;
-      expect(state.property.displayPrice, 1400,
-          reason: 'the details page must show the price the card showed');
-      expect(state.property.priceWithoutDiscount, 2000);
-      expect(state.property.effectiveDiscountPercent, 30);
-      expect(api.nightlyPricesCalls, 0,
-          reason: 'the card row already answers — no extra request');
-    });
-
-    test('falls back to the calendar when no card row was passed', () async {
-      // Discount today so the window is always upcoming, whatever day it runs.
-      final api = _FakeApi(discountDays: {DateTime.now().day});
-      final cubit = await _cubit(api);
+    test('shows the details endpoint keys verbatim', () async {
+      // The live response for this listing: no discount, 3000 both ways —
+      // even though the list row for the same unit says 1400/2000/30.
+      final cubit = await _cubit(_FakeApi());
 
       await cubit.getPropertyDetails('aswan-1');
 
       final state = cubit.state as PropertyDetailsLoaded;
-      expect(state.property.displayPrice, 1400,
-          reason: 'cheapest upcoming night from /nightly-prices');
-      expect(state.property.priceWithoutDiscount, 2000);
-      expect(state.property.effectiveDiscountPercent, 30);
-      expect(api.nightlyPricesCalls, greaterThan(0));
-    });
-
-    test('undiscounted calendar keeps its own nightly price and no badge',
-        () async {
-      final api = _FakeApi();
-      final cubit = await _cubit(api);
-
-      await cubit.getPropertyDetails('aswan-1');
-
-      final state = cubit.state as PropertyDetailsLoaded;
-      expect(state.property.displayPrice, 2000,
-          reason: 'calendar price wins over the stored 3000 base price');
-      expect(state.property.priceWithoutDiscount, isNull);
+      expect(state.property.displayPrice, 3000);
+      expect(state.property.priceWithoutDiscount, 3000);
       expect(state.property.effectiveDiscountPercent, 0);
+    });
+
+    test('renders the discount when the endpoint declares one', () async {
+      final cubit = await _cubit(_FakeApi(
+        pricePerNight: 1400,
+        priceWithoutDiscount: 2000,
+        discountPercent: 30,
+      ));
+
+      await cubit.getPropertyDetails('aswan-1');
+
+      final state = cubit.state as PropertyDetailsLoaded;
+      expect(state.property.displayPrice, 1400);
+      expect(state.property.priceWithoutDiscount, 2000);
+      expect(state.property.effectiveDiscountPercent, 30);
+    });
+
+    test('ignores the tapped card row — the endpoint is the only source',
+        () async {
+      final cubit = await _cubit(_FakeApi());
+
+      await cubit.getPropertyDetails('aswan-1');
+
+      expect((cubit.state as PropertyDetailsLoaded).property.displayPrice, 3000,
+          reason: 'no substitution from the list row is performed');
     });
   });
 
-  group('discount badge', () {
-    test('follows the backend percentage when it matches the prices', () {
-      expect(
-        effectiveDiscountPercent(const {
-          'pricePerNight': 1400,
-          'priceWithoutDiscount': 2000,
-          'discountPercent': 30,
-        }),
-        30,
-      );
+  group('discount keys', () {
+    // The live `/api/property-search` row for the Aswan listing: the three keys
+    // are the whole contract — badge, price after discount, price before it.
+    const homeRow = <String, dynamic>{
+      'weeklyDiscount': null,
+      'smallBookingDiscount': null,
+      'discountPercent': 30,
+      'pricePerNight': 1400,
+      'priceWithoutDiscount': 2000,
+    };
+
+    test('badge is the API percentage, never derived from the prices', () {
+      expect(effectiveDiscountPercent(homeRow), 30);
+      expect(originalNightlyPrice(homeRow), 2000,
+          reason: 'price before discount, struck through');
     });
 
-    test('describes the two prices on screen when the backend disagrees', () {
-      // Observed in production: a per-night calendar price discounted further
-      // by a listing-level percentage, with the original left at the base.
-      // "-20%" beside 2000 → 1120 reads as a bug; the real reduction is 44%.
+    test('a percentage that disagrees with the prices is still shown as-is',
+        () {
       expect(
         effectiveDiscountPercent(const {
           'pricePerNight': 1120,
           'priceWithoutDiscount': 2000,
           'discountPercent': 20,
         }),
-        44,
+        20,
+        reason: 'the API percentage wins — the app does not recompute it',
       );
     });
 
-    test('stays at zero when there is no reduction', () {
+    test('stays at zero when the API declares no discount', () {
       expect(
         effectiveDiscountPercent(const {
           'pricePerNight': 2650,
