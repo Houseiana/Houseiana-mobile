@@ -177,10 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Listings and favourites are independent — fire both together so the
     // cold load costs max(listings, favourites) instead of their sum.
-    final pageFuture = _propertyService.searchPropertiesGrouped(
-      params,
-      userId: _session.userId,
-    );
+    final pageFuture = _propertyService.searchPropertiesGrouped(params);
     final favsFuture = _loadFavoriteIds();
 
     final GroupedPropertiesPage page;
@@ -272,10 +269,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     final GroupedPropertiesPage page;
     try {
-      page = await _propertyService.searchPropertiesGrouped(
-        params,
-        userId: _session.userId,
-      );
+      page = await _propertyService.searchPropertiesGrouped(params);
     } catch (_) {
       // Release the flag (and keep `_hasMore`) so scrolling again retries the
       // same page instead of the spinner sticking forever.

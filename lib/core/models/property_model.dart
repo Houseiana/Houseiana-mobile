@@ -260,17 +260,19 @@ class PropertyModel extends Equatable {
   String get displayTitle => title ?? name ?? 'Property';
   double get displayPrice => pricePerNight ?? price ?? basePrice ?? 0;
 
-  /// Discount percentage for the badge, exactly as the backend declares it —
-  /// `weeklyDiscount || smallBookingDiscount || discountPercent || 0` (first
-  /// non-zero wins, web parity). It pairs with [displayPrice] (already
-  /// discounted) and [priceWithoutDiscount] (struck through). 0 when no
-  /// discount applies.
+  /// Discount percentage for the badge, exactly as the backend declares it.
+  /// [discountPercent] is the total cut between [priceWithoutDiscount] (struck
+  /// through) and [displayPrice] (already discounted), so it wins; the weekly /
+  /// small-booking values are components of that total and are only read when
+  /// no total is declared. 0 when no discount applies. Mirrors
+  /// `effectiveDiscountPercent` in `core/utils/discount_utils.dart`.
   int get effectiveDiscountPercent {
+    final generic = discountPercent ?? 0;
+    if (generic > 0) return generic;
     final weekly = weeklyDiscount ?? 0;
     if (weekly > 0) return weekly.round();
     final small = smallBookingDiscount ?? 0;
-    if (small > 0) return small.round();
-    return discountPercent ?? 0;
+    return small > 0 ? small.round() : 0;
   }
   String get displayLocation {
     if (city != null && city!.isNotEmpty) {

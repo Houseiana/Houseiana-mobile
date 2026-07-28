@@ -223,15 +223,21 @@ class PropertyService {
 
   PropertyService(this._api, this._lookups);
 
+  /// Searches listings and returns one flat page of normalized property maps.
+  ///
+  /// Deliberately **never** sends `userId`: `/api/property-search` switches to
+  /// personalized pricing the moment a user id is present — it stacks the
+  /// platform's "New Listing Discount" on top of the host's calendar discount
+  /// (2000 → 1400 → 1120) and reports the combined `discountPercent`. The
+  /// guest calendar (`/nightly-prices`) and the booking quote (`/availability`)
+  /// are queried without a user id, so a personalized row made the same unit
+  /// read one price on the card and another everywhere else. Every guest-facing
+  /// price surface therefore stays on the public pricing.
   Future<PropertySearchPage> searchProperties(
     PropertySearchParams params, {
-    String? userId,
     CancelToken? cancelToken,
   }) async {
     final query = params.toQueryParams();
-    if (userId != null) {
-      query['userId'] = userId;
-    }
 
     try {
       final response = await _api.get(
@@ -282,16 +288,15 @@ class PropertyService {
   /// back on follow-up requests). The backend returns:
   /// `{ propertiesByCountry: [{ regionId, name, nameAr, totalCount,
   ///    properties: [...] }], pagination: { hasMore, total, ... } }`.
+  ///
+  /// Like [searchProperties], no `userId` is sent — see that method for why the
+  /// home rails must stay on public pricing.
   Future<GroupedPropertiesPage> searchPropertiesGrouped(
     PropertySearchParams params, {
-    String? userId,
     CancelToken? cancelToken,
   }) async {
     final query = params.toQueryParams();
     query['isSorted'] = 'true';
-    if (userId != null) {
-      query['userId'] = userId;
-    }
 
     try {
       final response = await _api.get(
@@ -371,6 +376,10 @@ class PropertyService {
     );
   }
 
+  /// Flat listing fetch used only by the Discover screen, which reads the
+  /// per-row `isFavourited` flag that `userId` unlocks. Passing a user id also
+  /// switches the endpoint to personalized pricing (see [searchProperties]) —
+  /// don't reuse this for any guest-facing price surface.
   Future<List<PropertyModel>> getProperties({
     String? location,
     String? checkIn,
@@ -401,9 +410,16 @@ class PropertyService {
     }
   }
 
+  /// Loads one listing for the details screen.
+  ///
+  /// No `userId` here either (see [searchProperties]): with one the endpoint
+  /// answers with the personalized price — 3000 becomes 2400 for a signed-in
+  /// guest — so the details page would price the same unit differently
+  /// depending on whether anyone is signed in. The favourite state that used to
+  /// ride along on this call (`isFavourited`) now comes from
+  /// `FavoritesNotifier`, seeded from `/users/favorites`.
   Future<PropertyModel?> getPropertyById(
     String id, {
-    String? userId,
     String? checkIn,
     String? checkOut,
     CancelToken? cancelToken,
@@ -412,7 +428,6 @@ class PropertyService {
       final response = await _api.get(
         EndPoints.propertyDetails(id),
         queryParameters: {
-          if (userId != null) 'userId': userId,
           'checkin': checkIn ?? DateTime.now().toIso8601String(),
           'checkout': checkOut ?? DateTime.now().add(const Duration(days: 1)).toIso8601String(),
         },

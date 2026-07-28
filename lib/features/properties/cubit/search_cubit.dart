@@ -49,7 +49,6 @@ class SearchCubit extends Cubit<SearchState> {
     try {
       final page = await _propertyService.searchProperties(
         params,
-        userId: _userSession.userId,
         cancelToken: _nextToken(),
       );
       // Already normalized maps (PropertyService runs the model round-trip,
@@ -114,7 +113,6 @@ class SearchCubit extends Cubit<SearchState> {
 
       final page = await _propertyService.searchProperties(
         newParams,
-        userId: _userSession.userId,
         cancelToken: _nextToken(),
       );
       final propertyMaps = page.properties;

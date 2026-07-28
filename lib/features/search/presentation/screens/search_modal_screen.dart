@@ -6,7 +6,6 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/places_service.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
-import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
@@ -22,7 +21,6 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
 
   final _locationController = TextEditingController();
   final _propertyService = sl<PropertyService>();
-  final _session = sl<UserSession>();
   final _placesService = PlacesService();
 
   DateTime? _checkIn;
@@ -81,7 +79,6 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
       // figure was always under-reported / wrong.
       final page = await _propertyService.searchPropertiesGrouped(
         PropertySearchParams(page: 1, limit: 100, isSorted: true),
-        userId: _session.userId,
       );
       final destinations = _buildDestinations(page.groups);
 

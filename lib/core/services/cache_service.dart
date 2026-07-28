@@ -154,8 +154,14 @@ class HomeCache {
 
   /// Cache key for the home list under a given featured-region filter.
   /// `null` (the "All" chip) maps to a stable literal key.
+  ///
+  /// The `v2` segment retires entries written while the home rails were
+  /// fetched with a `userId` (personalized pricing): those rows carry a
+  /// signed-in guest's discounted price, and one bucket is shared by every
+  /// session, so a stale entry would keep serving them for up to [listTtl].
+  /// The prefix is unchanged, so prefix-wide invalidation still clears both.
   static String listKey(int? featuredRegionId) =>
-      '$listPrefix${featuredRegionId ?? 'all'}';
+      '${listPrefix}v2_${featuredRegionId ?? 'all'}';
 
   /// Cache key for a user's favourite-id set. Guests share a single bucket.
   static String favKey(String? userId) => '$favPrefix${userId ?? 'guest'}';

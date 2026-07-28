@@ -22,16 +22,20 @@ num _asNum(dynamic value) {
 
 /// Discount percentage for the badge, exactly as the backend declares it.
 ///
-/// Mirrors the web's `weeklyDiscount || smallBookingDiscount || discountPercent
-/// || 0` (first non-zero wins); in production the first two are always null, so
-/// this resolves to `discountPercent`. Returns 0 when no discount applies.
+/// `discountPercent` is the **total** cut between `priceWithoutDiscount` and
+/// `pricePerNight`, so it is the only value that describes the two prices the
+/// card puts it next to. `weeklyDiscount` / `smallBookingDiscount` are
+/// components of that total — a row can carry `smallBookingDiscount: 20` inside
+/// a `discountPercent: 44` (2000 → 1120), and reading the component first
+/// printed "-20%" beside a 44%-off price pair. They are therefore only read
+/// when no total is declared. Returns 0 when no discount applies.
 int effectiveDiscountPercent(Map<String, dynamic> property) {
+  final generic = _asNum(property['discountPercent']);
+  if (generic > 0) return generic.round();
   final weekly = _asNum(property['weeklyDiscount']);
   if (weekly > 0) return weekly.round();
   final small = _asNum(property['smallBookingDiscount']);
-  if (small > 0) return small.round();
-  final generic = _asNum(property['discountPercent']);
-  return generic > 0 ? generic.round() : 0;
+  return small > 0 ? small.round() : 0;
 }
 
 /// Pre-discount nightly price (`priceWithoutDiscount`) to render

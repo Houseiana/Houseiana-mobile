@@ -149,7 +149,6 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
           page: 1,
           limit: _pageLimit,
         ),
-        userId: _session.userId,
         cancelToken: _nextQueryToken(),
       );
     } on RequestCancelledException {
@@ -247,7 +246,6 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
           page: nextPage,
           limit: _pageLimit,
         ),
-        userId: _session.userId,
         // The CURRENT query's token: a new query cancels this stale page.
         cancelToken: _queryToken,
       );
@@ -517,7 +515,6 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
           page: 1,
           limit: _pageLimit,
         ),
-        userId: _session.userId,
         cancelToken: _nextQueryToken(),
       );
       // A newer query started while this was in flight — drop this result.

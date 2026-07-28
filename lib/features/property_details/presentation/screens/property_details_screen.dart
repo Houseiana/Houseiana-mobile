@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
@@ -83,17 +84,9 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     if (widget.propertyIdToLoad != null &&
         widget.propertyIdToLoad!.isNotEmpty) {
       final cubit = context.read<PropertyDetailsCubit>();
-      await cubit.getPropertyDetails(
-            widget.propertyIdToLoad!,
-            userId: _session.userId,
-          );
+      await cubit.getPropertyDetails(widget.propertyIdToLoad!);
       await cubit.loadRatings(widget.propertyIdToLoad!);
-      if (mounted) {
-        final loaded = cubit.state;
-        if (loaded is PropertyDetailsLoaded) {
-          setState(() => _isFavorite = loaded.property.isFavourited ?? false);
-        }
-      }
+      await _syncFavoriteState(widget.propertyIdToLoad!);
     }
     if (!mounted) return;
     if (passed != null) {
@@ -106,6 +99,31 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     _pageController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Fills the header heart from the app-wide [FavoritesNotifier].
+  ///
+  /// This used to read `isFavourited` off the details payload, but that flag
+  /// only comes back when the request carries a `userId` — the very parameter
+  /// that switches the endpoint to personalized pricing. The notifier is seeded
+  /// from `/users/favorites` by home and the search tab; when it has never been
+  /// seeded (a deep link straight into this screen) the list is fetched once,
+  /// so the heart can't start out wrong and unsave the unit on the next tap.
+  Future<void> _syncFavoriteState(String propertyId) async {
+    if (!_session.isLoggedIn) return;
+    final favorites = sl<FavoritesNotifier>();
+    if (favorites.value.isEmpty) {
+      try {
+        final favs = await sl<UserService>().getFavorites(_session.userId!);
+        favorites.addAll(favs
+            .map((f) => (f['propertyId'] ?? f['id'] ?? '').toString())
+            .where((id) => id.isNotEmpty));
+      } catch (_) {
+        // A favourites hiccup must not take the details page down with it.
+      }
+    }
+    if (!mounted) return;
+    setState(() => _isFavorite = favorites.contains(propertyId));
   }
 
   /// Opens the nightly-prices calendar and keeps the chosen range on this

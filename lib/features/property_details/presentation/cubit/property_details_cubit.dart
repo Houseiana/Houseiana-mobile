@@ -25,9 +25,12 @@ class PropertyDetailsCubit extends Cubit<PropertyDetailsState> {
   /// its `pricePerNight` / `priceWithoutDiscount` / `discountPercent`, the same
   /// three keys the list rows carry. Nothing is substituted or recomputed here:
   /// whatever that endpoint returns is what the page shows.
+  ///
+  /// No user id is passed on: the endpoint prices personally when it gets one
+  /// (see `PropertyService.getPropertyById`), which would make this page read a
+  /// different nightly price for a signed-in guest than for everyone else.
   Future<void> getPropertyDetails(
     String id, {
-    String? userId,
     String? checkIn,
     String? checkOut,
   }) async {
@@ -35,7 +38,6 @@ class PropertyDetailsCubit extends Cubit<PropertyDetailsState> {
     try {
       final property = await _propertyService.getPropertyById(
         id,
-        userId: userId,
         checkIn: checkIn,
         checkOut: checkOut,
         cancelToken: _cancelToken,
