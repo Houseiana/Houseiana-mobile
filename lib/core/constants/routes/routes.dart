@@ -33,9 +33,7 @@ import 'package:houseiana_mobile_app/features/property_details/presentation/scre
 import 'package:houseiana_mobile_app/features/property_details/presentation/screens/host_profile_screen.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/screens/amenities_screen.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/screens/location_map_screen.dart';
-import 'package:houseiana_mobile_app/features/property_details/presentation/screens/nightly_prices_calendar_screen.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/screens/reviews_screen.dart';
-import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/nightly_prices_cubit.dart';
 import 'package:houseiana_mobile_app/features/properties/presentation/screens/properties_screen.dart';
 import 'package:houseiana_mobile_app/features/properties/presentation/screens/search_properties_screen.dart';
 import 'package:houseiana_mobile_app/features/search/presentation/screens/search_modal_screen.dart';
@@ -152,7 +150,6 @@ class Routes {
   static const String reviews = '/reviews';
   static const String hostProfile = '/host-profile';
   static const String locationMap = '/location-map';
-  static const String nightlyPricesCalendar = '/property/nightly-prices';
 
   // Booking
   static const String dateSelection = '/date-selection';

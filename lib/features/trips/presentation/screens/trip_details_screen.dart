@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
@@ -208,7 +209,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
         (_booking?.currency != null && _booking!.currency!.isNotEmpty)
             ? _booking!.currency!
             : 'EGP';
-    final totalStr = '$currencyLabel ${_booking!.totalPrice.toStringAsFixed(0)}';
+    final totalStr = Money.format(_booking!.totalPrice, currencyLabel);
     final localizedStatus = _localizedStatus(context, _status);
 
     return Scaffold(

@@ -8,16 +8,42 @@ class NightlyPricesCubit extends Cubit<NightlyPricesState> {
   final PropertyService _service;
   final String propertyId;
 
+  /// Guards `open()` against the repeated taps the inline calendar invites —
+  /// every tap on the dates box focuses a field, and only the first one may
+  /// refetch the price pages.
+  bool _opening = false;
+
   NightlyPricesCubit(this._service, this.propertyId)
       : super(NightlyPricesState.initial(
           DateTime(DateTime.now().year, DateTime.now().month, 1),
           'EGP',
         ));
 
+  /// Focuses a half of the dates box — which also opens the inline calendar —
+  /// and loads the nightly prices the first time. Passing null closes it.
+  ///
+  /// Loading is deliberately deferred to this point: the calendar now lives on
+  /// the details page, and fetching its pages on every property view would cost
+  /// two requests the guest may never look at.
+  void focusField(NightlyStayField? field, {String? currency}) {
+    if (field == null) {
+      emit(state.copyWith(clearFocusedField: true));
+      return;
+    }
+    emit(state.copyWith(focusedField: field));
+    if (!state.initialized && !_opening) {
+      open(currency: currency ?? state.currency);
+    }
+  }
+
   Future<void> open({required String currency}) async {
+    _opening = true;
     final now = DateTime.now();
     final initialMonth = DateTime(now.year, now.month, 1);
-    emit(NightlyPricesState.initial(initialMonth, currency));
+    // Keep the focused half across the reset — the guest opened the calendar by
+    // tapping it, and losing the focus here would close it right back.
+    emit(NightlyPricesState.initial(initialMonth, currency)
+        .copyWith(focusedField: state.focusedField));
     // Fire booked-dates in parallel with the first price page.
     final bookedFuture = _loadBookedDates();
     await _fetchPage(1);
@@ -29,6 +55,9 @@ class NightlyPricesCubit extends Cubit<NightlyPricesState> {
       await _ensureMonth(s.leftMonth);
       await _ensureMonth(s.rightMonth);
     }
+    // Released either way: a failed load leaves `initialized` false, so the next
+    // tap on the dates box retries instead of showing an empty grid forever.
+    _opening = false;
   }
 
   Future<void> _loadBookedDates() async {
@@ -70,9 +99,10 @@ class NightlyPricesCubit extends Cubit<NightlyPricesState> {
   }
 
   bool canGoNext() {
-    final nextRight =
-        DateTime(state.leftMonth.year, state.leftMonth.month + 2, 1);
-    return _canShowMonth(nextRight);
+    // One month is on screen at a time (the inline calendar mirrors the web
+    // card), so the bound is the month that would become visible.
+    final next = DateTime(state.leftMonth.year, state.leftMonth.month + 1, 1);
+    return _canShowMonth(next);
   }
 
   bool canGoPrev() {
@@ -118,6 +148,12 @@ class NightlyPricesCubit extends Cubit<NightlyPricesState> {
     emit(state.copyWith(quote: avail, quoteLoading: false));
   }
 
+  /// Applies a day tap, honouring the focused half of the dates box exactly the
+  /// way the web card does: with "Check-in" focused the tap always sets the
+  /// arrival and focus moves on to the departure; with "Checkout" focused it
+  /// sets the departure and closes the calendar, unless the day is on or before
+  /// the arrival (or the range would span a booked night), in which case it
+  /// becomes the new arrival.
   void _applyDayTap(DateTime day) {
     final d = DateTime(day.year, day.month, day.day);
     final today = DateTime.now();
@@ -127,14 +163,31 @@ class NightlyPricesCubit extends Cubit<NightlyPricesState> {
 
     final ci = state.checkIn;
     final co = state.checkOut;
+    final focus = state.focusedField;
 
-    if (ci == null) {
-      emit(state.copyWith(checkIn: d, clearCheckOut: true));
+    if (focus == NightlyStayField.checkIn || ci == null) {
+      emit(state.copyWith(
+        checkIn: d,
+        clearCheckOut: true,
+        focusedField: NightlyStayField.checkOut,
+      ));
       return;
     }
+
+    if (focus == NightlyStayField.checkOut) {
+      if (!d.isAfter(ci) || _rangeCrossesBooked(ci, d)) {
+        emit(state.copyWith(checkIn: d, clearCheckOut: true));
+        return;
+      }
+      // A complete range closes the calendar, same as the web popup.
+      emit(state.copyWith(checkOut: d, clearFocusedField: true));
+      return;
+    }
+
+    // No focus (the calendar is closed — e.g. a programmatic tap): plain
+    // start-then-end range picking.
     if (co == null) {
       if (d.isAfter(ci)) {
-        // Reject ranges that span any booked night.
         if (_rangeCrossesBooked(ci, d)) {
           emit(state.copyWith(checkIn: d, clearCheckOut: true));
           return;
@@ -165,6 +218,9 @@ class NightlyPricesCubit extends Cubit<NightlyPricesState> {
       clearCheckOut: true,
       clearQuote: true,
       quoteLoading: false,
+      // Clearing from the open calendar hands focus back to the arrival so the
+      // very next tap starts a new range.
+      focusedField: state.isCalendarOpen ? NightlyStayField.checkIn : null,
     ));
   }
 

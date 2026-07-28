@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 
 enum NightlyCellRangeState { none, start, end, inRange }
 
@@ -236,19 +237,7 @@ class NightlyPriceCell extends StatelessWidget {
     );
   }
 
-  /// Compact web-parity price format: 2000 → "2K", 1500 → "1.5K",
-  /// 6825 → "6.8K", 250 → "250" (one decimal at most, trailing .0 dropped).
-  static String _formatPrice(double value) {
-    final v = value.round();
-    if (v >= 1000000) return '${_oneDecimal(v / 1000000)}M';
-    if (v >= 1000) return '${_oneDecimal(v / 1000)}K';
-    return '$v';
-  }
-
-  static String _oneDecimal(double n) {
-    final rounded = (n * 10).round() / 10;
-    return rounded % 1 == 0
-        ? rounded.toStringAsFixed(0)
-        : rounded.toStringAsFixed(1);
-  }
+  /// Day cells are too narrow for a full `6,300 EGP`, so they use the compact
+  /// variant; the currency is spelled out once in the note under the grid.
+  static String _formatPrice(double value) => Money.compact(value);
 }

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
@@ -325,7 +326,7 @@ class _TripsScreenState extends State<TripsScreen>
     final statusRaw = trip.status.value;
     final status = _localizedStatus(statusRaw);
     final nights = trip.nights;
-    final priceText = '${trip.currencyLabel} ${_formatPrice(trip.totalPrice)}';
+    final priceText = Money.format(trip.totalPrice, trip.currencyLabel);
 
     void goToDetails() {
       Navigator.pushNamed(context, Routes.tripDetails,
@@ -755,16 +756,6 @@ class _TripsScreenState extends State<TripsScreen>
         ),
       ),
     );
-  }
-
-  /// Renders the total like the web: integers with no decimals, otherwise
-  /// trimmed to two places (e.g. 3050, 3050.5).
-  String _formatPrice(double value) {
-    if (value == value.roundToDouble()) return value.toStringAsFixed(0);
-    return value
-        .toStringAsFixed(2)
-        .replaceAll(RegExp(r'0+$'), '')
-        .replaceAll(RegExp(r'\.$'), '');
   }
 
   static const List<String> _monthsShort = [

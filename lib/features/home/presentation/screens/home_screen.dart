@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
@@ -12,7 +15,7 @@ import 'package:houseiana_mobile_app/core/services/lookups_cache.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
-import 'package:houseiana_mobile_app/features/bottom_nav/presentation/cubit/cubit.dart';
+import 'package:houseiana_mobile_app/features/chat/data/firestore_chat_service.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
 import 'package:houseiana_mobile_app/shared/widgets/empty_state/empty_state_widget.dart';
@@ -65,12 +68,56 @@ class _HomeScreenState extends State<HomeScreen> {
   final _cache = sl<CacheService>();
   final _scrollController = ScrollController();
 
+  /// Live unread-message count driving BOTH home alerts (header badge + inbox
+  /// banner). A notifier — not a `StreamBuilder` — because the underlying
+  /// Firestore stream is single-subscription and has two consumers here.
+  final ValueNotifier<int> _unreadMessages = ValueNotifier<int>(0);
+  StreamSubscription<int>? _unreadSub;
+  bool _watchingUnread = false;
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _watchUnreadMessages();
     _loadCategories();
     _loadData();
+  }
+
+  /// Attaches the realtime unread-message counter (idempotent).
+  ///
+  /// Also called from `build` on purpose: home stays mounted for the whole
+  /// session inside the shell's lazy IndexedStack, so `initState` runs exactly
+  /// once — if the watch could not be attached then (signed out, Firebase not
+  /// ready yet, or a hot reload that skipped `initState`), the alerts would
+  /// stay dead forever. Guarded by [_watchingUnread], so repeated calls are
+  /// free and never open a second listener.
+  void _watchUnreadMessages() {
+    if (_watchingUnread) return;
+    final userId = _session.userId;
+    if (!_session.isLoggedIn || userId == null || userId.isEmpty) return;
+    // Firebase failed to initialize (no `google-services.json`): the app is
+    // designed to keep working without it, so just skip the alerts.
+    if (Firebase.apps.isEmpty) return;
+    try {
+      _unreadSub = sl<FirestoreChatService>().watchTotalUnread(userId).listen(
+        (count) => _unreadMessages.value = count,
+        // Firestore rules can reject the read; silent alerts are the right
+        // degradation, never a crash on the home screen.
+        onError: (Object e) => debugPrint('[Home] unread messages: $e'),
+      );
+      _watchingUnread = true;
+    } catch (e) {
+      debugPrint('[Home] unread messages unavailable: $e');
+    }
+  }
+
+  void _openMessages() {
+    if (!_session.isLoggedIn) {
+      _showSignInPrompt();
+      return;
+    }
+    Navigator.pushNamed(context, Routes.messages);
   }
 
   Future<void> _loadCategories() async {
@@ -116,6 +163,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _unreadSub?.cancel();
+    _unreadMessages.dispose();
     super.dispose();
   }
 
@@ -356,6 +405,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Cheap no-op once attached — see [_watchUnreadMessages] for why the watch
+    // cannot rely on initState alone.
+    _watchUnreadMessages();
     // CustomScrollView + lazy slivers: only visible city sections/cards are
     // built (the old SingleChildScrollView→Column built every card eagerly).
     return Scaffold(
@@ -378,6 +430,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 16),
                     _buildSearchBar(),
                     const SizedBox(height: 20),
+                    _buildUnreadMessagesAlert(),
                     _buildCategoryFilters(),
                     const SizedBox(height: 20),
                   ],
@@ -446,16 +499,153 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.pushNamed(context, Routes.notifications);
             }),
             const SizedBox(width: 8),
-            _buildIconButton(Icons.person_outline, () {
-              if (_session.isLoggedIn) {
-                context.read<BottomNavCubit>().changeIndex(4);
-              } else {
-                _showSignInPrompt();
-              }
-            }),
+            // Messages replaces the old profile shortcut here: Profile already
+            // has a permanent bottom-nav tab, while the inbox was buried three
+            // taps deep — users were missing incoming messages entirely.
+            _buildMessagesButton(),
           ],
         ),
       ],
+    );
+  }
+
+  /// Header inbox shortcut. With unread messages the whole button flips to the
+  /// brand yellow with a filled icon (a lone 8px dot on a 32px button was too
+  /// easy to miss) and carries the count badge.
+  Widget _buildMessagesButton() {
+    return ValueListenableBuilder<int>(
+      valueListenable: _unreadMessages,
+      builder: (context, count, _) {
+        final hasUnread = count > 0;
+        final button = GestureDetector(
+          onTap: _openMessages,
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: hasUnread
+                  ? AppColors.primaryColor
+                  : const Color(0xFFF9F9FA),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              hasUnread
+                  ? Icons.chat_bubble_rounded
+                  : Icons.chat_bubble_outline_rounded,
+              size: 18,
+              color: hasUnread
+                  ? const Color(0xFF1D242B)
+                  : const Color(0xFF6B7280),
+            ),
+          ),
+        );
+        if (!hasUnread) return button;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            button,
+            // Directional so the badge stays on the trailing corner in Arabic.
+            PositionedDirectional(
+              top: -3,
+              end: -3,
+              child: Container(
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  count > 9 ? '9+' : '$count',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    height: 1.1,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Self-clearing alert card above the fold: the header badge alone still
+  /// relies on the user looking at a 32px corner icon, so unread messages also
+  /// get a full-width row right under the search bar. It disappears on its own
+  /// once the thread is opened (the unread counter drops to 0 in Firestore).
+  Widget _buildUnreadMessagesAlert() {
+    return ValueListenableBuilder<int>(
+      valueListenable: _unreadMessages,
+      builder: (context, count, _) {
+        if (count <= 0) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: GestureDetector(
+            onTap: _openMessages,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF9E6),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.primaryColor, width: 1),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primaryColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.chat_bubble_rounded,
+                        size: 18, color: Color(0xFF1D242B)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          count == 1
+                              ? context.tr('home.newMessageAlert')
+                              : context.tr('home.newMessagesAlert',
+                                  args: {'n': count}),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1D242B),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          context.tr('home.newMessagesAlertAction'),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    context.isRtl ? Icons.chevron_left : Icons.chevron_right,
+                    size: 20,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1145,7 +1335,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final effectivePrice = double.tryParse(price) ?? 0;
     final originalPriceStr =
         (discountPct > 0 && original != null && original > effectivePrice)
-            ? '${original.toStringAsFixed(0)} $currency'
+            ? Money.format(original, currency)
             : null;
 
     final bedrooms = p['bedrooms'] as int?;
@@ -1162,7 +1352,7 @@ class _HomeScreenState extends State<HomeScreen> {
       title: title,
       location: location,
       originalPrice: originalPriceStr,
-      price: '${(double.tryParse(price) ?? 0).toStringAsFixed(0)} $currency',
+      price: Money.format(double.tryParse(price) ?? 0, currency),
       discount: discountPct > 0 ? '-$discountPct%' : null,
       bedrooms: bedrooms,
       beds: beds,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
@@ -187,9 +188,9 @@ class _PaymentTile extends StatelessWidget {
         payment['price'] ??
         0;
     final amount = amountValue is num
-        ? amountValue.toStringAsFixed(2)
-        : double.tryParse(amountValue.toString())?.toStringAsFixed(2) ??
-            amountValue.toString();
+        ? Money.format(amountValue, currency)
+        : Money.format(
+            double.tryParse(amountValue.toString()) ?? 0, currency);
     final date = _formatDate(_text(['date', 'createdAt', 'paidAt'], ''));
     final statusColor = _statusColor(status);
 
@@ -242,7 +243,7 @@ class _PaymentTile extends StatelessWidget {
                 ),
               ),
               Text(
-                '$currency $amount',
+                amount,
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,

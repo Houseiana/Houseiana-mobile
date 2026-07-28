@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
@@ -446,8 +447,8 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
       title: (p['title'] ?? p['name'] ?? context.tr('property.untitled'))
           .toString(),
       location: _extractLocation(p),
-      priceText: price.toStringAsFixed(0),
-      originalPriceText: showOriginal ? original.toStringAsFixed(0) : null,
+      priceText: Money.amountOnly(price),
+      originalPriceText: showOriginal ? Money.amountOnly(original) : null,
       discountPercent: discountPct,
       currency: _extractCurrency(p),
       rating: rating is num ? rating.toDouble() : 0,

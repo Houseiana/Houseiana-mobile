@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
@@ -729,8 +730,8 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       imageUrl: _extractImage(p),
       title: _extractTitle(p),
       location: _extractLocation(p),
-      priceText: price.toStringAsFixed(0),
-      originalPriceText: showOriginal ? original.toStringAsFixed(0) : null,
+      priceText: Money.amountOnly(price),
+      originalPriceText: showOriginal ? Money.amountOnly(original) : null,
       discountPercent: discountPct,
       currency: _extractCurrency(p),
       rating: _extractRating(p),

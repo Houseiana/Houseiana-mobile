@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
@@ -184,18 +185,8 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
     return (c != null && c.isNotEmpty) ? c : 'EGP';
   }
 
-  /// Formats a number with up to 2 decimals, dropping trailing zeros — mirrors
-  /// the web `fmt()` helper used in PriceSummary.
-  String _fmt(num? n) {
-    final v = (n ?? 0).toDouble();
-    final rounded = (v * 100).round() / 100;
-    return rounded % 1 == 0
-        ? rounded.toStringAsFixed(0)
-        : rounded.toStringAsFixed(2);
-  }
-
-  /// Currency-prefixed amount, e.g. "EGP 2500".
-  String _money(num? n) => '$_currency ${_fmt(n)}';
+  /// Amount in the app-wide format, e.g. "2,500 EGP".
+  String _money(num? n) => Money.format(n, _currency);
 
   /// Resolves the unit's cancellation policy text from the property payload,
   /// using the same precedence as the web (fixed → free days → free hours →

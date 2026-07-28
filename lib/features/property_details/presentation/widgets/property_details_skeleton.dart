@@ -66,27 +66,26 @@ class PropertyDetailsSkeleton extends StatelessWidget {
 
                   const _SkeletonDivider(),
 
-                  // Highlights
+                  // Booking card — dates box + price hint, matching where the
+                  // real section now sits (right under the header info).
                   Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
-                      children: List.generate(3, (i) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Row(
-                          children: [
-                            const Bone.circle(size: 32),
-                            const SizedBox(width: 16),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Bone.text(words: 2),
-                                const SizedBox(height: 4),
-                                const Bone.text(words: 4),
-                              ],
-                            ),
-                          ],
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Bone.text(words: 2),
+                        const SizedBox(height: 14),
+                        Container(
+                          height: 72,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: AppColors.neutral200,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                      )),
+                        const SizedBox(height: 16),
+                        const Bone.multiText(lines: 2),
+                      ],
                     ),
                   ),
 

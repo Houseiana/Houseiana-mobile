@@ -118,17 +118,6 @@ class AppRoutes {
           ),
           settings,
         );
-      case Routes.nightlyPricesCalendar:
-        final args = settings.arguments as Map<String, dynamic>?;
-        final propertyId = args?['propertyId']?.toString() ?? '';
-        final currency = args?['currency']?.toString() ?? 'EGP';
-        return _buildRoute<Map<String, DateTime>>(
-          BlocProvider(
-            create: (_) => sl<NightlyPricesCubit>(param1: propertyId),
-            child: NightlyPricesCalendarScreen(currency: currency),
-          ),
-          settings,
-        );
       case Routes.hostProfile:
         final args = settings.arguments as Map?;
         final host = args?['host'] as Map? ?? {};

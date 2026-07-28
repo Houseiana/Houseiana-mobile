@@ -20,6 +20,10 @@ class MonthCalendarWidget extends StatelessWidget {
   final ValueChanged<DateTime> onDayTap;
   final VoidCallback onRetry;
 
+  /// Off when the caller draws its own month header — the inline calendar on the
+  /// details page puts the month name between its prev / next arrows.
+  final bool showTitle;
+
   const MonthCalendarWidget({
     super.key,
     required this.month,
@@ -34,6 +38,7 @@ class MonthCalendarWidget extends StatelessWidget {
     required this.bookedDates,
     required this.onDayTap,
     required this.onRetry,
+    this.showTitle = true,
   });
 
   @override
@@ -45,19 +50,20 @@ class MonthCalendarWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Center(
-            child: Text(
-              monthTitle,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: AppColors.charcoal,
+        if (showTitle)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Center(
+              child: Text(
+                monthTitle,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.charcoal,
+                ),
               ),
             ),
           ),
-        ),
         if (error != null)
           _buildError(context)
         else

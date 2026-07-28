@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 /// The stay's price breakdown, rendered straight from a
@@ -67,7 +68,7 @@ class AvailabilityQuoteRows extends StatelessWidget {
       return v is num ? v.toDouble() : null;
     }
 
-    String money(double? value) => '$currency ${_fmt(value)}';
+    String money(double? value) => Money.format(value, currency);
 
     final nights = (avail['nights'] as num?)?.toInt() ?? nightsFallback ?? 0;
     final nightlyLabel = nights == 1
@@ -99,15 +100,6 @@ class AvailabilityQuoteRows extends StatelessWidget {
       _row(context.tr('booking.totalUsd'), money(amount('totalPrice')),
           isTotal: true),
     ];
-  }
-
-  /// Up to 2 decimals with trailing zeros dropped — the web `fmt()` helper.
-  String _fmt(num? n) {
-    final v = (n ?? 0).toDouble();
-    final rounded = (v * 100).round() / 100;
-    return rounded % 1 == 0
-        ? rounded.toStringAsFixed(0)
-        : rounded.toStringAsFixed(2);
   }
 
   Widget _row(String label, String value,

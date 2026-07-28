@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/month_calendar_widget.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/price_details_section.dart';
-import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+
+import 'stay_booking_harness.dart';
 
 /// The live `/property-search/{id}/availability` quote for
 /// `فيلا دورين ببرايفت بول` 28→30 Jul 2026 — the stay in the reference web
@@ -22,81 +23,69 @@ const _quote = <String, dynamic>{
   'totalPrice': 23100,
 };
 
-Future<void> _pump(
-  WidgetTester tester, {
-  Map<String, dynamic>? availability,
-  DateTime? checkIn,
-  DateTime? checkOut,
-  bool isLoading = false,
-  Locale locale = const Locale('en'),
-}) async {
-  // The delegate decodes the ~130KB translation file on a background isolate,
-  // which pumpAndSettle can't drive — warm the static cache first so the
-  // delegate resolves within the pumped frames.
-  await tester.runAsync(
-      () => AppLocalizations.load(AppLocale.fromCode(locale.languageCode)));
-
-  await tester.pumpWidget(
-    MaterialApp(
-      locale: locale,
-      supportedLocales: const [Locale('en'), Locale('ar')],
-      localizationsDelegates: const [
-        AppLocalizationsDelegate(),
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      home: Scaffold(
-        body: SingleChildScrollView(
-          child: PriceDetailsSection(
-            currency: 'EGP',
-            checkIn: checkIn,
-            checkOut: checkOut,
-            availability: availability,
-            isLoading: isLoading,
-            onPickDates: () {},
-          ),
-        ),
-      ),
-    ),
-  );
-  await tester.pumpAndSettle();
-}
-
 void main() {
-  testWidgets('renders the service fee and total from the availability quote',
+  testWidgets('the calendar opens inside the details page, not on a new screen',
       (tester) async {
-    tester.view.physicalSize = const Size(390, 1200);
+    tester.view.physicalSize = const Size(390, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await _pump(
-      tester,
-      availability: _quote,
-      checkIn: DateTime(2026, 7, 28),
-      checkOut: DateTime(2026, 7, 30),
-    );
+    await pumpStaySection(tester, api: FakeStayApi(availability: _quote));
 
-    expect(find.text('EGP 10500 × 2 nights'), findsOneWidget);
-    expect(find.text('EGP 21000'), findsOneWidget);
+    expect(find.byType(MonthCalendarWidget), findsNothing,
+        reason: 'the calendar stays collapsed until a date field is tapped');
+
+    await openStayCalendar(tester);
+
+    expect(find.byType(MonthCalendarWidget), findsOneWidget);
+    expect(find.byType(PriceDetailsSection), findsOneWidget,
+        reason: 'the booking section is still on screen — nothing was pushed');
+  });
+
+  testWidgets('picking check-in then checkout collapses the calendar again',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await pumpStaySection(tester, api: FakeStayApi(availability: _quote));
+    await selectTwoNightStay(tester);
+
+    expect(find.byType(MonthCalendarWidget), findsNothing,
+        reason: 'a complete range closes the calendar, same as the web popup');
+    expect(find.text('Add date'), findsNothing,
+        reason: 'both halves of the dates box now carry a date');
+  });
+
+  testWidgets('renders the service fee and total from the availability quote',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await pumpStaySection(tester, api: FakeStayApi(availability: _quote));
+    await selectTwoNightStay(tester);
+
+    expect(find.text('10,500 EGP × 2 nights'), findsOneWidget);
+    expect(find.text('21,000 EGP'), findsOneWidget);
     expect(find.text('Cleaning fee'), findsOneWidget);
     expect(find.text('Service fee'), findsOneWidget,
         reason: 'the service fee row is the whole point of this section');
-    expect(find.text('EGP 2100'), findsOneWidget);
+    expect(find.text('2,100 EGP'), findsOneWidget);
     expect(find.text('Total'), findsOneWidget);
-    expect(find.text('EGP 23100'), findsOneWidget);
+    expect(find.text('23,100 EGP'), findsOneWidget);
   });
 
   testWidgets('shows the discount row only when the quote carries one',
       (tester) async {
-    tester.view.physicalSize = const Size(390, 1200);
+    tester.view.physicalSize = const Size(390, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
     // The Aswan listing, 29→31 Jul: 2000/night, 1400 charged on both nights.
-    await _pump(
+    await pumpStaySection(
       tester,
-      availability: const {
+      api: FakeStayApi(availability: const {
         'isAvailable': true,
         'nights': 2,
         'pricePerNight': 2000,
@@ -105,21 +94,20 @@ void main() {
         'serviceFee': 280,
         'discount': 1200,
         'totalPrice': 3115,
-      },
-      checkIn: DateTime(2026, 7, 29),
-      checkOut: DateTime(2026, 7, 31),
+      }),
     );
+    await selectTwoNightStay(tester);
 
     expect(find.text('Discount'), findsOneWidget);
-    expect(find.text('- EGP 1200'), findsOneWidget);
-    expect(find.text('EGP 280'), findsOneWidget);
-    expect(find.text('EGP 3115'), findsOneWidget);
+    expect(find.text('- 1,200 EGP'), findsOneWidget);
+    expect(find.text('280 EGP'), findsOneWidget);
+    expect(find.text('3,115 EGP'), findsOneWidget);
     expect(find.text('Platform fee'), findsNothing,
         reason: 'the quote carries no platformCommission');
   });
 
   testWidgets('asks for dates before showing any amount', (tester) async {
-    await _pump(tester);
+    await pumpStaySection(tester, api: FakeStayApi(availability: _quote));
 
     expect(
         find.text(
@@ -130,33 +118,74 @@ void main() {
   });
 
   testWidgets('says so when the dates are not available', (tester) async {
-    await _pump(
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await pumpStaySection(
       tester,
-      availability: const {'isAvailable': false},
-      checkIn: DateTime(2026, 7, 28),
-      checkOut: DateTime(2026, 7, 30),
+      api: FakeStayApi(availability: const {'isAvailable': false}),
     );
+    await selectTwoNightStay(tester);
 
     expect(find.text('This property is not available for the selected dates.'),
         findsOneWidget);
     expect(find.text('Service fee'), findsNothing);
   });
 
-  testWidgets('renders in Arabic (RTL)', (tester) async {
-    tester.view.physicalSize = const Size(390, 1200);
+  testWidgets('announces the minimum stay up front and warns when short',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await _pump(
+    await pumpStaySection(
       tester,
-      availability: _quote,
-      checkIn: DateTime(2026, 7, 28),
-      checkOut: DateTime(2026, 7, 30),
-      locale: const Locale('ar'),
+      api: FakeStayApi(availability: _quote),
+      minNights: 3,
     );
 
+    expect(find.text('Minimum stay: 3 nights'), findsOneWidget,
+        reason: 'the guest should know before picking, not at reserve time');
+
+    await selectTwoNightStay(tester);
+
+    expect(
+        find.text('You picked 2 nights — this place takes a minimum of 3.'),
+        findsOneWidget);
+  });
+
+  testWidgets('no minimum-stay notice when the host accepts single nights',
+      (tester) async {
+    await pumpStaySection(
+      tester,
+      api: FakeStayApi(availability: _quote),
+      minNights: 1,
+    );
+
+    expect(find.textContaining('Minimum stay'), findsNothing);
+  });
+
+  testWidgets('reassures the guest they are not charged yet', (tester) async {
+    await pumpStaySection(tester, api: FakeStayApi(availability: _quote));
+
+    expect(find.text("You won't be charged yet"), findsOneWidget);
+  });
+
+  testWidgets('renders in Arabic (RTL)', (tester) async {
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await pumpStaySection(
+      tester,
+      api: FakeStayApi(availability: _quote),
+      locale: const Locale('ar'),
+    );
+    await selectTwoNightStay(tester);
+
     expect(find.text('رسوم الخدمة'), findsOneWidget);
-    expect(find.text('EGP 2100'), findsOneWidget);
+    expect(find.text('2,100 EGP'), findsOneWidget);
     expect(find.text('الإجمالي'), findsOneWidget);
   });
 }

@@ -25,14 +25,8 @@ class HelperMethods {
     ).show(context);
   }
 
-  static String formatPrice(double price) {
-    if (price >= 1000000) {
-      return '\$${(price / 1000000).toStringAsFixed(1)}M';
-    } else if (price >= 1000) {
-      return '\$${(price / 1000).toStringAsFixed(0)}K';
-    }
-    return '\$${price.toStringAsFixed(0)}';
-  }
+  // `formatPrice` used to live here with a hardcoded `$` sign and no callers.
+  // Money lives in `core/utils/money.dart` now — use `Money.format`.
 
   static String formatArea(double area) {
     return '${area.toStringAsFixed(0)} sq ft';

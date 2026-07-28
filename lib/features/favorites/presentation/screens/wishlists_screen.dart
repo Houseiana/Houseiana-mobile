@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
@@ -431,7 +432,7 @@ class _SavedHomeCard extends StatelessWidget {
                                     if (showOriginal)
                                       TextSpan(
                                         text:
-                                            '${original.toStringAsFixed(0)} $currency ',
+                                            '${Money.format(original, currency)} ',
                                         style: const TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w400,
@@ -442,7 +443,7 @@ class _SavedHomeCard extends StatelessWidget {
                                       ),
                                     TextSpan(
                                         text:
-                                            '${price.toStringAsFixed(0)} $currency '),
+                                            '${Money.format(price, currency)} '),
                                     TextSpan(
                                       text: context.tr('favorites.perNight'),
                                       style: const TextStyle(

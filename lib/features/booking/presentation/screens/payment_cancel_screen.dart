@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
@@ -67,7 +68,7 @@ class _PaymentCancelScreenState extends State<PaymentCancelScreen> {
   String get _displayAmount {
     final b = _booking;
     if (b == null) return '--';
-    return '${b.totalPrice.toStringAsFixed(2)} ${b.currencyLabel}';
+    return Money.format(b.totalPrice, b.currencyLabel);
   }
 
   @override

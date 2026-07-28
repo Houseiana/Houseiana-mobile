@@ -8,9 +8,11 @@ import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
-import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
+import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/nightly_prices_cubit.dart';
+import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/nightly_prices_state.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/property_details_cubit.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/property_details_state.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/screens/amenities_screen.dart';
@@ -39,7 +41,6 @@ class PropertyDetailsScreen extends StatefulWidget {
 
 class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   final _session = sl<UserSession>();
-  final _propertyService = sl<PropertyService>();
   final _pageController = PageController();
   final _scrollController = ScrollController();
   int _currentPage = 0;
@@ -49,16 +50,20 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   bool _isFavorite = false;
   bool _didInit = false;
 
-  /// Dates the guest picked for this stay, and the `/availability` quote for
-  /// them. The web keeps the check-in / checkout inputs inside the booking card
-  /// and prices the stay from that endpoint; mobile picks the dates in the
-  /// nightly-prices calendar and keeps them here so the same breakdown — cleaning
-  /// fee, service fee, discount, total — can render on this screen instead of
-  /// only appearing at the reserve step.
-  DateTime? _checkIn;
-  DateTime? _checkOut;
-  Map<String, dynamic>? _availability;
-  bool _availabilityLoading = false;
+  /// Owns the stay the guest is composing — the picked dates, the nightly-price
+  /// calendar behind them and the `/availability` quote for the range.
+  ///
+  /// The web keeps all of that inside the booking card on the property page
+  /// (`booking-card.tsx`), so mobile does too: [PriceDetailsSection] renders the
+  /// calendar inline instead of pushing a separate screen, and this screen reads
+  /// the same cubit when the guest reserves. Created here (not by the route) so
+  /// the section and the bottom bar share one instance; it only hits the network
+  /// once the guest actually opens the calendar.
+  NightlyPricesCubit? _stayCubit;
+
+  /// Anchor used to scroll the booking section into view when Reserve is tapped
+  /// without dates.
+  final _priceSectionKey = GlobalKey();
 
   @override
   void initState() {
@@ -98,8 +103,14 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   void dispose() {
     _pageController.dispose();
     _scrollController.dispose();
+    _stayCubit?.close();
     super.dispose();
   }
+
+  /// One cubit per visited property, created the first time the loaded payload
+  /// gives us its id.
+  NightlyPricesCubit _ensureStayCubit(String propertyId) =>
+      _stayCubit ??= sl<NightlyPricesCubit>(param1: propertyId);
 
   /// Fills the header heart from the app-wide [FavoritesNotifier].
   ///
@@ -126,47 +137,19 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     setState(() => _isFavorite = favorites.contains(propertyId));
   }
 
-  /// Opens the nightly-prices calendar and keeps the chosen range on this
-  /// screen, then quotes it. Returns false when the guest backed out.
-  Future<bool> _pickStayDates(PropertyModel property) async {
-    final result = await Navigator.pushNamed<Map<String, DateTime>>(
-      context,
-      Routes.nightlyPricesCalendar,
-      arguments: {
-        'propertyId': property.id,
-        'currency': property.currency ?? 'EGP',
-      },
+  /// Opens the inline calendar on the check-in field and brings the booking
+  /// section into view — what used to be a push to a full-screen date picker.
+  Future<void> _promptForStayDates(PropertyModel property) async {
+    _ensureStayCubit(property.id)
+        .focusField(NightlyStayField.checkIn, currency: property.currency ?? 'EGP');
+    final anchor = _priceSectionKey.currentContext;
+    if (anchor == null) return;
+    await Scrollable.ensureVisible(
+      anchor,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+      alignment: 0.05,
     );
-    if (!mounted || result == null) return false;
-    setState(() {
-      _checkIn = result['checkIn'];
-      _checkOut = result['checkOut'];
-      _availability = null;
-      _availabilityLoading = true;
-    });
-    await _loadAvailability(property.id);
-    return true;
-  }
-
-  /// Quotes the selected range through `/property-search/{id}/availability` —
-  /// the only endpoint that knows the fees, so the breakdown never guesses.
-  Future<void> _loadAvailability(String propertyId) async {
-    if (_checkIn == null || _checkOut == null) return;
-    try {
-      final avail = await _propertyService.getAvailability(
-        propertyId,
-        checkIn: _checkIn!.toIso8601String(),
-        checkOut: _checkOut!.toIso8601String(),
-      );
-      if (!mounted) return;
-      setState(() {
-        _availability = avail;
-        _availabilityLoading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _availabilityLoading = false);
-    }
   }
 
   Future<void> _resolveCoordinates(Map<String, dynamic> property) async {
@@ -487,82 +470,88 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       final cancellationPolicy = _getCancellationPolicy(context, property);
       final ratings = state.ratings;
 
-      return Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildPhotoHeader(photos, property),
-                  if (photos.isNotEmpty) _buildThumbnailStrip(photos),
-                  _buildPropertyInfo(propertyType, title, rating, reviewCount,
-                      location, bedrooms, beds, bathrooms, maxGuests, area),
-                  const _SectionDivider(),
-                  if (hostId.isNotEmpty) ...[
-                    HostedByWidget(
-                      hostName: hostName,
-                      hostAvatar: hostAvatar,
-                      isSuperhost: _isSuperhost(property),
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        Routes.ownerProfile,
-                        arguments: {'userId': hostId},
+      return BlocProvider<NightlyPricesCubit>.value(
+        value: _ensureStayCubit(state.property.id),
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildPhotoHeader(photos, property),
+                    if (photos.isNotEmpty) _buildThumbnailStrip(photos),
+                    _buildPropertyInfo(propertyType, title, rating, reviewCount,
+                        location, bedrooms, beds, bathrooms, maxGuests, area),
+                    const _SectionDivider(),
+                    // Straight under the header, the way the web card sits at
+                    // the top of the sidebar: the guest shouldn't have to scroll
+                    // past the whole listing to find the dates and the price.
+                    _buildPriceDetailsSection(state.property),
+                    const _SectionDivider(),
+                    if (hostId.isNotEmpty) ...[
+                      HostedByWidget(
+                        hostName: hostName,
+                        hostAvatar: hostAvatar,
+                        isSuperhost: _isSuperhost(property),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          Routes.ownerProfile,
+                          arguments: {'userId': hostId},
+                        ),
                       ),
+                      const _SectionDivider(),
+                    ],
+                    if (description.isNotEmpty) ...[
+                      _buildAboutSection(description),
+                      const _SectionDivider(),
+                    ],
+                    if (bedrooms > 0 ||
+                        beds > 0 ||
+                        bathrooms > 0 ||
+                        maxGuests > 0 ||
+                        area.isNotEmpty) ...[
+                      _buildPropertyDetailsSection(
+                          bedrooms, beds, bathrooms, maxGuests, area),
+                      const _SectionDivider(),
+                    ],
+                    if (amenities.isNotEmpty) ...[
+                      _buildAmenitiesSection(amenities),
+                      const _SectionDivider(),
+                    ],
+                    ThingsToKnowWidget(
+                      checkInTime: checkInTime,
+                      checkOutTime: checkOutTime,
+                      allowSmoking: _allowSmoking(property),
+                      allowPets: _allowPets(property),
+                      allowEvents: _allowEvents(property),
+                      allowGuests: _allowGuests(property),
+                      allowMarriedOnly: _allowMarriedOnly(property),
+                      houseRules: rules,
+                      hasEnhancedCleaning: _hasEnhancedCleaning(property),
+                      hasSecurityCamera: _hasSecurityCamera(property),
+                      hasSafetyKit: _hasSafetyKit(property),
+                      hasCarbonMonoxideAlarm: _hasCarbonMonoxideAlarm(property),
+                      hasSmokeAlarm: _hasSmokeAlarm(property),
+                      cancellationPolicy: cancellationPolicy,
+                      hasCancellationWindow: _hasCancellationWindow(property),
                     ),
                     const _SectionDivider(),
+                    _buildLocationSection(property, location),
+                    if (ratings.isNotEmpty || reviewCount > 0) ...[
+                      const _SectionDivider(),
+                      // _buildReviewsSection(
+                      //     ratings, reviewCount, rating, hasMoreRatings, property),
+                    ],
+                    const SizedBox(height: 100),
                   ],
-                  if (description.isNotEmpty) ...[
-                    _buildAboutSection(description),
-                    const _SectionDivider(),
-                  ],
-                  if (bedrooms > 0 ||
-                      beds > 0 ||
-                      bathrooms > 0 ||
-                      maxGuests > 0 ||
-                      area.isNotEmpty) ...[
-                    _buildPropertyDetailsSection(
-                        bedrooms, beds, bathrooms, maxGuests, area),
-                    const _SectionDivider(),
-                  ],
-                  if (amenities.isNotEmpty) ...[
-                    _buildAmenitiesSection(amenities),
-                    const _SectionDivider(),
-                  ],
-                  _buildPriceDetailsSection(state.property),
-                  const _SectionDivider(),
-                  ThingsToKnowWidget(
-                    checkInTime: checkInTime,
-                    checkOutTime: checkOutTime,
-                    allowSmoking: _allowSmoking(property),
-                    allowPets: _allowPets(property),
-                    allowEvents: _allowEvents(property),
-                    allowGuests: _allowGuests(property),
-                    allowMarriedOnly: _allowMarriedOnly(property),
-                    houseRules: rules,
-                    hasEnhancedCleaning: _hasEnhancedCleaning(property),
-                    hasSecurityCamera: _hasSecurityCamera(property),
-                    hasSafetyKit: _hasSafetyKit(property),
-                    hasCarbonMonoxideAlarm: _hasCarbonMonoxideAlarm(property),
-                    hasSmokeAlarm: _hasSmokeAlarm(property),
-                    cancellationPolicy: cancellationPolicy,
-                    hasCancellationWindow: _hasCancellationWindow(property),
-                  ),
-                  const _SectionDivider(),
-                  _buildLocationSection(property, location),
-                  if (ratings.isNotEmpty || reviewCount > 0) ...[
-                    const _SectionDivider(),
-                    // _buildReviewsSection(
-                    //     ratings, reviewCount, rating, hasMoreRatings, property),
-                  ],
-                  const SizedBox(height: 100),
-                ],
+                ),
               ),
             ),
-          ),
-          _buildBottomBar(price, state.property),
-        ],
+            _buildBottomBar(price, state.property),
+          ],
+        ),
       );
     }
 
@@ -1551,27 +1540,66 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     );
   }
 
-  /// The price breakdown card — see [PriceDetailsSection]. It lives here rather
-  /// than in the bottom bar because it only has numbers once the guest picks
-  /// dates, which they do through the same calendar the Reserve button opens.
+  /// The booking card — dates, inline calendar and price breakdown; see
+  /// [PriceDetailsSection]. It lives here rather than in the bottom bar because
+  /// it only has numbers once the guest picks dates, which they now do without
+  /// leaving this page.
   Widget _buildPriceDetailsSection(PropertyModel property) {
     return PriceDetailsSection(
+      key: _priceSectionKey,
       currency: property.currency ?? 'EGP',
-      checkIn: _checkIn,
-      checkOut: _checkOut,
-      availability: _availability,
-      isLoading: _availabilityLoading,
-      onPickDates: () => _pickStayDates(property),
+      minNights: property.minNights,
     );
   }
 
-  Widget _buildBottomBar(double price, PropertyModel property) {
+  /// Sticky reserve bar. Rebuilt on every stay change so the amount it shows
+  /// always agrees with the booking section right above it.
+  Widget _buildBottomBar(double payloadPrice, PropertyModel property) {
+    return BlocBuilder<NightlyPricesCubit, NightlyPricesState>(
+      builder: (context, stay) => _bottomBar(payloadPrice, property, stay),
+    );
+  }
+
+  Widget _bottomBar(
+      double payloadPrice, PropertyModel property, NightlyPricesState stay) {
     final isInstant = property.instantBook ?? false;
     final currency = property.currency ?? 'EGP';
-    final discountPct = property.effectiveDiscountPercent;
-    final original = property.priceWithoutDiscount;
+
+    // Once a range is quoted the bar shows what the stay costs, not a nightly
+    // rate the guest has already moved past — the breakdown above says the same
+    // number.
+    final quote = stay.quote;
+    final quotedTotal = (quote?['totalPrice'] as num?)?.toDouble();
+    final showsTotal = stay.hasCompleteRange &&
+        quote != null &&
+        quote['isAvailable'] != false &&
+        quotedTotal != null;
+    final nights = stay.hasCompleteRange
+        ? stay.checkOut!.difference(stay.checkIn!).inDays
+        : 0;
+
+    // Nightly fallback: prefer the calendar's own price for the next open
+    // night. The details endpoint reports the stored base price and no
+    // discount, so before this the bar could advertise 3000 while the calendar
+    // immediately below it quoted 2000.
+    final night = stay.nextAvailableNight;
+    final price = showsTotal
+        ? quotedTotal
+        : (night?.effectivePrice ?? payloadPrice);
+    final original = showsTotal
+        ? null
+        : (night != null
+            ? (night.hasDiscount ? night.price : null)
+            : property.priceWithoutDiscount);
+    final discountPct = night != null
+        ? (night.discountPercent ?? 0)
+        : property.effectiveDiscountPercent;
     final hasDiscount =
-        discountPct > 0 && original != null && original > price;
+        !showsTotal && discountPct > 0 && original != null && original > price;
+
+    final savings = showsTotal
+        ? ((quote['discount'] as num?)?.toDouble() ?? 0)
+        : (hasDiscount ? original - price : 0.0);
 
     final String buttonText = isInstant
         ? context.tr('propertyDetails.reserve')
@@ -1604,7 +1632,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               children: [
                 if (hasDiscount)
                   Text(
-                    '${original.toStringAsFixed(0)} $currency',
+                    Money.format(original, currency),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -1620,9 +1648,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   children: [
                     Flexible(
                       child: Text(
-                        price > 0
-                            ? '${price.toStringAsFixed(0)} $currency'
-                            : '--',
+                        price > 0 ? Money.format(price, currency) : '--',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -1657,11 +1683,30 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   ],
                 ),
                 Text(
-                  context.tr('propertyDetails.perNight'),
+                  showsTotal
+                      ? context.tr(
+                          nights == 1
+                              ? 'propertyDetails.stayTotalLabelSingular'
+                              : 'propertyDetails.stayTotalLabel',
+                          args: {'nights': nights})
+                      : context.tr('propertyDetails.perNight'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
                 ),
+                // The percentage alone doesn't tell the guest what they keep.
+                if (savings > 0)
+                  Text(
+                    context.tr('propertyDetails.youSave',
+                        args: {'amount': Money.format(savings, currency)}),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF059669),
+                    ),
+                  ),
                 const SizedBox(height: 2),
                 Text(
                   isInstant
@@ -1761,24 +1806,31 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       _showSignInPrompt();
       return;
     }
-    final propertyId = property.id;
-    final propertyJson = property.toJson();
-    // Dates already chosen in the price-details section carry straight through
-    // instead of asking for them a second time.
-    if (_checkIn == null || _checkOut == null) {
-      final picked = await _pickStayDates(property);
-      if (!mounted || !picked) return;
+    final stay = _ensureStayCubit(property.id).state;
+    // Without a range there is nothing to reserve: open the calendar in place
+    // and scroll to it rather than pushing a picker on top of the page.
+    if (stay.checkIn == null || stay.checkOut == null) {
+      await _promptForStayDates(property);
+      return;
     }
+    // Too short for this host: the backend would refuse at the booking step, so
+    // send the guest back to the calendar where the warning is already showing.
+    final nights = stay.checkOut!.difference(stay.checkIn!).inDays;
+    if (PriceDetailsSection.isBelowMinimum(nights, property.minNights)) {
+      await _promptForStayDates(property);
+      return;
+    }
+    if (!mounted) return;
     Navigator.pushNamed(
       context,
       Routes.bookingRequest,
       arguments: {
-        'propertyId': propertyId,
-        'property': propertyJson,
+        'propertyId': property.id,
+        'property': property.toJson(),
         'price': property.displayPrice,
         'title': property.displayTitle,
-        'checkIn': _checkIn!.toIso8601String(),
-        'checkOut': _checkOut!.toIso8601String(),
+        'checkIn': stay.checkIn!.toIso8601String(),
+        'checkOut': stay.checkOut!.toIso8601String(),
       },
     );
   }

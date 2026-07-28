@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/utils/discount_utils.dart';
@@ -685,8 +686,7 @@ class _PreviewCard extends StatelessWidget {
                         children: [
                           if (showOriginal)
                             TextSpan(
-                              text:
-                                  '${original.toStringAsFixed(0)} $currency ',
+                              text: '${Money.format(original, currency)} ',
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w400,
@@ -695,11 +695,7 @@ class _PreviewCard extends StatelessWidget {
                                 decorationColor: Color(0xFF979797),
                               ),
                             ),
-                          TextSpan(
-                            text: currency.isNotEmpty
-                                ? '${priceNum.toStringAsFixed(0)} $currency'
-                                : priceNum.toStringAsFixed(0),
-                          ),
+                          TextSpan(text: Money.format(priceNum, currency)),
                         ],
                       ),
                     ),

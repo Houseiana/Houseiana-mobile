@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
@@ -40,8 +41,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
   bool _lookupsLoading = true;
   bool _lookupsFailed = false;
 
-  String _formatPrice(double value) =>
-      'EGP ${_priceFormatter.format(value.toInt())}';
+  String _formatPrice(double value) => Money.format(value.toInt(), 'EGP');
 
   /// Amenities loaded from `/api/lookups/Amenities`. Each carries the `id`
   /// sent to the search API and the `name` shown to the user.

@@ -126,15 +126,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('EGP 750'), findsOneWidget,
+    expect(find.text('750 EGP'), findsOneWidget,
         reason: 'nights row should show the pre-discount subtotal '
             '(availability pricePerNight 250 × 3)');
-    expect(find.text('- EGP 150'), findsOneWidget,
+    expect(find.text('- 150 EGP'), findsOneWidget,
         reason: 'discount row should show the availability discount');
-    expect(find.text('EGP 690'), findsWidgets,
+    expect(find.text('690 EGP'), findsWidgets,
         reason: 'total should be the availability totalPrice '
             '(600 + 30 + 60), not 240 × 3 + fees');
-    expect(find.text('EGP 720'), findsNothing,
+    expect(find.text('720 EGP'), findsNothing,
         reason: 'the today-price subtotal (240 × 3) must not be used');
   });
 }

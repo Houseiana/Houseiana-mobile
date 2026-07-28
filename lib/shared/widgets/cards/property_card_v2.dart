@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
@@ -354,7 +355,7 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
                       // discounted price, matching the web card.
                       if (widget._hasDiscount) ...[
                         Text(
-                          '${widget.originalPrice!.toStringAsFixed(0)} ${widget.currency}',
+                          Money.format(widget.originalPrice!, widget.currency),
                           style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF979797),
@@ -366,7 +367,7 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
                       ],
                       // Effective (discounted) price
                       Text(
-                        '${widget.price.toStringAsFixed(0)} ${widget.currency}',
+                        Money.format(widget.price, widget.currency),
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -653,7 +654,7 @@ class CompactPropertyCard extends StatelessWidget {
                                   children: [
                                     TextSpan(
                                       text:
-                                          '${originalPrice!.toStringAsFixed(0)} $currency ',
+                                          '${Money.format(originalPrice!, currency)} ',
                                       style: const TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w400,
@@ -664,13 +665,13 @@ class CompactPropertyCard extends StatelessWidget {
                                     ),
                                     TextSpan(
                                       text:
-                                          '${price.toStringAsFixed(0)} $currency${context.tr('home.perNight')}',
+                                          '${Money.format(price, currency)}${context.tr('home.perNight')}',
                                     ),
                                   ],
                                 ),
                               )
                             : Text(
-                          '${price.toStringAsFixed(0)} $currency${context.tr('home.perNight')}',
+                          '${Money.format(price, currency)}${context.tr('home.perNight')}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
