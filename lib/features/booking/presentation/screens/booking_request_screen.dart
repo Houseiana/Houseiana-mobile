@@ -729,10 +729,8 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                   : context.tr('booking.priceByNightsTemplate',
                       args: {'price': priceFormatted, 'nights': _nights}),
               _money(_grossSubtotal)),
-          const SizedBox(height: 12),
-          _priceRow(context.tr('booking.cleaningFee'), _money(_cleaningFee)),
-          const SizedBox(height: 12),
-          _priceRow(context.tr('booking.serviceFee'), _money(_serviceFee)),
+          // Directly under the pre-discount nights total, so the subtraction
+          // reads top-to-bottom — same order as the details page.
           if (_hasDiscount) ...[
             const SizedBox(height: 12),
             _priceRow(
@@ -741,6 +739,10 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
               isDiscount: true,
             ),
           ],
+          const SizedBox(height: 12),
+          _priceRow(context.tr('booking.cleaningFee'), _money(_cleaningFee)),
+          const SizedBox(height: 12),
+          _priceRow(context.tr('booking.serviceFee'), _money(_serviceFee)),
           const Divider(height: 24, color: Color(0xFFE5E7EB)),
           _priceRow(context.tr('booking.totalUsd'), _money(_total),
               isTotal: true),

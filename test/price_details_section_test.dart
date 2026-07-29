@@ -83,6 +83,9 @@ void main() {
     addTearDown(tester.view.reset);
 
     // The Aswan listing, 29→31 Jul: 2000/night, 1400 charged on both nights.
+    // `subtotal` (2800) is already discounted and `discount` (1200) is the
+    // saving, so the nights row must show the pre-discount 4000 — otherwise it
+    // reads "2,000 × 2 nights = 2,800".
     await pumpStaySection(
       tester,
       api: FakeStayApi(availability: const {
@@ -98,6 +101,12 @@ void main() {
     );
     await selectTwoNightStay(tester);
 
+    expect(find.text('2,000 EGP × 2 nights'), findsOneWidget);
+    expect(find.text('4,000 EGP'), findsOneWidget,
+        reason: 'the nights row must be the pre-discount total, so the '
+            '4,000 − 1,200 + 35 + 280 = 3,115 column adds up on screen');
+    expect(find.text('2,800 EGP'), findsNothing,
+        reason: 'the already-discounted subtotal never appears on its own');
     expect(find.text('Discount'), findsOneWidget);
     expect(find.text('- 1,200 EGP'), findsOneWidget);
     expect(find.text('280 EGP'), findsOneWidget);

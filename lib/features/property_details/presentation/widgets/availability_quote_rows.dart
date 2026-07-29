@@ -71,18 +71,35 @@ class AvailabilityQuoteRows extends StatelessWidget {
     String money(double? value) => Money.format(value, currency);
 
     final nights = (avail['nights'] as num?)?.toInt() ?? nightsFallback ?? 0;
-    final nightlyLabel = nights == 1
-        ? context.tr('booking.priceByNightTemplate',
-            args: {'price': money(amount('pricePerNight')), 'nights': nights})
-        : context.tr('booking.priceByNightsTemplate',
-            args: {'price': money(amount('pricePerNight')), 'nights': nights});
-
     final platformCommission = amount('platformCommission') ?? 0;
     final discount = amount('discount') ?? 0;
+
+    // `subtotal` from `/availability` is ALREADY discounted and `discount` is
+    // the saving, so printing it against the nightly rate read as
+    // "2,000 EGP × 2 nights = 2,800 EGP" — arithmetic that doesn't work. The
+    // nights row shows the pre-discount total instead and the discount line
+    // right below it does the subtracting, so the column adds up to the total
+    // on screen. Same treatment as the reserve step's price card.
+    final grossSubtotal = (amount('subtotal') ?? 0) + discount;
+    final grossNightly = nights > 0
+        ? grossSubtotal / nights
+        : (amount('pricePerNight') ?? 0);
+
+    final nightlyLabel = nights == 1
+        ? context.tr('booking.priceByNightTemplate',
+            args: {'price': money(grossNightly), 'nights': nights})
+        : context.tr('booking.priceByNightsTemplate',
+            args: {'price': money(grossNightly), 'nights': nights});
+
     final gap = SizedBox(height: compact ? 8 : 12);
 
     return [
-      _row(nightlyLabel, money(amount('subtotal'))),
+      _row(nightlyLabel, money(grossSubtotal)),
+      if (discount > 0) ...[
+        gap,
+        _row(context.tr('booking.discount'), '- ${money(discount)}',
+            isDiscount: true),
+      ],
       gap,
       _row(context.tr('booking.cleaningFee'), money(amount('cleaningFee'))),
       gap,
@@ -90,11 +107,6 @@ class AvailabilityQuoteRows extends StatelessWidget {
       if (platformCommission > 0) ...[
         gap,
         _row(context.tr('booking.platformFee'), money(platformCommission)),
-      ],
-      if (discount > 0) ...[
-        gap,
-        _row(context.tr('booking.discount'), '- ${money(discount)}',
-            isDiscount: true),
       ],
       Divider(height: compact ? 18 : 24, color: AppColors.neutral200),
       _row(context.tr('booking.totalUsd'), money(amount('totalPrice')),

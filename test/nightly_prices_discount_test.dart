@@ -84,6 +84,9 @@ void main() {
     expect(find.text('300 EGP'), findsOneWidget);
     expect(find.text('Cleaning fee'), findsOneWidget);
     expect(find.text('35 EGP'), findsOneWidget);
+    expect(find.text('4,000 EGP'), findsOneWidget,
+        reason: 'nights row is the pre-discount total (3,000 subtotal + 1,000 '
+            'saved), so the discount below it has something to subtract from');
     expect(find.text('- 1,000 EGP'), findsOneWidget);
     expect(find.text('3,335 EGP'), findsOneWidget,
         reason: 'total = subtotal + fees, straight from the quote');
