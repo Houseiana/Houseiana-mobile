@@ -331,6 +331,8 @@
     "forRent": "For Rent",
     "noPropertiesFound": "No properties found",
     "noPropertiesFoundDescription": "Try adjusting your search or filters",
+    "noPropertiesInPlace": "No stays in {place} yet. Try a nearby destination or adjust your filters.",
+    "searchWholeRegion": "Search all of {place}",
     "noPropertiesOnMap": "No properties to show on map",
     "noPropertiesOnMapDescription": "None of the results in this area include map coordinates.",
     "noPropertiesInArea": "No properties in this area. Move the map to explore nearby.",

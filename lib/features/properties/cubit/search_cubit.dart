@@ -32,21 +32,30 @@ class SearchCubit extends Cubit<SearchState> {
     return super.close();
   }
 
-  /// Union-adds this page's favourite ids into the app-wide notifier (a
-  /// search page only knows its own slice — never remove). Hearts render from
-  /// the notifier, so favourite state stays out of the emitted list.
-  void _seedFavorites(List<Map<String, dynamic>> maps) {
-    if (!_userSession.isLoggedIn) return;
-    sl<FavoritesNotifier>().addAll(maps
-        .where((p) =>
-            p['guestFavorite'] == true || p['isGuestFavorite'] == true)
-        .map((p) => (p['id'] ?? p['_id'] ?? p['propertyId'] ?? '').toString())
-        .where((id) => id.isNotEmpty));
+  /// The user's saved property ids, or null when they can't be fetched — a
+  /// favourites hiccup must not take the results down with it, and an empty
+  /// set would wrongly clear every heart.
+  ///
+  /// This used to derive the hearts from the results themselves, filling any
+  /// row flagged `guestFavorite`. But that flag is the "Guest favourite"
+  /// quality badge, NOT the viewer's wishlist: badged listings showed a heart
+  /// nobody saved, and a unit the user had just un-saved came back filled on
+  /// the very next search (while it was correctly gone from the wishlist).
+  Future<Set<String>?> _fetchFavoriteIds() async {
+    if (!_userSession.isLoggedIn) return null;
+    try {
+      return await _userService.getFavoriteIds(_userSession.userId!);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> search(PropertySearchParams params) async {
     emit(SearchLoading());
     try {
+      // Results and favourites are independent — fire both together so the
+      // load costs max(results, favourites) instead of their sum.
+      final favoritesFuture = _fetchFavoriteIds();
       final page = await _propertyService.searchProperties(
         params,
         cancelToken: _nextToken(),
@@ -54,7 +63,9 @@ class SearchCubit extends Cubit<SearchState> {
       // Already normalized maps (PropertyService runs the model round-trip,
       // off the UI isolate for big pages).
       final propertyMaps = page.properties;
-      _seedFavorites(propertyMaps);
+      // Seed BEFORE emitting so no heart ever paints from a stale set.
+      final favoriteIds = await favoritesFuture;
+      if (favoriteIds != null) sl<FavoritesNotifier>().seed(favoriteIds);
       final hasMore = propertyMaps.length >= params.limit;
       emit(SearchLoaded(
         properties: propertyMaps,
@@ -115,8 +126,9 @@ class SearchCubit extends Cubit<SearchState> {
         newParams,
         cancelToken: _nextToken(),
       );
+      // No favourites call here: [search] already seeded the user's FULL
+      // wishlist, which covers every page this list can grow into.
       final propertyMaps = page.properties;
-      _seedFavorites(propertyMaps);
 
       final hasMore = propertyMaps.length >= newParams.limit;
       emit(SearchLoaded(

@@ -63,6 +63,33 @@ class UserService {
     return _list(response);
   }
 
+  /// The signed-in user's saved property ids — the ONLY source a heart may be
+  /// filled from (see [FavoritesNotifier]).
+  ///
+  /// Fetched in one page big enough to hold a whole wishlist: the set
+  /// replace-seeds the notifier, so a short page would silently empty the
+  /// hearts of everyone past the default 20.
+  Future<Set<String>> getFavoriteIds(String userId) async {
+    final favorites = await getFavorites(userId, limit: _favoriteIdsPageSize);
+    return favorites
+        .map(_favoritePropertyId)
+        .where((id) => id.isNotEmpty)
+        .toSet();
+  }
+
+  static const int _favoriteIdsPageSize = 100;
+
+  /// A favourites row is either the property itself or a
+  /// `{ propertyId, property: {...} }` wrapper.
+  String _favoritePropertyId(Map<String, dynamic> row) {
+    final property = row['property'];
+    return (row['propertyId'] ??
+            (property is Map ? (property['id'] ?? property['_id']) : null) ??
+            row['id'] ??
+            '')
+        .toString();
+  }
+
   /// POST /users/favorites
   /// Body: { "userId": "...", "propertyId": "..." }
   /// The backend toggles — if already favourite it removes it.

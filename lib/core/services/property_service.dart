@@ -81,10 +81,22 @@ class PropertySearchParams {
     this.radiusKm,
   });
 
+  /// Calendar day (`yyyy-MM-dd`) for a date the caller may hand over as a full
+  /// ISO timestamp — the search modal passes `DateTime.toIso8601String()`
+  /// (`2026-08-05T00:00:00.000`), while every other date this app sends the
+  /// backend is a plain day. Trimmed here, the single place the query is built,
+  /// so the first page and every `loadMore` agree.
+  static String? _dateOnly(String? raw) {
+    final trimmed = raw?.trim() ?? '';
+    if (trimmed.isEmpty) return null;
+    final t = trimmed.indexOf('T');
+    return t > 0 ? trimmed.substring(0, t) : trimmed;
+  }
+
   Map<String, dynamic> toQueryParams() => {
         if (location != null && location!.isNotEmpty) 'location': location,
-        if (checkIn != null && checkIn!.isNotEmpty) 'checkin': checkIn,
-        if (checkOut != null && checkOut!.isNotEmpty) 'checkout': checkOut,
+        if (_dateOnly(checkIn) != null) 'checkin': _dateOnly(checkIn),
+        if (_dateOnly(checkOut) != null) 'checkout': _dateOnly(checkOut),
         if (guests != null) 'guests': guests,
         if (minPrice != null) 'minPrice': minPrice,
         if (maxPrice != null) 'maxPrice': maxPrice,
@@ -249,9 +261,16 @@ class PropertyService {
       final normalized = rawList.length >= _normalizeComputeThreshold
           ? await compute(_normalizePropertyMaps, rawList)
           : _normalizePropertyMaps(rawList);
+      final total = _extractTotal(response);
+      if (kDebugMode) {
+        // An empty page is ambiguous from the outside (no matches vs. a shape
+        // we failed to read) — print what was asked and what came back.
+        debugPrint('[PropertySearch] $query → rows=${normalized.length} '
+            'total=$total');
+      }
       return PropertySearchPage(
         properties: normalized,
-        total: _extractTotal(response),
+        total: total,
       );
     } on RequestCancelledException {
       rethrow; // keep the type — callers swallow cancellations silently
@@ -657,17 +676,41 @@ class PropertyService {
       raw = raw['data'] ?? raw['items'] ?? raw;
     }
     if (raw is Map) {
-      raw = raw['items'] ??
-          raw['data'] ??
-          raw.values.firstWhere(
-            (v) => v is List,
-            orElse: () => [],
-          );
+      final map = raw;
+      // Property-search answers with a named `properties` array plus a parallel
+      // `propertiesByCountry` grouping of the same rows. Read those names
+      // explicitly: the "first list in the map" fallback below picks whichever
+      // array the backend happens to serialise first, so any other array in the
+      // payload turns a good page into a silent "No properties found".
+      final named = map['items'] ?? map['data'] ?? map['properties'];
+      final grouped = _flattenGroupedProperties(map['propertiesByCountry']);
+      if (named is List && named.isNotEmpty) {
+        raw = named;
+      } else if (grouped.isNotEmpty) {
+        raw = grouped;
+      } else if (named is List) {
+        raw = named; // genuinely empty result set
+      } else {
+        raw = map.values.firstWhere((v) => v is List, orElse: () => []);
+      }
     }
     if (raw is List) {
       return raw.whereType<Map<String, dynamic>>().toList();
     }
     return [];
+  }
+
+  /// Flattens `propertiesByCountry: [{ ..., properties: [...] }]` into one flat
+  /// row list, so a grouped answer to a flat query still renders.
+  List<Map<String, dynamic>> _flattenGroupedProperties(dynamic raw) {
+    if (raw is! List) return const [];
+    final rows = <Map<String, dynamic>>[];
+    for (final group in raw) {
+      if (group is! Map) continue;
+      final props = group['properties'];
+      if (props is List) rows.addAll(props.whereType<Map<String, dynamic>>());
+    }
+    return rows;
   }
 
   Map<String, dynamic>? _parseItem(dynamic response) {

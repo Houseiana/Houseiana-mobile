@@ -276,11 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<Set<String>?> _loadFavoriteIds() async {
     if (!_session.isLoggedIn) return null;
     try {
-      final favs = await _userService.getFavorites(_session.userId!);
-      return favs
-          .map((f) => (f['propertyId'] ?? f['id'] ?? '').toString())
-          .where((id) => id.isNotEmpty)
-          .toSet();
+      return await _userService.getFavoriteIds(_session.userId!);
     } catch (_) {
       return null;
     }

@@ -47,7 +47,6 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   bool _descriptionExpanded = false;
   double? _lat;
   double? _lng;
-  bool _isFavorite = false;
   bool _didInit = false;
 
   /// Owns the stay the guest is composing — the picked dates, the nightly-price
@@ -86,12 +85,15 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       passed = Map<String, dynamic>.from(args['property'] as Map);
     }
 
+    // Whichever way this page was opened, the header heart must know the
+    // user's saved ids.
+    _ensureFavoritesLoaded();
+
     if (widget.propertyIdToLoad != null &&
         widget.propertyIdToLoad!.isNotEmpty) {
       final cubit = context.read<PropertyDetailsCubit>();
       await cubit.getPropertyDetails(widget.propertyIdToLoad!);
       await cubit.loadRatings(widget.propertyIdToLoad!);
-      await _syncFavoriteState(widget.propertyIdToLoad!);
     }
     if (!mounted) return;
     if (passed != null) {
@@ -112,29 +114,25 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   NightlyPricesCubit _ensureStayCubit(String propertyId) =>
       _stayCubit ??= sl<NightlyPricesCubit>(param1: propertyId);
 
-  /// Fills the header heart from the app-wide [FavoritesNotifier].
+  /// Makes sure the app-wide [FavoritesNotifier] — which the header heart
+  /// renders from — knows this user's saved ids.
   ///
-  /// This used to read `isFavourited` off the details payload, but that flag
-  /// only comes back when the request carries a `userId` — the very parameter
-  /// that switches the endpoint to personalized pricing. The notifier is seeded
-  /// from `/users/favorites` by home and the search tab; when it has never been
-  /// seeded (a deep link straight into this screen) the list is fetched once,
-  /// so the heart can't start out wrong and unsave the unit on the next tap.
-  Future<void> _syncFavoriteState(String propertyId) async {
+  /// The heart used to read `isFavourited` off the details payload, but that
+  /// flag only comes back when the request carries a `userId` — the very
+  /// parameter that switches the endpoint to personalized pricing. The notifier
+  /// is seeded from `/users/favorites` by home and the search screens; when it
+  /// has never been seeded (a deep link straight into this screen) the list is
+  /// fetched once here, so the heart can't start out wrong and unsave the unit
+  /// on the next tap.
+  Future<void> _ensureFavoritesLoaded() async {
     if (!_session.isLoggedIn) return;
     final favorites = sl<FavoritesNotifier>();
-    if (favorites.value.isEmpty) {
-      try {
-        final favs = await sl<UserService>().getFavorites(_session.userId!);
-        favorites.addAll(favs
-            .map((f) => (f['propertyId'] ?? f['id'] ?? '').toString())
-            .where((id) => id.isNotEmpty));
-      } catch (_) {
-        // A favourites hiccup must not take the details page down with it.
-      }
+    if (favorites.value.isNotEmpty) return;
+    try {
+      favorites.addAll(await sl<UserService>().getFavoriteIds(_session.userId!));
+    } catch (_) {
+      // A favourites hiccup must not take the details page down with it.
     }
-    if (!mounted) return;
-    setState(() => _isFavorite = favorites.contains(propertyId));
   }
 
   /// Opens the inline calendar on the check-in field and brings the booking
@@ -657,34 +655,43 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   onTap: () => _shareProperty(property),
                 ),
                 const SizedBox(width: 8),
-                _CircleButton(
-                  icon: _isFavorite ? Icons.favorite : Icons.favorite_border,
-                  iconColor: _isFavorite ? Colors.red : AppColors.charcoal,
-                  onTap: () {
-                    if (!_session.isLoggedIn) {
-                      showSignInToSaveFavoritesSheet(context);
-                      return;
-                    }
-                    final cubitState =
-                        context.read<PropertyDetailsCubit>().state;
-                    final propId = cubitState is PropertyDetailsLoaded
-                        ? cubitState.property.id
-                        : '';
-                    final newVal = !_isFavorite;
-                    setState(() => _isFavorite = newVal);
-                    if (propId.isNotEmpty) {
-                      sl<UserService>()
-                          .toggleFavorite(
-                            userId: _session.userId ?? '',
-                            propertyId: propId,
-                          )
-                          .catchError((_) {
-                        if (mounted) setState(() => _isFavorite = !newVal);
-                        return false;
-                      });
-                    }
-                  },
-                ),
+                // Reads the app-wide notifier instead of a locally copied flag,
+                // so this heart can never disagree with the wishlist (or with
+                // the card that opened the page): `UserService.toggleFavorite`
+                // flips the notifier optimistically and rolls it back if the
+                // POST fails.
+                Builder(builder: (context) {
+                  final cubitState =
+                      context.read<PropertyDetailsCubit>().state;
+                  final propId = cubitState is PropertyDetailsLoaded
+                      ? cubitState.property.id
+                      : '';
+                  return ValueListenableBuilder<Set<String>>(
+                    valueListenable: sl<FavoritesNotifier>(),
+                    builder: (context, favoriteIds, _) {
+                      final isFavorite = favoriteIds.contains(propId);
+                      return _CircleButton(
+                        icon:
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                        iconColor:
+                            isFavorite ? Colors.red : AppColors.charcoal,
+                        onTap: () {
+                          if (!_session.isLoggedIn) {
+                            showSignInToSaveFavoritesSheet(context);
+                            return;
+                          }
+                          if (propId.isEmpty) return;
+                          sl<UserService>()
+                              .toggleFavorite(
+                                userId: _session.userId ?? '',
+                                propertyId: propId,
+                              )
+                              .catchError((_) => false);
+                        },
+                      );
+                    },
+                  );
+                }),
               ],
             ),
           ),

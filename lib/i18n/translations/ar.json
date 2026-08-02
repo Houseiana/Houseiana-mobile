@@ -331,6 +331,8 @@
     "forRent": "للإيجار",
     "noPropertiesFound": "لا توجد عقارات",
     "noPropertiesFoundDescription": "حاول تعديل البحث أو التصفية",
+    "noPropertiesInPlace": "لا توجد أماكن إقامة في {place} حتى الآن. جرّب وجهة قريبة أو عدّل عوامل التصفية.",
+    "searchWholeRegion": "ابحث في {place} كلها",
     "noPropertiesOnMap": "لا توجد عقارات لعرضها على الخريطة",
     "noPropertiesOnMapDescription": "لا تحتوي أي من النتائج في هذه المنطقة على إحداثيات.",
     "noPropertiesInArea": "لا توجد عقارات في هذه المنطقة. حرّك الخريطة لاستكشاف ما حولها.",

@@ -42,6 +42,13 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
   /// as `villageId` (Country tab: village tap). Distinct id space from the
   /// RegionCategory region ids — the home "See All" passes `regionId` instead.
   dynamic _villageId;
+
+  /// The region a [_villageId] belongs to (Country tab drill-down). Never sent
+  /// with the village filter — it only backs the "search the whole region"
+  /// escape hatch offered when the village itself has no stays.
+  dynamic _parentRegionId;
+  String _parentRegionName = '';
+
   bool _mapView = false;
 
   /// Selected sort option id (the `sortBy` value sent to the search API), or
@@ -80,7 +87,14 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
       }
       _regionId = args['regionId'];
       _villageId = args['villageId'];
+      _parentRegionId = args['parentRegionId'];
+      _parentRegionName = (args['parentRegionName'] ?? '').toString();
     }
+    // The header sits outside the result BlocBuilders, so it renders once with
+    // the initial (empty) values: without this rebuild the search bar read
+    // "Anywhere" even when the results were scoped to one village — and an
+    // empty page gave no clue what had actually been searched.
+    if (mounted) setState(() {});
     _doSearch();
   }
 
@@ -489,6 +503,13 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
   }
 
   Widget _buildEmptyState() {
+    // Name what came back empty — a bare "No properties found" over a header
+    // that says "Anywhere" reads like a failure rather than a result.
+    final searched = _location.trim();
+    final canWidenToRegion = _villageId != null &&
+        _parentRegionId != null &&
+        _parentRegionName.trim().isNotEmpty;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -508,10 +529,36 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              context.tr('property.noPropertiesFoundDescription'),
+              searched.isEmpty
+                  ? context.tr('property.noPropertiesFoundDescription')
+                  : context.tr('property.noPropertiesInPlace',
+                      args: {'place': searched}),
               style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
               textAlign: TextAlign.center,
             ),
+            if (canWidenToRegion) ...[
+              const SizedBox(height: 4),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _villageId = null;
+                    _regionId = _parentRegionId;
+                    _location = _parentRegionName;
+                  });
+                  _doSearch();
+                },
+                child: Text(
+                  context.tr('property.searchWholeRegion',
+                      args: {'place': _parentRegionName}),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1D242B),
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => Navigator.pop(context),

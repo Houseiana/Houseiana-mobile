@@ -111,8 +111,11 @@ class _VillageListScreenState extends State<VillageListScreen> {
                                 itemCount: _villages.length,
                                 separatorBuilder: (_, __) =>
                                     const SizedBox(height: 12),
-                                itemBuilder: (_, i) =>
-                                    _VillageTile(village: _villages[i]),
+                                itemBuilder: (_, i) => _VillageTile(
+                                  village: _villages[i],
+                                  regionId: widget.regionId,
+                                  regionName: widget.regionName,
+                                ),
                               ),
                             ),
             ),
@@ -172,7 +175,16 @@ class _VillageListScreenState extends State<VillageListScreen> {
 class _VillageTile extends StatelessWidget {
   final RegionVillage village;
 
-  const _VillageTile({required this.village});
+  /// The region this village belongs to — handed to the results screen only so
+  /// an empty village can offer "search the whole region" instead of a dead end.
+  final int regionId;
+  final String regionName;
+
+  const _VillageTile({
+    required this.village,
+    required this.regionId,
+    required this.regionName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -187,6 +199,8 @@ class _VillageTile extends StatelessWidget {
             // villageId below.
             'location': village.name,
             'villageId': village.id,
+            'parentRegionId': regionId,
+            'parentRegionName': regionName,
             'totalGuests': 0,
           },
         );

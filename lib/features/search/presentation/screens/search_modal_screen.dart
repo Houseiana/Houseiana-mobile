@@ -492,8 +492,35 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
     );
   }
 
-  /// A single Google Places suggestion. Picking it searches by free text
-  /// (`location` = the place name) with no region scope — the web behaviour.
+  /// The catalog destination that goes by [name], if any — matched on the exact
+  /// label first, then on one name containing the other ("Sidi Abdel Rahman" vs
+  /// "Sidi Abdel Rahman, Matrouh").
+  ///
+  /// Used to give a picked Google place a region scope: the suggestion text is
+  /// in the app's language, and a free-text `location` search only matches when
+  /// that exact string exists in the backend's data — which is why some picks
+  /// came back "No properties found" while others worked.
+  _LiveDestination? _matchCatalogDestination(String name) {
+    final needle = name.trim().toLowerCase();
+    if (needle.isEmpty) return null;
+    for (final destination in _destinations) {
+      if (destination.regionId == null) continue;
+      if (destination.name.trim().toLowerCase() == needle) return destination;
+    }
+    for (final destination in _destinations) {
+      if (destination.regionId == null) continue;
+      final candidate = destination.name.trim().toLowerCase();
+      if (candidate.isEmpty) continue;
+      if (candidate.contains(needle) || needle.contains(candidate)) {
+        return destination;
+      }
+    }
+    return null;
+  }
+
+  /// A single Google Places suggestion. Picking one that is also a catalog
+  /// destination scopes the search by its `regionId`; anything else falls back
+  /// to a free-text `location` search (the web behaviour).
   Widget _placePredictionTile(PlacePrediction prediction) {
     final title = prediction.mainText.isNotEmpty
         ? prediction.mainText
@@ -505,9 +532,10 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
         _placesDebounce?.cancel();
         _placesSeq++; // invalidate any in-flight fetch
         _placesSessionToken = null; // picking a place ends the billing session
+        final matched = _matchCatalogDestination(title);
         setState(() {
           _locationController.text = title;
-          _selectedRegionId = null;
+          _selectedRegionId = matched?.regionId;
           _placePredictions = [];
           _isLoadingPlaces = false;
           _activeStep = 1;
