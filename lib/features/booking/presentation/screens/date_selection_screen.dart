@@ -235,7 +235,7 @@ class _DateSelectionScreenState extends State<DateSelectionScreen> {
               ),
             ),
             Icon(
-              context.isRtl ? Icons.arrow_back_ios : Icons.arrow_forward_ios,
+              Icons.arrow_forward_ios,
               size: 16,
               color: date != null ? AppColors.primaryColor : AppColors.neutral400,
             ),

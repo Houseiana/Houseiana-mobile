@@ -7,6 +7,7 @@ import 'package:houseiana_mobile_app/core/models/region_village_model.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/features/country/presentation/widgets/destination_message_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/i18n/locale_aware_state.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 /// Third level of the Country tab: the villages of a destination region, from
@@ -26,17 +27,45 @@ class VillageListScreen extends StatefulWidget {
   State<VillageListScreen> createState() => _VillageListScreenState();
 }
 
-class _VillageListScreenState extends State<VillageListScreen> {
+class _VillageListScreenState extends State<VillageListScreen>
+    with LocaleAwareState<VillageListScreen> {
   final _propertyService = sl<PropertyService>();
 
   bool _isLoading = true;
   String? _error;
   List<RegionVillage> _villages = [];
 
+  /// Header title — seeded from the route argument (frozen in the language it
+  /// was tapped in) and re-resolved after a language switch.
+  late String _regionName = widget.regionName;
+
   @override
   void initState() {
     super.initState();
     _loadVillages();
+  }
+
+  /// Village names are localized by the backend, so a language switch has to
+  /// re-fetch the list (and re-resolve the region title above it).
+  @override
+  void onLocaleChanged() {
+    _loadVillages(force: true);
+    _refreshRegionName();
+  }
+
+  Future<void> _refreshRegionName() async {
+    try {
+      final regions = await _propertyService.getRegionCategories();
+      if (!mounted) return;
+      for (final region in regions) {
+        if (region.id == widget.regionId) {
+          setState(() => _regionName = region.name);
+          return;
+        }
+      }
+    } catch (_) {
+      // Title-only refresh — keep the previous label on failure.
+    }
   }
 
   /// [force] (pull-to-refresh) bypasses the 24h lookups cache and keeps the
@@ -114,7 +143,7 @@ class _VillageListScreenState extends State<VillageListScreen> {
                                 itemBuilder: (_, i) => _VillageTile(
                                   village: _villages[i],
                                   regionId: widget.regionId,
-                                  regionName: widget.regionName,
+                                  regionName: _regionName,
                                 ),
                               ),
                             ),
@@ -142,7 +171,7 @@ class _VillageListScreenState extends State<VillageListScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.regionName,
+                  _regionName,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,

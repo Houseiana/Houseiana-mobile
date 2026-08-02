@@ -197,4 +197,30 @@ void main() {
     expect(find.text('2,100 EGP'), findsOneWidget);
     expect(find.text('الإجمالي'), findsOneWidget);
   });
+
+  testWidgets('the month arrows keep their LTR glyphs in Arabic',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await pumpStaySection(
+      tester,
+      api: FakeStayApi(availability: _quote),
+      locale: const Locale('ar'),
+    );
+    await openStayCalendar(tester);
+
+    // `chevron_left`/`chevron_right` carry `matchTextDirection`, so `Icon`
+    // already mirrors the glyph under an RTL `Directionality`. Choosing the
+    // icon by locale on top of that flips it a second time and leaves the
+    // arrows pointing the wrong way in Arabic — assert the raw, unswapped
+    // glyphs so that fix can't be undone by "correcting" it again.
+    expect(find.byIcon(Icons.chevron_left), findsOneWidget,
+        reason: 'previous month keeps the LTR glyph; Flutter mirrors it');
+    expect(find.byIcon(Icons.chevron_right), findsOneWidget,
+        reason: 'next month keeps the LTR glyph; Flutter mirrors it');
+    expect(Icons.chevron_left.matchTextDirection, isTrue,
+        reason: 'the mirroring this relies on comes from the IconData itself');
+  });
 }

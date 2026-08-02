@@ -123,12 +123,18 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(
-                      '${_currentIndex + 1} / ${widget.photos.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                    // Forced LTR: under Arabic bidi the neutral " / " between
+                    // two numbers takes the paragraph direction, so "1 / 5"
+                    // rendered as "5 / 1".
+                    child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Text(
+                        '${_currentIndex + 1} / ${widget.photos.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),

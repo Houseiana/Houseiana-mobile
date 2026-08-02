@@ -160,8 +160,13 @@ class HomeCache {
   /// signed-in guest's discounted price, and one bucket is shared by every
   /// session, so a stale entry would keep serving them for up to [listTtl].
   /// The prefix is unchanged, so prefix-wide invalidation still clears both.
-  static String listKey(int? featuredRegionId) =>
-      '${listPrefix}v2_${featuredRegionId ?? 'all'}';
+  ///
+  /// [lang] buckets the entry per app language, exactly like [categoriesKey]:
+  /// the rows carry backend-localized text (titles, city names), so a single
+  /// shared bucket kept serving the previous language's rails for up to
+  /// [listTtl] after a switch — even across an app restart.
+  static String listKey(int? featuredRegionId, String lang) =>
+      '${listPrefix}v2_${lang}_${featuredRegionId ?? 'all'}';
 
   /// Cache key for a user's favourite-id set. Guests share a single bucket.
   static String favKey(String? userId) => '$favPrefix${userId ?? 'guest'}';

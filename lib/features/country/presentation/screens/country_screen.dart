@@ -7,6 +7,7 @@ import 'package:houseiana_mobile_app/core/models/country_option.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/features/country/presentation/widgets/destination_message_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/i18n/locale_aware_state.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 /// First level of the Country tab: countries from `GET /api/lookups/country`.
@@ -20,7 +21,8 @@ class CountryScreen extends StatefulWidget {
   State<CountryScreen> createState() => _CountryScreenState();
 }
 
-class _CountryScreenState extends State<CountryScreen> {
+class _CountryScreenState extends State<CountryScreen>
+    with LocaleAwareState<CountryScreen> {
   final _searchController = TextEditingController();
   final _propertyService = sl<PropertyService>();
 
@@ -51,6 +53,14 @@ class _CountryScreenState extends State<CountryScreen> {
     _searchController.dispose();
     super.dispose();
   }
+
+  /// The country names are localized by the backend (`?lang=`), and this tab
+  /// stays mounted for the whole session — so a language switch has to re-fetch
+  /// them or the list keeps showing the previous language. `force: true` skips
+  /// the 24h lookups cache and keeps the current list on screen (no skeleton
+  /// flash) while the new-language one loads.
+  @override
+  void onLocaleChanged() => _loadCountries(force: true);
 
   /// [force] (pull-to-refresh) bypasses the 24h lookups cache and keeps the
   /// current list on screen instead of flashing the skeleton.

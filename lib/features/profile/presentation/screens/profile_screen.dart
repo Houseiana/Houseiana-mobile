@@ -283,9 +283,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: Color(0xFFEF4444),
                     ),
                   ),
-                  trailing: Icon(
-                    context.isRtl ? Icons.chevron_left : Icons.chevron_right,
-                    color: const Color(0xFF9CA3AF),
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: Color(0xFF9CA3AF),
                     size: 20,
                   ),
                   onTap: () {
@@ -447,9 +447,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 );
               }),
             ),
-            Icon(
-              context.isRtl ? Icons.chevron_left : Icons.chevron_right,
-              color: const Color(0xFF9CA3AF),
+            // Disclosure chevron: `chevron_right` sets `matchTextDirection`,
+            // so Flutter mirrors it for us in Arabic. Do not swap it manually
+            // — that double-flips it back to pointing right.
+            const Icon(
+              Icons.chevron_right,
+              color: Color(0xFF9CA3AF),
             ),
           ],
         ),
@@ -609,9 +612,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Color(0xFF1D242B),
                   ),
                 ),
-                trailing: Icon(
-                  context.isRtl ? Icons.chevron_left : Icons.chevron_right,
-                  color: const Color(0xFF9CA3AF),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: Color(0xFF9CA3AF),
                   size: 20,
                 ),
                 onTap: item.onTap,

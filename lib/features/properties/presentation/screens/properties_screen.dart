@@ -13,6 +13,7 @@ import 'package:houseiana_mobile_app/core/utils/discount_utils.dart';
 import 'package:houseiana_mobile_app/features/properties/presentation/widgets/property_map_view.dart';
 import 'package:houseiana_mobile_app/features/properties/presentation/widgets/property_sort_control.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/i18n/locale_aware_state.dart';
 import 'package:houseiana_mobile_app/shared/widgets/cards/property_list_card.dart';
 import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
 import 'package:houseiana_mobile_app/shared/widgets/empty_state/empty_state_widget.dart';
@@ -25,7 +26,8 @@ class PropertiesScreen extends StatefulWidget {
   State<PropertiesScreen> createState() => _PropertiesScreenState();
 }
 
-class _PropertiesScreenState extends State<PropertiesScreen> {
+class _PropertiesScreenState extends State<PropertiesScreen>
+    with LocaleAwareState<PropertiesScreen> {
   bool _isMapView = false;
   final TextEditingController _searchController = TextEditingController();
 
@@ -103,6 +105,14 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
     _scrollController.addListener(_onScroll);
     _loadData();
   }
+
+  /// The search tab stays mounted for the whole session, so a language switch
+  /// has to re-query — the rows come back from `/api/property-search` already
+  /// localized under the `lang` header. The active location filter is passed
+  /// back in explicitly: `_loadData` assigns `_filterLocation` from its
+  /// argument, so calling it bare would silently clear the filter.
+  @override
+  void onLocaleChanged() => _loadData(location: _filterLocation);
 
   @override
   void dispose() {

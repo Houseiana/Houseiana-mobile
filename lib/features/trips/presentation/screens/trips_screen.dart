@@ -12,6 +12,7 @@ import 'package:houseiana_mobile_app/features/bottom_nav/presentation/cubit/cubi
 import 'package:houseiana_mobile_app/features/bottom_nav/presentation/cubit/states.dart';
 import 'package:houseiana_mobile_app/features/chat/data/firestore_chat_service.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/i18n/locale_aware_state.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/trip_skeleton.dart';
 
 class TripsScreen extends StatefulWidget {
@@ -22,7 +23,7 @@ class TripsScreen extends StatefulWidget {
 }
 
 class _TripsScreenState extends State<TripsScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, LocaleAwareState<TripsScreen> {
   TabController? _tabController;
 
   final _userService = sl<UserService>();
@@ -48,7 +49,18 @@ class _TripsScreenState extends State<TripsScreen>
     super.dispose();
   }
 
-  Future<void> _init() async {
+  /// This tab stays mounted for the whole session, so a language switch has to
+  /// rebuild everything the backend localizes: the filter tabs (BookingStatus
+  /// lookup names) and the trip rows themselves. The cached rows are dropped so
+  /// [_loadTab] actually re-queries, and the selected tab is preserved.
+  @override
+  void onLocaleChanged() {
+    if (!_session.isLoggedIn) return;
+    _tripsByTab.clear();
+    _init(initialIndex: _tabController?.index ?? 0);
+  }
+
+  Future<void> _init({int initialIndex = 0}) async {
     if (!_session.isLoggedIn) {
       setState(() => _loadingTabs = false);
       return;
@@ -60,7 +72,11 @@ class _TripsScreenState extends State<TripsScreen>
     final tabs = await _userService.getTripFilterTabs();
     if (!mounted) return;
 
-    final controller = TabController(length: tabs.length, vsync: this);
+    final controller = TabController(
+      length: tabs.length,
+      initialIndex: tabs.isEmpty ? 0 : initialIndex.clamp(0, tabs.length - 1),
+      vsync: this,
+    );
     controller.addListener(() {
       // Lazy-load a tab's trips the first time it becomes the active tab.
       if (!controller.indexIsChanging) {
@@ -68,13 +84,20 @@ class _TripsScreenState extends State<TripsScreen>
       }
     });
 
+    final previous = _tabController;
     setState(() {
       _tabs = tabs;
       _tabController = controller;
       _loadingTabs = false;
     });
+    // Only safe once the tree has rebuilt onto the new controller — disposing
+    // one that is still attached to the live TabBar/TabBarView throws.
+    if (previous != null) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => previous.dispose());
+    }
 
-    if (tabs.isNotEmpty) _loadTab(tabs.first);
+    if (tabs.isNotEmpty) _loadTab(tabs[controller.index]);
   }
 
   Future<void> _loadTab(TripFilterTab tab, {bool force = false}) async {
@@ -805,11 +828,33 @@ class _TripsScreenState extends State<TripsScreen>
     );
   }
 
-  /// The `BookingStatus` lookup returns English names ("Upcoming", "Past",
-  /// "Cancelled", "Need to Pay", "Awaiting Approval") regardless of the `lang`
-  /// header, so we localize the tab labels client-side. Falls back to the raw
-  /// lookup name for any status we don't recognize (keeps forward-compat).
+  /// `BookingStatus` lookup id → our translation key. The id is the stable part
+  /// of the contract; the `name` is NOT — the backend hands back Arabic names
+  /// for some accounts ("سابق", "بحاجة للدفع", …) no matter what the app locale
+  /// is, and those used to fall through to the raw-label branch below, which is
+  /// how Arabic tabs showed up on an English UI. Ids come from
+  /// `GET /api/Lookups/BookingStatus`: 1 Upcoming, 2 Past, 3 Cancelled,
+  /// 4 Need to Pay, 5 Awaiting Approval.
+  static const Map<int, String> _tabLabelKeyById = {
+    1: 'trips.upcoming',
+    2: 'trips.past',
+    3: 'trips.cancelled',
+    4: 'trips.needToPay',
+    5: 'trips.awaitingApproval',
+  };
+
+  /// Tab labels are always rendered from our own translations, keyed by the
+  /// lookup id. The name matcher below only serves the offline
+  /// [TripFilterTab.fallback] list (which carries status strings, not ids) and
+  /// any future status the lookup adds; the raw lookup name is the last resort.
   String _localizedTabLabel(TripFilterTab tab) {
+    final filter = tab.filter;
+    final id = filter is num
+        ? filter.toInt()
+        : int.tryParse(filter.toString().trim());
+    final keyById = id == null ? null : _tabLabelKeyById[id];
+    if (keyById != null) return context.tr(keyById);
+
     final normalized = tab.label.toUpperCase().replaceAll(RegExp(r'[\s_-]'), '');
     switch (normalized) {
       case 'UPCOMING':

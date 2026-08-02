@@ -17,6 +17,7 @@ import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/features/chat/data/firestore_chat_service.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/i18n/locale_aware_state.dart';
 import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
 import 'package:houseiana_mobile_app/shared/widgets/empty_state/empty_state_widget.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart';
@@ -32,7 +33,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with LocaleAwareState<HomeScreen> {
   /// Selected region category id from `/api/Lookups/RegionCategory`, sent to
   /// the search endpoint as `featuredRegionId` to filter the home in place.
   /// Null means "All" (no filter). Drilling into a region (See All) uses
@@ -80,6 +82,16 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     _watchUnreadMessages();
+    _loadCategories();
+    _loadData();
+  }
+
+  /// Home stays mounted for the whole session, so a language switch has to
+  /// re-run both loads — the destination chips and the listing rails alike come
+  /// back from the backend already localized. Both caches are keyed per
+  /// language, so the previously-visited language renders straight from cache.
+  @override
+  void onLocaleChanged() {
     _loadCategories();
     _loadData();
   }
@@ -186,7 +198,10 @@ class _HomeScreenState extends State<HomeScreen> {
   /// `UserService.toggleFavorite`), so after a favourite the next load misses
   /// the cache and fetches fresh — matching the product spec.
   Future<void> _loadData({bool forceRefresh = false}) async {
-    final listKey = HomeCache.listKey(_selectedFeaturedRegionId);
+    final listKey = HomeCache.listKey(
+      _selectedFeaturedRegionId,
+      sl<LookupsCache>().activeLang,
+    );
     final favKey = HomeCache.favKey(_session.userId);
 
     // ── Cache hit → render immediately, no network call. ──
@@ -631,10 +646,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                  Icon(
-                    context.isRtl ? Icons.chevron_left : Icons.chevron_right,
+                  const Icon(
+                    Icons.chevron_right,
                     size: 20,
-                    color: const Color(0xFF6B7280),
+                    color: Color(0xFF6B7280),
                   ),
                 ],
               ),
@@ -1256,10 +1271,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                  child: Icon(
-                    context.isRtl ? Icons.arrow_back : Icons.arrow_forward,
+                  child: const Icon(
+                    Icons.arrow_forward,
                     size: 16,
-                    color: const Color(0xFF1D242B),
+                    color: Color(0xFF1D242B),
                   ),
                 ),
               ),

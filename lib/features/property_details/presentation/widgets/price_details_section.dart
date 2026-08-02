@@ -300,7 +300,6 @@ class PriceDetailsSection extends StatelessWidget {
   Widget _monthNav(BuildContext context, NightlyPricesState state) {
     final cubit = context.read<NightlyPricesCubit>();
     final locale = Localizations.localeOf(context).toLanguageTag();
-    final rtl = Directionality.of(context) == TextDirection.rtl;
     final canPrev = cubit.canGoPrev();
     final canNext = cubit.canGoNext();
 
@@ -308,9 +307,11 @@ class PriceDetailsSection extends StatelessWidget {
       children: [
         IconButton(
           onPressed: canPrev ? cubit.goPrev : null,
-          // The arrows sit at the layout edges, so in Arabic "previous" is the
-          // right-hand button and needs the mirrored glyph.
-          icon: Icon(rtl ? Icons.chevron_right : Icons.chevron_left),
+          // The Row is direction-aware, so "previous" already lands at the
+          // right-hand edge in Arabic, and `chevron_left` carries
+          // `matchTextDirection` so Flutter mirrors the glyph to match.
+          // Swapping the icon by hand here would flip it a second time.
+          icon: const Icon(Icons.chevron_left),
           color: AppColors.charcoal,
           disabledColor: AppColors.neutral300,
           visualDensity: VisualDensity.compact,
@@ -329,7 +330,7 @@ class PriceDetailsSection extends StatelessWidget {
         ),
         IconButton(
           onPressed: canNext ? cubit.goNext : null,
-          icon: Icon(rtl ? Icons.chevron_left : Icons.chevron_right),
+          icon: const Icon(Icons.chevron_right),
           color: AppColors.charcoal,
           disabledColor: AppColors.neutral300,
           visualDensity: VisualDensity.compact,

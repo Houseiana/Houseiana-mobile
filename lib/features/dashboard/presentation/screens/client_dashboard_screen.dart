@@ -393,8 +393,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                 ],
               ),
             ),
-            Icon(
-              context.isRtl ? Icons.chevron_left : Icons.chevron_right,
+            const Icon(
+              Icons.chevron_right,
               color: AppColors.neutral400,
             ),
           ],

@@ -8,6 +8,7 @@ import 'package:houseiana_mobile_app/core/models/region_category_model.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/features/country/presentation/widgets/destination_message_state.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
+import 'package:houseiana_mobile_app/i18n/locale_aware_state.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 /// Second level of the Country tab: the destination regions of a country,
@@ -36,7 +37,8 @@ class RegionListScreen extends StatefulWidget {
   State<RegionListScreen> createState() => _RegionListScreenState();
 }
 
-class _RegionListScreenState extends State<RegionListScreen> {
+class _RegionListScreenState extends State<RegionListScreen>
+    with LocaleAwareState<RegionListScreen> {
   final _propertyService = sl<PropertyService>();
 
   /// Stable `/api/lookups/country` id of the only country the destination
@@ -47,10 +49,41 @@ class _RegionListScreenState extends State<RegionListScreen> {
   String? _error;
   List<RegionCategory> _regions = [];
 
+  /// Header title. Seeded from the name the country list passed in, but kept in
+  /// State so it can be re-resolved in the new language after a switch — the
+  /// route argument itself is frozen in whatever language it was tapped in.
+  late String _countryName = widget.countryName;
+
   @override
   void initState() {
     super.initState();
     _loadRegions();
+  }
+
+  /// Region names come from the backend already localized, and this route can
+  /// still be in the navigation stack when the language is switched (Profile →
+  /// Language sits on top of it), so re-fetch both the grid and the country
+  /// title instead of leaving the previous language behind.
+  @override
+  void onLocaleChanged() {
+    _loadRegions(force: true);
+    _refreshCountryName();
+  }
+
+  Future<void> _refreshCountryName() async {
+    try {
+      final countries = await _propertyService.getCountries();
+      if (!mounted) return;
+      for (final country in countries) {
+        if (country.id == widget.countryId) {
+          setState(() => _countryName = country.name);
+          return;
+        }
+      }
+    } catch (_) {
+      // Title-only refresh — keep the previous label rather than surfacing an
+      // error over a screen whose actual content loaded fine.
+    }
   }
 
   /// [force] (pull-to-refresh) bypasses the 24h lookups cache and keeps the
@@ -172,7 +205,7 @@ class _RegionListScreenState extends State<RegionListScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.countryName,
+                  _countryName,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,

@@ -603,9 +603,15 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               ),
             ),
           ),
+          // Directional (start/end) rather than physical (left/right): the
+          // arrow/chevron icons carry `matchTextDirection: true`, so Flutter
+          // already mirrors the glyph in Arabic. Pinning them with `Positioned`
+          // left an RTL back arrow pointing right while sitting on the left
+          // edge. `PageView` also reverses under RTL (page 0 renders rightmost),
+          // so "previous" genuinely belongs at the start edge.
           if (photos.length > 1 && _currentPage > 0)
-            Positioned(
-              left: 12,
+            PositionedDirectional(
+              start: 12,
               top: 0,
               bottom: 0,
               child: Center(
@@ -621,8 +627,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               ),
             ),
           if (photos.length > 1 && _currentPage < photos.length - 1)
-            Positioned(
-              right: 12,
+            PositionedDirectional(
+              end: 12,
               top: 0,
               bottom: 0,
               child: Center(
@@ -637,16 +643,16 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                 ),
               ),
             ),
-          Positioned(
-            left: 16,
+          PositionedDirectional(
+            start: 16,
             top: 12 + MediaQuery.of(context).padding.top,
             child: _CircleButton(
               icon: Icons.arrow_back,
               onTap: () => Navigator.pop(context),
             ),
           ),
-          Positioned(
-            right: 16,
+          PositionedDirectional(
+            end: 16,
             top: 12 + MediaQuery.of(context).padding.top,
             child: Row(
               children: [
@@ -723,8 +729,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               ),
             ),
           if (photos.isNotEmpty)
-            Positioned(
-              right: 16,
+            PositionedDirectional(
+              end: 16,
               bottom: 14,
               child: Container(
                 padding:
@@ -733,12 +739,18 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   color: Colors.black.withValues(alpha: 0.55),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  '${_currentPage + 1} / ${photos.length}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                // Forced LTR: under Arabic bidi the neutral " / " between two
+                // numbers takes the paragraph direction, so "1 / 5" rendered
+                // as "5 / 1".
+                child: Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Text(
+                    '${_currentPage + 1} / ${photos.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),

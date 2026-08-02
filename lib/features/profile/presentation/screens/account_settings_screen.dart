@@ -236,8 +236,11 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           color: AppColors.neutral600,
         ),
       ),
-      trailing: Icon(
-        context.isRtl ? Icons.chevron_left : Icons.chevron_right,
+      // `chevron_right` carries `matchTextDirection`, so Flutter mirrors it
+      // automatically under an RTL Directionality — swapping it by hand here
+      // would flip it twice and point it the wrong way in Arabic.
+      trailing: const Icon(
+        Icons.chevron_right,
         color: AppColors.neutral400,
       ),
       onTap: onTap,
