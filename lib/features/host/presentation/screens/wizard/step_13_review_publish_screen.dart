@@ -76,7 +76,7 @@ class Step13ReviewPublishScreen extends StatelessWidget {
                             _buildIconText(Icons.cancel_outlined, data.cancellationPolicyType ?? context.tr('wizard.policyFlexible')),
                             const SizedBox(height: 4),
                             Text(
-                              context.tr('wizard.freeCancelWithin24'),
+                              _cancellationSummary(context, data),
                               style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
                             ),
                           ],
@@ -316,6 +316,22 @@ class Step13ReviewPublishScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// One-line summary of the chosen cancellation window. The window always
+  /// counts back from check-in, so the copy says so explicitly instead of the
+  /// old hardcoded "within 24h" (which was shown even for a 5-day policy).
+  String _cancellationSummary(BuildContext context, WizardData data) {
+    final type = (data.cancellationPolicyType ?? 'FLEXIBLE').toUpperCase();
+    if (type == 'FIXED') {
+      return context.tr('wizard.freeCancelDaysBefore', args: {'days': 30});
+    }
+    if (type == 'MODERATE') {
+      return context.tr('wizard.freeCancelDaysBefore',
+          args: {'days': data.freeCancellationDays ?? 5});
+    }
+    return context.tr('wizard.freeCancelHoursBefore',
+        args: {'hours': data.freeCancellationHours ?? 24});
   }
 
   Widget _buildIconText(IconData icon, String text, {Color? iconColor}) {

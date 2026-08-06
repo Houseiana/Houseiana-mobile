@@ -379,6 +379,29 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     return policyType == 'fixed' || days > 0 || hours > 0;
   }
 
+  /// The free-cancellation window counts back from **check-in**, not from the
+  /// booking date, so once the guest picks dates we can show the exact
+  /// deadline instead of a relative "N days" the guest has to work out.
+  /// Returns null when no dates are picked yet or the deadline already passed.
+  DateTime? _cancellationDeadline(Map<String, dynamic> p, DateTime? checkIn) {
+    if (checkIn == null) return null;
+    final raw = p['cancellationPolicy'] ?? p['cancelPolicy'];
+    if (raw is! Map) return null;
+    final policyType = (raw['policyType'] ?? '').toString().toLowerCase();
+    final days = (raw['freeCancellationDays'] as num?)?.toInt() ?? 0;
+    final hours = (raw['freeCancellationHours'] as num?)?.toInt() ?? 0;
+    DateTime? deadline;
+    if (policyType == 'fixed') {
+      deadline = checkIn.subtract(const Duration(days: 30));
+    } else if (days > 0) {
+      deadline = checkIn.subtract(Duration(days: days));
+    } else if (hours > 0) {
+      deadline = checkIn.subtract(Duration(hours: hours));
+    }
+    if (deadline == null || deadline.isBefore(DateTime.now())) return null;
+    return deadline;
+  }
+
   bool _isSuperhost(Map<String, dynamic> p) => (p['isSuperhost'] ??
       p['host']?['isSuperhost'] ??
       p['host']?['superhost'] ??
@@ -518,22 +541,28 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                       _buildAmenitiesSection(amenities),
                       const _SectionDivider(),
                     ],
-                    ThingsToKnowWidget(
-                      checkInTime: checkInTime,
-                      checkOutTime: checkOutTime,
-                      allowSmoking: _allowSmoking(property),
-                      allowPets: _allowPets(property),
-                      allowEvents: _allowEvents(property),
-                      allowGuests: _allowGuests(property),
-                      allowMarriedOnly: _allowMarriedOnly(property),
-                      houseRules: rules,
-                      hasEnhancedCleaning: _hasEnhancedCleaning(property),
-                      hasSecurityCamera: _hasSecurityCamera(property),
-                      hasSafetyKit: _hasSafetyKit(property),
-                      hasCarbonMonoxideAlarm: _hasCarbonMonoxideAlarm(property),
-                      hasSmokeAlarm: _hasSmokeAlarm(property),
-                      cancellationPolicy: cancellationPolicy,
-                      hasCancellationWindow: _hasCancellationWindow(property),
+                    BlocBuilder<NightlyPricesCubit, NightlyPricesState>(
+                      buildWhen: (prev, curr) => prev.checkIn != curr.checkIn,
+                      builder: (context, stay) => ThingsToKnowWidget(
+                        checkInTime: checkInTime,
+                        checkOutTime: checkOutTime,
+                        allowSmoking: _allowSmoking(property),
+                        allowPets: _allowPets(property),
+                        allowEvents: _allowEvents(property),
+                        allowGuests: _allowGuests(property),
+                        allowMarriedOnly: _allowMarriedOnly(property),
+                        houseRules: rules,
+                        hasEnhancedCleaning: _hasEnhancedCleaning(property),
+                        hasSecurityCamera: _hasSecurityCamera(property),
+                        hasSafetyKit: _hasSafetyKit(property),
+                        hasCarbonMonoxideAlarm:
+                            _hasCarbonMonoxideAlarm(property),
+                        hasSmokeAlarm: _hasSmokeAlarm(property),
+                        cancellationPolicy: cancellationPolicy,
+                        cancellationDeadline:
+                            _cancellationDeadline(property, stay.checkIn),
+                        hasCancellationWindow: _hasCancellationWindow(property),
+                      ),
                     ),
                     const _SectionDivider(),
                     _buildLocationSection(property, location),

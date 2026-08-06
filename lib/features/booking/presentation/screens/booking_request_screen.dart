@@ -215,6 +215,44 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
     return context.tr('booking.freeCancellation');
   }
 
+  Map? get _cancellationPolicyMap {
+    final raw = _property['cancellationPolicy'] ?? _property['cancelPolicy'];
+    return raw is Map ? raw : null;
+  }
+
+  /// Whether the policy defines a free-cancellation window, after which
+  /// cancelling yields no refund (drives the "after that" note).
+  bool get _hasCancellationWindow {
+    final raw = _cancellationPolicyMap;
+    if (raw == null) return false;
+    final policyType = (raw['policyType'] ?? '').toString().toLowerCase();
+    final days = (raw['freeCancellationDays'] as num?)?.toInt() ?? 0;
+    final hours = (raw['freeCancellationHours'] as num?)?.toInt() ?? 0;
+    return policyType == 'fixed' || days > 0 || hours > 0;
+  }
+
+  /// The free-cancellation window counts back from **check-in**, not from the
+  /// booking date — with the dates already chosen here we can spell out the
+  /// exact deadline. Null when there are no dates or it has already passed.
+  DateTime? get _cancellationDeadline {
+    final checkIn = _checkIn;
+    final raw = _cancellationPolicyMap;
+    if (checkIn == null || raw == null) return null;
+    final policyType = (raw['policyType'] ?? '').toString().toLowerCase();
+    final days = (raw['freeCancellationDays'] as num?)?.toInt() ?? 0;
+    final hours = (raw['freeCancellationHours'] as num?)?.toInt() ?? 0;
+    DateTime? deadline;
+    if (policyType == 'fixed') {
+      deadline = checkIn.subtract(const Duration(days: 30));
+    } else if (days > 0) {
+      deadline = checkIn.subtract(Duration(days: days));
+    } else if (hours > 0) {
+      deadline = checkIn.subtract(Duration(hours: hours));
+    }
+    if (deadline == null || deadline.isBefore(DateTime.now())) return null;
+    return deadline;
+  }
+
   /// Fetches availability/pricing for the selected dates so the price
   /// breakdown (notably the service fee) reflects the backend, matching the
   /// web reserve flow. Silently falls back to local values on failure.
@@ -405,13 +443,44 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                         color: const Color(0xFFF9F9FA),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Text(
-                        _cancellationPolicyText(),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF6B7280),
-                          height: 1.5,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _cancellationPolicyText(),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF1D242B),
+                              fontWeight: FontWeight.w600,
+                              height: 1.5,
+                            ),
+                          ),
+                          if (_cancellationDeadline != null) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              context.tr('propertyDetails.freeCancellationUntil',
+                                  args: {
+                                    'date': _formatDate(_cancellationDeadline)
+                                  }),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF6B7280),
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                          if (_hasCancellationWindow) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              context.tr('propertyDetails.noRefundAfterWindow'),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF6B7280),
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
 
