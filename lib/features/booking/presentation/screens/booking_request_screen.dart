@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/utils/money.dart';
+import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
@@ -13,7 +14,7 @@ import 'package:houseiana_mobile_app/features/booking/presentation/widgets/guest
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class BookingRequestScreen extends StatefulWidget {
-  const BookingRequestScreen({super.key});
+  BookingRequestScreen({super.key});
 
   @override
   State<BookingRequestScreen> createState() => _BookingRequestScreenState();
@@ -111,7 +112,9 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   double _serviceFeeFromProperty() {
     final fees = _property['fees'] as Map<String, dynamic>? ?? {};
     final service = fees['service'] ?? fees['serviceFee'] ?? 0;
-    return (service is num ? service.toDouble() : double.tryParse('$service') ?? 0);
+    return (service is num
+        ? service.toDouble()
+        : double.tryParse('$service') ?? 0);
   }
 
   /// Service fee for the selected dates, taken from the availability API
@@ -201,14 +204,16 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
         return context.tr('propertyDetails.cancelFixedPolicy');
       }
       if (days > 0) {
-        return context.tr('propertyDetails.cancelFreeDays', args: {'days': days});
+        return context
+            .tr('propertyDetails.cancelFreeDays', args: {'days': days});
       }
       if (hours > 0) {
-        return context.tr('propertyDetails.cancelFreeHours', args: {'hours': hours});
+        return context
+            .tr('propertyDetails.cancelFreeHours', args: {'hours': hours});
       }
       if (policyType.isNotEmpty) {
-        return context.tr('propertyDetails.cancelPolicyType',
-            args: {'type': policyType});
+        return context
+            .tr('propertyDetails.cancelPolicyType', args: {'type': policyType});
       }
     }
     if (raw is String && raw.isNotEmpty) return raw;
@@ -274,7 +279,8 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   /// Maximum guests allowed for this property, derived from the API payload
   /// (`maxGuests`, falling back to `guests`). Defaults to 16 when unspecified.
   int get _maxGuests {
-    final raw = _property['maxGuests'] ?? _property['guests'] ?? _property['maxGuest'];
+    final raw =
+        _property['maxGuests'] ?? _property['guests'] ?? _property['maxGuest'];
     final n = raw is num ? raw.toInt() : int.tryParse('$raw');
     return (n != null && n > 0) ? n : 16;
   }
@@ -302,15 +308,6 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
       initialDate: _checkIn ?? DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) => Theme(
-        data: ThemeData.light().copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: Color(0xFFFCC519),
-            onPrimary: Color(0xFF1D242B),
-          ),
-        ),
-        child: child!,
-      ),
     );
     if (date != null && mounted) {
       setState(() {
@@ -330,15 +327,6 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
       initialDate: _checkOut ?? firstDate,
       firstDate: firstDate,
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) => Theme(
-        data: ThemeData.light().copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: Color(0xFFFCC519),
-            onPrimary: Color(0xFF1D242B),
-          ),
-        ),
-        child: child!,
-      ),
     );
     if (date != null && mounted) {
       setState(() {
@@ -388,26 +376,26 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.cardBackground,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF1D242B)),
+            icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             context.tr('propertyDetails.reserve'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1D242B),
+              color: AppColors.charcoal,
             ),
           ),
           centerTitle: true,
-          bottom: const PreferredSize(
+          bottom: PreferredSize(
             preferredSize: Size.fromHeight(1),
-            child: Divider(height: 1, color: Color(0xFFE5E7EB)),
+            child: Divider(height: 1, color: AppColors.neutral200),
           ),
         ),
         body: Column(
@@ -419,28 +407,24 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildPropertyCard(),
-
                     const SizedBox(height: 28),
-
                     _buildSectionTitle(context.tr('booking.yourTrip')),
                     const SizedBox(height: 16),
                     _buildTripCard(),
-
                     const SizedBox(height: 28),
-
                     if (_nights > 0) ...[
                       _buildSectionTitle(context.tr('booking.priceDetails')),
                       const SizedBox(height: 16),
                       _buildPriceCard(),
                       const SizedBox(height: 28),
                     ],
-
-                    _buildSectionTitle(context.tr('booking.cancellationPolicyTitle')),
+                    _buildSectionTitle(
+                        context.tr('booking.cancellationPolicyTitle')),
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF9F9FA),
+                        color: AppColors.ghostWhite,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
@@ -448,9 +432,9 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                         children: [
                           Text(
                             _cancellationPolicyText(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF1D242B),
+                              color: AppColors.charcoal,
                               fontWeight: FontWeight.w600,
                               height: 1.5,
                             ),
@@ -458,13 +442,14 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                           if (_cancellationDeadline != null) ...[
                             const SizedBox(height: 6),
                             Text(
-                              context.tr('propertyDetails.freeCancellationUntil',
+                              context.tr(
+                                  'propertyDetails.freeCancellationUntil',
                                   args: {
                                     'date': _formatDate(_cancellationDeadline)
                                   }),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFF6B7280),
+                                color: AppColors.neutral500,
                                 height: 1.5,
                               ),
                             ),
@@ -473,9 +458,9 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                             const SizedBox(height: 6),
                             Text(
                               context.tr('propertyDetails.noRefundAfterWindow'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFF6B7280),
+                                color: AppColors.neutral500,
                                 height: 1.5,
                               ),
                             ),
@@ -483,37 +468,37 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 20),
-
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                        border: Border.all(color: AppColors.neutral200),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: RichText(
                         text: TextSpan(
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF6B7280),
+                            color: AppColors.neutral500,
                             height: 1.5,
                           ),
                           children: [
-                            TextSpan(text: context.tr('booking.byAgreeingPrefix')),
                             TextSpan(
-                              text: context.tr('booking.houseRulesCancellation'),
-                              style: const TextStyle(
+                                text: context.tr('booking.byAgreeingPrefix')),
+                            TextSpan(
+                              text:
+                                  context.tr('booking.houseRulesCancellation'),
+                              style: TextStyle(
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF1D242B),
+                                color: AppColors.charcoal,
                               ),
                             ),
                             TextSpan(text: context.tr('booking.andSeparator')),
                             TextSpan(
                               text: context.tr('booking.guestRefundPolicy'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF1D242B),
+                                color: AppColors.charcoal,
                               ),
                             ),
                             const TextSpan(text: '.'),
@@ -525,7 +510,6 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                 ),
               ),
             ),
-
             _buildBottomBar(),
           ],
         ),
@@ -540,7 +524,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.neutral200),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -554,7 +538,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                     height: 72,
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
-                        width: 80, height: 72, color: const Color(0xFFF0F0F0)),
+                        width: 80, height: 72, color: AppColors.neutral100),
                     errorWidget: (context, url, error) => _imgPlaceholder(),
                   )
                 : _imgPlaceholder(),
@@ -566,10 +550,10 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
               children: [
                 Text(
                   _title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1D242B),
+                    color: AppColors.charcoal,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -578,8 +562,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                   const SizedBox(height: 4),
                   Text(
                     location,
-                    style:
-                        const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                    style: TextStyle(fontSize: 12, color: AppColors.neutral500),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -587,15 +570,16 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    const Icon(Icons.star, size: 12, color: Color(0xFFFCC519)),
+                    const Icon(Icons.star,
+                        size: 12, color: AppColors.primaryColor),
                     const SizedBox(width: 3),
                     Text(
                       context.tr('booking.pricePerNightFormat',
                           args: {'price': _money(_headerNightly)}),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1D242B),
+                        color: AppColors.charcoal,
                       ),
                     ),
                   ],
@@ -613,18 +597,18 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
       width: 80,
       height: 72,
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
+        color: AppColors.neutral100,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: const Icon(Icons.home_work_outlined,
-          size: 28, color: Color(0xFFD1D5DB)),
+      child:
+          Icon(Icons.home_work_outlined, size: 28, color: AppColors.neutral300),
     );
   }
 
   Widget _buildTripCard() {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.neutral200),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -641,11 +625,11 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                       children: [
                         Text(
                           context.tr('booking.checkInLabel'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1,
-                            color: Color(0xFF6B7280),
+                            color: AppColors.neutral500,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -655,15 +639,15 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: _checkIn == null
-                                ? const Color(0xFF9CA3AF)
-                                : const Color(0xFF1D242B),
+                                ? AppColors.neutral400
+                                : AppColors.charcoal,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                Container(width: 1, height: 36, color: const Color(0xFFE5E7EB)),
+                Container(width: 1, height: 36, color: AppColors.neutral200),
                 Expanded(
                   child: GestureDetector(
                     onTap: _pickCheckOut,
@@ -674,11 +658,11 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                         children: [
                           Text(
                             context.tr('booking.checkOutLabel'),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1,
-                              color: Color(0xFF6B7280),
+                              color: AppColors.neutral500,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -688,8 +672,8 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: _checkOut == null
-                                  ? const Color(0xFF9CA3AF)
-                                  : const Color(0xFF1D242B),
+                                  ? AppColors.neutral400
+                                  : AppColors.charcoal,
                             ),
                           ),
                         ],
@@ -700,9 +684,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
               ],
             ),
           ),
-
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
-
+          Divider(height: 1, color: AppColors.neutral200),
           Padding(
             padding: const EdgeInsets.all(16),
             child: _buildGuestRow(
@@ -710,9 +692,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                 '',
                 _guests,
                 _guests > 1 ? () => setState(() => _guests--) : null,
-                _guests < _maxGuests
-                    ? () => setState(() => _guests++)
-                    : null),
+                _guests < _maxGuests ? () => setState(() => _guests++) : null),
           ),
         ],
       ),
@@ -733,14 +713,14 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1D242B))),
+                      color: AppColors.charcoal)),
               if (sublabel.isNotEmpty)
                 Text(sublabel,
-                    style: const TextStyle(
-                        fontSize: 11, color: Color(0xFF9CA3AF))),
+                    style:
+                        TextStyle(fontSize: 11, color: AppColors.neutral400)),
             ],
           ),
         ),
@@ -750,10 +730,10 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
           child: Text(
             '$value',
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1D242B)),
+                color: AppColors.charcoal),
           ),
         ),
         _counterBtn(Icons.add, onInc),
@@ -771,12 +751,12 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: enabled ? const Color(0xFF6B7280) : const Color(0xFFE5E7EB),
+            color: enabled ? AppColors.neutral500 : AppColors.neutral200,
           ),
         ),
         child: Icon(icon,
             size: 14,
-            color: enabled ? const Color(0xFF1D242B) : const Color(0xFFD1D5DB)),
+            color: enabled ? AppColors.charcoal : AppColors.neutral300),
       ),
     );
   }
@@ -786,7 +766,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.neutral200),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -812,7 +792,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
           _priceRow(context.tr('booking.cleaningFee'), _money(_cleaningFee)),
           const SizedBox(height: 12),
           _priceRow(context.tr('booking.serviceFee'), _money(_serviceFee)),
-          const Divider(height: 24, color: Color(0xFFE5E7EB)),
+          Divider(height: 24, color: AppColors.neutral200),
           _priceRow(context.tr('booking.totalUsd'), _money(_total),
               isTotal: true),
         ],
@@ -822,7 +802,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
 
   Widget _priceRow(String label, String value,
       {bool isTotal = false, bool isDiscount = false}) {
-    const discountGreen = Color(0xFF059669);
+    const discountGreen = AppColors.success;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -833,27 +813,26 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
               color: isDiscount
                   ? discountGreen
                   : isTotal
-                      ? const Color(0xFF1D242B)
-                      : const Color(0xFF6B7280),
+                      ? AppColors.charcoal
+                      : AppColors.neutral500,
             )),
         Text(value,
             style: TextStyle(
               fontSize: isTotal ? 18 : 14,
               fontWeight: FontWeight.w700,
-              color: isDiscount ? discountGreen : const Color(0xFF1D242B),
+              color: isDiscount ? discountGreen : AppColors.charcoal,
             )),
       ],
     );
   }
 
   Widget _buildBottomBar() {
-    final canContinue =
-        _checkIn != null && _checkOut != null && _guests >= 1;
+    final canContinue = _checkIn != null && _checkOut != null && _guests >= 1;
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: const Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+        color: AppColors.cardBackground,
+        border: Border(top: BorderSide(color: AppColors.neutral200)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
@@ -873,16 +852,15 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                 children: [
                   Text(
                     '${_formatDate(_checkIn)} → ${_formatDate(_checkOut)}',
-                    style:
-                        const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                    style: TextStyle(fontSize: 12, color: AppColors.neutral500),
                   ),
                   Text(
                     context.tr('booking.totalAmount',
                         args: {'amount': _money(_total)}),
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1D242B)),
+                        color: AppColors.charcoal),
                   ),
                 ],
               ),
@@ -897,9 +875,9 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                   onPressed:
                       (canContinue && !isLoading) ? _onReservePressed : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFCC519),
-                    foregroundColor: const Color(0xFF1D242B),
-                    disabledBackgroundColor: const Color(0xFFE5E7EB),
+                    backgroundColor: AppColors.primaryColor,
+                    foregroundColor: AppColors.brandCharcoal,
+                    disabledBackgroundColor: AppColors.neutral200,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -910,7 +888,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Color(0xFF1D242B),
+                            color: AppColors.brandCharcoal,
                           ),
                         )
                       : Text(
@@ -919,8 +897,8 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                                   ? context.tr('propertyDetails.reserve')
                                   : context.tr('propertyDetails.requestToBook'))
                               : context.tr('booking.selectDatesAndGuests'),
-                          style:
-                              const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                 );
               },
@@ -989,7 +967,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
       context: context,
       barrierDismissible: false,
       builder: (_) => const Center(
-        child: CircularProgressIndicator(color: Color(0xFFFCC519)),
+        child: CircularProgressIndicator(color: AppColors.primaryColor),
       ),
     ).whenComplete(() => _loadingDialogOpen = false);
   }
@@ -1010,7 +988,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Column(
           children: [
@@ -1018,20 +996,22 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
               width: 56,
               height: 56,
               decoration: const BoxDecoration(
+                // dark-ok: amber status medallion, fixed in both themes
                 color: Color(0xFFFEF3C7),
                 shape: BoxShape.circle,
               ),
+              // dark-ok: on the amber medallion
               child: const Icon(Icons.schedule,
-                  color: Color(0xFFD97706), size: 30),
+                  color: Color(0xFFD97706), size: 30), // dark-ok
             ),
             const SizedBox(height: 16),
             Text(
               context.tr('booking.requestSentTitle'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1D242B),
+                color: AppColors.charcoal,
               ),
             ),
           ],
@@ -1039,7 +1019,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
         content: Text(
           context.tr('booking.requestSentMessage'),
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+          style: TextStyle(fontSize: 14, color: AppColors.neutral500),
         ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
@@ -1056,16 +1036,16 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFCC519),
-                foregroundColor: const Color(0xFF1D242B),
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: AppColors.brandCharcoal,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(
                 context.tr('common.ok'),
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w600),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -1077,10 +1057,10 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,
-        color: Color(0xFF1D242B),
+        color: AppColors.charcoal,
       ),
     );
   }

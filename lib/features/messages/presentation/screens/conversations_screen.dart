@@ -11,7 +11,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/message_skeleton.dart';
 
 class ConversationsScreen extends StatefulWidget {
-  const ConversationsScreen({super.key});
+  ConversationsScreen({super.key});
 
   @override
   State<ConversationsScreen> createState() => _ConversationsScreenState();
@@ -51,7 +51,8 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     final diff = now.difference(local);
     if (diff.inMinutes < 1) return '';
     if (diff.inMinutes < 60) {
-      return context.tr('notifications.minutesShort', args: {'n': diff.inMinutes});
+      return context
+          .tr('notifications.minutesShort', args: {'n': diff.inMinutes});
     }
     if (diff.inHours < 24) {
       return context.tr('notifications.hoursShort', args: {'n': diff.inHours});
@@ -66,19 +67,19 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: Navigator.canPop(context)
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+                icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
         title: Text(
           context.tr('messages.title'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -98,13 +99,14 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
       bloc: _cubit,
       builder: (context, state) {
         if (state is ConversationsLoading || state is ConversationsInitial) {
-          return const ConversationsSkeletonLoader(itemCount: 6);
+          return ConversationsSkeletonLoader(itemCount: 6);
         }
         if (state is ConversationsError) {
           return _buildErrorState(context);
         }
-        final conversations =
-            state is ConversationsLoaded ? state.conversations : <Conversation>[];
+        final conversations = state is ConversationsLoaded
+            ? state.conversations
+            : <Conversation>[];
         if (conversations.isEmpty) {
           return _buildEmptyState(context);
         }
@@ -147,7 +149,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                     name.isNotEmpty
                         ? name[0].toUpperCase()
                         : context.tr('messages.userFallback')[0].toUpperCase(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: AppColors.charcoal,
@@ -168,7 +170,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                 constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                 child: Text(
                   '$unread',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.charcoal,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
@@ -196,7 +198,8 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
               time,
               style: TextStyle(
                 fontSize: 12,
-                color: hasUnread ? AppColors.primaryColor : AppColors.neutral600,
+                color:
+                    hasUnread ? AppColors.primaryColor : AppColors.neutral600,
                 fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
@@ -210,7 +213,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
               padding: const EdgeInsets.only(top: 2),
               child: Text(
                 property,
-                style: const TextStyle(fontSize: 12, color: AppColors.neutral600),
+                style: TextStyle(fontSize: 12, color: AppColors.neutral600),
               ),
             ),
           if (lastMsg.isNotEmpty)
@@ -260,7 +263,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             const SizedBox(height: 24),
             Text(
               context.tr('messages.noMessages'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,
@@ -269,7 +272,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             const SizedBox(height: 8),
             Text(
               context.tr('messages.noMessagesYetDescription'),
-              style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+              style: TextStyle(fontSize: 14, color: AppColors.neutral600),
               textAlign: TextAlign.center,
             ),
           ],
@@ -285,11 +288,11 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 60, color: AppColors.neutral400),
+            Icon(Icons.error_outline, size: 60, color: AppColors.neutral400),
             const SizedBox(height: 16),
             Text(
               context.tr('messages.failedToLoad'),
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal),
@@ -299,10 +302,10 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
               onPressed: () => _cubit.load(_session.userId!),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
                 elevation: 0,
-                shape:
-                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(context.tr('messages.retry')),
             ),
@@ -332,7 +335,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             const SizedBox(height: 24),
             Text(
               context.tr('messages.signInToView'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,
@@ -341,7 +344,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             const SizedBox(height: 8),
             Text(
               context.tr('messages.signInToViewDescription'),
-              style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+              style: TextStyle(fontSize: 14, color: AppColors.neutral600),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -356,15 +359,15 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                 }),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
                 child: Text(
                   context.tr('messages.signIn'),
-                  style:
-                      const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w700),
                 ),
               ),
             ),

@@ -8,7 +8,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class PrivacySettingsScreen extends StatefulWidget {
-  const PrivacySettingsScreen({super.key});
+  PrivacySettingsScreen({super.key});
 
   @override
   State<PrivacySettingsScreen> createState() => _PrivacySettingsScreenState();
@@ -182,17 +182,17 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('profile.privacySettings'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -213,7 +213,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               ).then((_) => _loadPrivacyData()),
             )
           : _isLoading
-              ? const TileListSkeleton(
+              ? TileListSkeleton(
                   itemCount: 8,
                   leadingSize: 40,
                   showTrailing: true,
@@ -246,7 +246,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           const SizedBox(height: 8),
           Text(
             context.tr('profile.sharing'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -280,7 +280,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           const SizedBox(height: 28),
           Text(
             context.tr('profile.personalization'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -314,7 +314,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           const SizedBox(height: 28),
           Text(
             context.tr('profile.manageYourData'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -377,7 +377,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: AppColors.neutral600, size: 20),
@@ -389,7 +389,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal,
@@ -398,7 +398,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppColors.neutral600,
                     height: 1.35,
@@ -430,10 +430,14 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDestructive ? const Color(0xFFFFF5F5) : AppColors.ghostWhite,
+        color: isDestructive
+            ? AppColors.error.withValues(alpha: 0.08)
+            : AppColors.ghostWhite,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDestructive ? const Color(0xFFFFD6D6) : AppColors.neutral200,
+          color: isDestructive
+              ? AppColors.error.withValues(alpha: 0.3)
+              : AppColors.neutral200,
         ),
       ),
       child: Row(
@@ -449,7 +453,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal,
@@ -458,7 +462,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppColors.neutral600,
                     height: 1.35,
@@ -482,18 +486,19 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       decoration: BoxDecoration(
         color: AppColors.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.3)),
+        border:
+            Border.all(color: AppColors.primaryColor.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.shield_outlined, color: AppColors.charcoal, size: 20),
+              Icon(Icons.shield_outlined, color: AppColors.charcoal, size: 20),
               const SizedBox(width: 12),
               Text(
                 context.tr('profile.yourPrivacyMatters'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: AppColors.charcoal,
@@ -504,7 +509,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           const SizedBox(height: 8),
           Text(
             context.tr('profile.privacyPolicyInfo'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               color: AppColors.neutral600,
               height: 1.45,
@@ -543,7 +548,7 @@ class _MessageState extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
 
-  const _MessageState({
+  _MessageState({
     required this.icon,
     required this.title,
     required this.message,
@@ -564,7 +569,7 @@ class _MessageState extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -574,7 +579,7 @@ class _MessageState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral600,
                 height: 1.45,
@@ -588,7 +593,7 @@ class _MessageState extends StatelessWidget {
                   onPressed: onAction,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
-                    foregroundColor: AppColors.charcoal,
+                    foregroundColor: AppColors.brandCharcoal,
                   ),
                   child: Text(actionLabel!),
                 ),

@@ -7,7 +7,7 @@ class PhotoGalleryScreen extends StatefulWidget {
   final List<String> photos;
   final int initialIndex;
 
-  const PhotoGalleryScreen({
+  PhotoGalleryScreen({
     super.key,
     required this.photos,
     this.initialIndex = 0,
@@ -37,6 +37,7 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // dark-ok: full-screen photo viewer, black in both themes
       backgroundColor: Colors.black,
       body: Stack(
         children: [
@@ -67,7 +68,7 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                       return const Icon(
                         Icons.broken_image,
                         size: 100,
-                        color: Colors.white54,
+                        color: Colors.white54, // dark-ok: on the black viewer
                       );
                     },
                   ),
@@ -106,10 +107,11 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(
                       Icons.arrow_back,
-                      color: Colors.white,
+                      color: Colors.white, // dark-ok: overlay on the photo
                       size: 24,
                     ),
                     style: IconButton.styleFrom(
+                      // dark-ok: scrim chip over the photo
                       backgroundColor: Colors.black26,
                       shape: const CircleBorder(),
                     ),
@@ -120,6 +122,7 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
+                      // dark-ok: counter chip over the photo
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -131,7 +134,7 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                       child: Text(
                         '${_currentIndex + 1} / ${widget.photos.length}',
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Colors.white, // dark-ok: on the counter chip
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
@@ -149,7 +152,8 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                         SnackBar(
                           content: Text(
                             url.isNotEmpty
-                                ? context.tr('propertyDetails.photoCounter', args: {
+                                ? context
+                                    .tr('propertyDetails.photoCounter', args: {
                                     'current': _currentIndex + 1,
                                     'total': widget.photos.length,
                                   })
@@ -160,10 +164,11 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                     },
                     icon: const Icon(
                       Icons.share,
-                      color: Colors.white,
+                      color: Colors.white, // dark-ok: overlay on the photo
                       size: 24,
                     ),
                     style: IconButton.styleFrom(
+                      // dark-ok: scrim chip over the photo
                       backgroundColor: Colors.black26,
                       shape: const CircleBorder(),
                     ),
@@ -223,15 +228,17 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                           imageUrl: widget.photos[index],
                           fit: BoxFit.cover,
                           placeholder: (context, url) => Container(
+                            // dark-ok: thumbnail strip on the black viewer
                             color: Colors.grey[900],
                           ),
                           errorWidget: (context, url, error) {
                             return Container(
+                              // dark-ok: thumbnail strip on the black viewer
                               color: Colors.grey[800],
                               child: const Icon(
                                 Icons.broken_image,
                                 size: 20,
-                                color: Colors.white54,
+                                color: Colors.white54, // dark-ok: on black
                               ),
                             );
                           },

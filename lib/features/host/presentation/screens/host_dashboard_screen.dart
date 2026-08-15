@@ -13,19 +13,19 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class HostDashboardScreen extends StatelessWidget {
-  const HostDashboardScreen({super.key});
+  HostDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => HostDashboardCubit()..loadDashboard(),
-      child: const _HostDashboardView(),
+      child: _HostDashboardView(),
     );
   }
 }
 
 class _HostDashboardView extends StatelessWidget {
-  const _HostDashboardView();
+  _HostDashboardView();
 
   @override
   Widget build(BuildContext context) {
@@ -37,20 +37,19 @@ class _HostDashboardView extends StatelessWidget {
             state.message.toLowerCase().contains('not logged in');
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF9F9FA),
+          backgroundColor: AppColors.scaffoldBackground,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.cardBackground,
             elevation: 0,
             leading: Navigator.canPop(context)
                 ? IconButton(
-                    icon:
-                        const Icon(Icons.arrow_back, color: AppColors.charcoal),
+                    icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
                     onPressed: () => Navigator.pop(context),
                   )
                 : null,
             title: Text(
               context.tr('host.title'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,
@@ -59,7 +58,7 @@ class _HostDashboardView extends StatelessWidget {
             centerTitle: true,
             actions: [
               IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.notifications_outlined,
                   color: AppColors.charcoal,
                 ),
@@ -71,15 +70,16 @@ class _HostDashboardView extends StatelessWidget {
           body: !session.isLoggedIn || isLoginError
               ? _buildLoginRequired(context)
               : state is HostDashboardLoading
-                  ? const StatsPageSkeleton()
+                  ? StatsPageSkeleton()
                   : state is HostDashboardError
                       ? _buildErrorState(
                           context,
                           message: state.message,
                         )
                       : RefreshIndicator(
-                          onRefresh: () =>
-                              context.read<HostDashboardCubit>().loadDashboard(),
+                          onRefresh: () => context
+                              .read<HostDashboardCubit>()
+                              .loadDashboard(),
                           color: AppColors.primaryColor,
                           child: SingleChildScrollView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -113,7 +113,7 @@ class _HostDashboardView extends StatelessWidget {
       children: [
         Text(
           context.tr('host.welcomeBackName', args: {'name': name}),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w700,
             color: AppColors.charcoal,
@@ -122,7 +122,7 @@ class _HostDashboardView extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           context.tr('host.hostingOverview'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             color: AppColors.neutral600,
           ),
@@ -163,7 +163,7 @@ class _HostDashboardView extends StatelessWidget {
           icon: Icons.calendar_month_rounded,
           label: context.tr('host.bookingsStat'),
           value: '$bookingsCount',
-          color: Colors.blue,
+          color: AppColors.info,
           onTap: () => Navigator.pushNamed(context, Routes.hostBookings),
         ),
         _buildStatCard(
@@ -172,13 +172,13 @@ class _HostDashboardView extends StatelessWidget {
           value: totalEarnings > 0
               ? '\$${totalEarnings.toStringAsFixed(0)}'
               : '--',
-          color: const Color(0xFF4CAF50),
+          color: AppColors.success,
         ),
         _buildStatCard(
           icon: Icons.star_rounded,
           label: context.tr('host.avgRatingStat'),
           value: averageRating > 0 ? averageRating.toStringAsFixed(1) : '--',
-          color: Colors.orange,
+          color: AppColors.warning,
           onTap: () => Navigator.pushNamed(context, Routes.hostReviews),
         ),
       ],
@@ -197,7 +197,7 @@ class _HostDashboardView extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -225,7 +225,7 @@ class _HostDashboardView extends StatelessWidget {
               children: [
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal,
@@ -233,7 +233,7 @@ class _HostDashboardView extends StatelessWidget {
                 ),
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppColors.neutral600,
                   ),
@@ -252,7 +252,7 @@ class _HostDashboardView extends StatelessWidget {
       children: [
         Text(
           context.tr('host.quickActions'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -309,7 +309,7 @@ class _HostDashboardView extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -325,7 +325,7 @@ class _HostDashboardView extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
                 color: AppColors.charcoal,
@@ -351,7 +351,7 @@ class _HostDashboardView extends StatelessWidget {
           children: [
             Text(
               context.tr('host.yourListings'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,
@@ -378,7 +378,8 @@ class _HostDashboardView extends StatelessWidget {
             Icons.home_work_outlined,
           )
         else
-          ...recentProperties.map((property) => _buildPropertyCard(context, property)),
+          ...recentProperties
+              .map((property) => _buildPropertyCard(context, property)),
       ],
     );
   }
@@ -392,7 +393,7 @@ class _HostDashboardView extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -415,7 +416,7 @@ class _HostDashboardView extends StatelessWidget {
                     placeholder: (context, url) => Container(
                       width: 60,
                       height: 60,
-                      color: const Color(0xFFF0F0F0),
+                      color: AppColors.neutral100,
                     ),
                     errorWidget: (context, url, error) => _imgPlaceholder(),
                   )
@@ -428,7 +429,7 @@ class _HostDashboardView extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -442,7 +443,7 @@ class _HostDashboardView extends StatelessWidget {
                     'price':
                         '${property.currency ?? 'EGP'} ${price.toStringAsFixed(0)}'
                   }),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppColors.neutral600,
                   ),
@@ -510,16 +511,15 @@ class _HostDashboardView extends StatelessWidget {
   }
 
   Widget _buildRecentBookings(BuildContext context, HostDashboardState state) {
-    final recentBookings = state is HostDashboardLoaded
-        ? state.recentBookings
-        : <BookingModel>[];
+    final recentBookings =
+        state is HostDashboardLoaded ? state.recentBookings : <BookingModel>[];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           context.tr('host.recentBookings'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -533,7 +533,8 @@ class _HostDashboardView extends StatelessWidget {
             Icons.calendar_month_outlined,
           )
         else
-          ...recentBookings.map((booking) => _buildBookingCard(context, booking)),
+          ...recentBookings
+              .map((booking) => _buildBookingCard(context, booking)),
       ],
     );
   }
@@ -550,7 +551,7 @@ class _HostDashboardView extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -582,7 +583,7 @@ class _HostDashboardView extends StatelessWidget {
               children: [
                 Text(
                   context.tr('host.guestBooking'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -590,7 +591,7 @@ class _HostDashboardView extends StatelessWidget {
                 ),
                 Text(
                   propertyName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppColors.neutral600,
                   ),
@@ -600,7 +601,7 @@ class _HostDashboardView extends StatelessWidget {
                 if (checkIn.isNotEmpty)
                   Text(
                     '$checkIn -> $checkOut',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       color: AppColors.neutral400,
                     ),
@@ -659,7 +660,7 @@ class _HostDashboardView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.neutral200),
       ),
@@ -670,7 +671,7 @@ class _HostDashboardView extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,
@@ -679,7 +680,7 @@ class _HostDashboardView extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppColors.neutral600,
               ),
@@ -699,7 +700,7 @@ class _HostDashboardView extends StatelessWidget {
         color: AppColors.ghostWhite,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Icon(
+      child: Icon(
         Icons.home_work_outlined,
         color: AppColors.neutral400,
         size: 26,
@@ -726,7 +727,7 @@ class _HostDashboardView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.lock_outline,
               size: 52,
               color: AppColors.neutral500,
@@ -735,7 +736,7 @@ class _HostDashboardView extends StatelessWidget {
             Text(
               context.tr('host.signInToManageHosting'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -745,7 +746,7 @@ class _HostDashboardView extends StatelessWidget {
             Text(
               context.tr('host.signInToManageHostingDesc'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral600,
                 height: 1.5,
@@ -762,7 +763,7 @@ class _HostDashboardView extends StatelessWidget {
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                 ),
                 child: Text(context.tr('auth.signIn')),
               ),
@@ -789,7 +790,7 @@ class _HostDashboardView extends StatelessWidget {
             Text(
               context.tr('host.unableToLoadDashboard'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -799,7 +800,7 @@ class _HostDashboardView extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral600,
                 height: 1.5,
@@ -807,10 +808,11 @@ class _HostDashboardView extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => context.read<HostDashboardCubit>().loadDashboard(),
+              onPressed: () =>
+                  context.read<HostDashboardCubit>().loadDashboard(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
               ),
               child: Text(context.tr('common.retry')),
             ),

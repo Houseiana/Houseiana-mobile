@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
@@ -18,7 +19,7 @@ class PropertySortControl extends StatefulWidget {
   /// different option from the sheet.
   final ValueChanged<String?> onChanged;
 
-  const PropertySortControl({
+  PropertySortControl({
     super.key,
     required this.selectedId,
     required this.onChanged,
@@ -98,14 +99,18 @@ class _PropertySortControlState extends State<PropertySortControl> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFFCC519) : const Color(0xFFF9F9FA),
+          color: isActive ? AppColors.primaryColor : AppColors.ghostWhite,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.neutral200),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.swap_vert, size: 16, color: Color(0xFF1D242B)),
+            // The active pill is the brand yellow in both themes, so its
+            // content stays dark; the idle pill follows the surface.
+            Icon(Icons.swap_vert,
+                size: 16,
+                color: isActive ? AppColors.brandCharcoal : AppColors.charcoal),
             const SizedBox(width: 6),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 110),
@@ -113,15 +118,19 @@ class _PropertySortControlState extends State<PropertySortControl> {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF1D242B),
+                  color:
+                      isActive ? AppColors.brandCharcoal : AppColors.charcoal,
                 ),
               ),
             ),
-            const Icon(Icons.keyboard_arrow_down,
-                size: 16, color: Color(0xFF6B7280)),
+            Icon(Icons.keyboard_arrow_down,
+                size: 16,
+                color: isActive
+                    ? AppColorsLight.neutral500
+                    : AppColors.neutral500),
           ],
         ),
       ),
@@ -133,7 +142,7 @@ class _PropertySortControlState extends State<PropertySortControl> {
   void _openSortSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -148,22 +157,22 @@ class _PropertySortControlState extends State<PropertySortControl> {
                   children: [
                     Text(
                       context.tr('filters.sortBy'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1D242B),
+                        color: AppColors.charcoal,
                       ),
                     ),
                     const Spacer(),
                     IconButton(
                       onPressed: () => Navigator.pop(sheetContext),
-                      icon: const Icon(Icons.close,
-                          size: 20, color: Color(0xFF6B7280)),
+                      icon: Icon(Icons.close,
+                          size: 20, color: AppColors.neutral500),
                     ),
                   ],
                 ),
               ),
-              const Divider(height: 1, color: Color(0xFFE5E7EB)),
+              Divider(height: 1, color: AppColors.neutral200),
               _buildSortTile(
                 sheetContext,
                 id: null,
@@ -196,11 +205,11 @@ class _PropertySortControlState extends State<PropertySortControl> {
         style: TextStyle(
           fontSize: 14,
           fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          color: const Color(0xFF1D242B),
+          color: AppColors.charcoal,
         ),
       ),
       trailing: selected
-          ? const Icon(Icons.check, size: 20, color: Color(0xFFFCC519))
+          ? const Icon(Icons.check, size: 20, color: AppColors.primaryColor)
           : null,
       onTap: () {
         Navigator.pop(sheetContext);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
@@ -13,7 +14,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 /// caller can proceed to create the PENDING booking. Returns `null` when the
 /// guest cancels or dismisses the sheet.
 class GuestInfoModalSheet extends StatefulWidget {
-  const GuestInfoModalSheet({
+  GuestInfoModalSheet({
     super.key,
     this.defaultFirstName = '',
     this.defaultLastName = '',
@@ -35,7 +36,7 @@ class GuestInfoModalSheet extends StatefulWidget {
     return showModalBottomSheet<Map<String, String>>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -151,7 +152,7 @@ class _GuestInfoModalSheetState extends State<GuestInfoModalSheet> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE5E7EB),
+                    color: AppColors.neutral200,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -163,17 +164,17 @@ class _GuestInfoModalSheetState extends State<GuestInfoModalSheet> {
                   Expanded(
                     child: Text(
                       context.tr('booking.guestInfoTitle'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1D242B),
+                        color: AppColors.charcoal,
                       ),
                     ),
                   ),
                   GestureDetector(
                     onTap:
                         _submitting ? null : () => Navigator.of(context).pop(),
-                    child: const Icon(Icons.close, color: Color(0xFF9CA3AF)),
+                    child: Icon(Icons.close, color: AppColors.neutral400),
                   ),
                 ],
               ),
@@ -183,15 +184,19 @@ class _GuestInfoModalSheetState extends State<GuestInfoModalSheet> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFFBEB),
+                  // dark-ok: amber notice callout — the tinted panel and its
+                  // amber-on-amber text stay a self-contained light island in
+                  // both themes.
+                  color: const Color(0xFFFFFBEB), // dark-ok
                   border: Border.all(color: const Color(0xFFFDE68A)),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // dark-ok: on the amber notice panel
                     const Icon(Icons.warning_amber_rounded,
-                        size: 20, color: Color(0xFFD97706)),
+                        size: 20, color: Color(0xFFD97706)), // dark-ok
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -202,6 +207,7 @@ class _GuestInfoModalSheetState extends State<GuestInfoModalSheet> {
                             style: const TextStyle(
                               fontSize: 13,
                               height: 1.5,
+                              // dark-ok: on the amber notice panel
                               color: Color(0xFF92400E),
                             ),
                           ),
@@ -212,6 +218,7 @@ class _GuestInfoModalSheetState extends State<GuestInfoModalSheet> {
                               fontSize: 13,
                               height: 1.5,
                               fontWeight: FontWeight.w700,
+                              // dark-ok: on the amber notice panel
                               color: Color(0xFF92400E),
                             ),
                           ),
@@ -225,9 +232,9 @@ class _GuestInfoModalSheetState extends State<GuestInfoModalSheet> {
 
               Text(
                 context.tr('booking.guestInfoSubtitle'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF6B7280),
+                  color: AppColors.neutral500,
                   height: 1.4,
                 ),
               ),
@@ -277,7 +284,10 @@ class _GuestInfoModalSheetState extends State<GuestInfoModalSheet> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEF2F2),
+                    // dark-ok: red error callout — the tinted panel and its
+                    // red-on-red text stay a self-contained light island in
+                    // both themes.
+                    color: const Color(0xFFFEF2F2), // dark-ok
                     border: Border.all(color: const Color(0xFFFECACA)),
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -285,6 +295,7 @@ class _GuestInfoModalSheetState extends State<GuestInfoModalSheet> {
                     _error!,
                     style: const TextStyle(
                       fontSize: 13,
+                      // dark-ok: on the red error panel
                       color: Color(0xFFB91C1C),
                     ),
                   ),
@@ -303,8 +314,8 @@ class _GuestInfoModalSheetState extends State<GuestInfoModalSheet> {
                             ? null
                             : () => Navigator.of(context).pop(),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFE5E7EB)),
-                          foregroundColor: const Color(0xFF1D242B),
+                          side: BorderSide(color: AppColors.neutral200),
+                          foregroundColor: AppColors.charcoal,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -326,9 +337,9 @@ class _GuestInfoModalSheetState extends State<GuestInfoModalSheet> {
                       child: ElevatedButton(
                         onPressed: _submitting ? null : _submit,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFCC519),
-                          foregroundColor: const Color(0xFF1D242B),
-                          disabledBackgroundColor: const Color(0xFFE5E7EB),
+                          backgroundColor: AppColors.primaryColor,
+                          foregroundColor: AppColors.brandCharcoal,
+                          disabledBackgroundColor: AppColors.neutral200,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -343,7 +354,7 @@ class _GuestInfoModalSheetState extends State<GuestInfoModalSheet> {
                                     height: 18,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: Color(0xFF1D242B),
+                                      color: AppColors.brandCharcoal,
                                     ),
                                   ),
                                   const SizedBox(width: 10),
@@ -389,10 +400,10 @@ class _GuestInfoModalSheetState extends State<GuestInfoModalSheet> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF374151),
+            color: AppColors.neutral700,
           ),
         ),
         const SizedBox(height: 6),
@@ -402,32 +413,30 @@ class _GuestInfoModalSheetState extends State<GuestInfoModalSheet> {
           keyboardType: keyboardType,
           textInputAction: textInputAction,
           onSubmitted: onSubmitted,
-          style: const TextStyle(fontSize: 15, color: Color(0xFF1D242B)),
+          style: TextStyle(fontSize: 15, color: AppColors.charcoal),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle:
-                const TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
-            prefixIcon:
-                Icon(icon, size: 20, color: const Color(0xFF9CA3AF)),
+            hintStyle: TextStyle(fontSize: 14, color: AppColors.neutral400),
+            prefixIcon: Icon(icon, size: 20, color: AppColors.neutral400),
             isDense: true,
             contentPadding:
                 const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              borderSide: BorderSide(color: AppColors.neutral200),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              borderSide: BorderSide(color: AppColors.neutral200),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide:
-                  const BorderSide(color: Color(0xFFFCC519), width: 1.5),
+                  const BorderSide(color: AppColors.primaryColor, width: 1.5),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFF3F4F6)),
+              borderSide: BorderSide(color: AppColors.neutral100),
             ),
           ),
         ),

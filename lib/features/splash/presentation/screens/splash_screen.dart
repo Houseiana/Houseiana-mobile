@@ -11,19 +11,19 @@ import 'package:houseiana_mobile_app/features/splash/presentation/cubit/splash_s
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class SplashScreen extends StatelessWidget {
-  const SplashScreen({super.key});
+  SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => sl<SplashCubit>()..checkAppVersion(),
-      child: const _SplashView(),
+      child: _SplashView(),
     );
   }
 }
 
 class _SplashView extends StatefulWidget {
-  const _SplashView();
+  _SplashView();
 
   @override
   State<_SplashView> createState() => _SplashViewState();
@@ -45,13 +45,6 @@ class _SplashViewState extends State<_SplashView>
   @override
   void initState() {
     super.initState();
-
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-      ),
-    );
 
     _logoController = AnimationController(
       vsync: this,
@@ -140,44 +133,52 @@ class _SplashViewState extends State<_SplashView>
           );
         }
       },
-      child: Scaffold(
-        backgroundColor: AppColors.charcoal,
-        body: Stack(
-          children: [
-            Positioned(
-              top: 12,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  width: 150,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2A3140),
-                    borderRadius: BorderRadius.circular(17),
+      // The splash is charcoal in both themes, so it needs light status-bar
+      // icons regardless. Scoped to the route (rather than an imperative
+      // SystemChrome call) so the style is restored when it is popped.
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light.copyWith(
+          statusBarColor: Colors.transparent,
+        ),
+        child: Scaffold(
+          backgroundColor: AppColors.brandCharcoal,
+          body: Stack(
+            children: [
+              Positioned(
+                top: 12,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    width: 150,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      // dark-ok: the splash is charcoal in both themes
+                      color: const Color(0xFF2A3140),
+                      borderRadius: BorderRadius.circular(17),
+                    ),
                   ),
                 ),
               ),
-            ),
-
-            Center(
-              child: BlocBuilder<SplashCubit, SplashState>(
-                builder: (context, state) {
-                  return _ContentView(
-                    logoFade: _logoFade,
-                    logoScale: _logoScale,
-                    titleSlide: _titleSlide,
-                    titleFade: _titleFade,
-                    dotsFade: _dotsFade,
-                    buttonSlide: _buttonSlide,
-                    buttonFade: _buttonFade,
-                    onGetStarted: _onGetStarted,
-                    showGetStarted: state is SplashReady,
-                  );
-                },
+              Center(
+                child: BlocBuilder<SplashCubit, SplashState>(
+                  builder: (context, state) {
+                    return _ContentView(
+                      logoFade: _logoFade,
+                      logoScale: _logoScale,
+                      titleSlide: _titleSlide,
+                      titleFade: _titleFade,
+                      dotsFade: _dotsFade,
+                      buttonSlide: _buttonSlide,
+                      buttonFade: _buttonFade,
+                      onGetStarted: _onGetStarted,
+                      showGetStarted: state is SplashReady,
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -195,7 +196,7 @@ class _ContentView extends StatelessWidget {
   final VoidCallback onGetStarted;
   final bool showGetStarted;
 
-  const _ContentView({
+  _ContentView({
     required this.logoFade,
     required this.logoScale,
     required this.titleSlide,
@@ -237,6 +238,7 @@ class _ContentView extends StatelessWidget {
                   style: GoogleFonts.readexPro(
                     fontSize: 36,
                     fontWeight: FontWeight.w700,
+                    // dark-ok: the splash is charcoal in both themes
                     color: Colors.white,
                     height: 1.25,
                   ),
@@ -247,7 +249,8 @@ class _ContentView extends StatelessWidget {
                   style: GoogleFonts.readexPro(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
-                    color: AppColors.neutral400,
+                    // dark-ok: the splash is charcoal in both themes
+                    color: AppColorsLight.neutral400,
                     height: 1.3,
                   ),
                 ),
@@ -292,7 +295,7 @@ class _ContentView extends StatelessWidget {
                     style: GoogleFonts.readexPro(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.charcoal,
+                      color: AppColors.brandCharcoal,
                     ),
                   ),
                 ),
@@ -323,10 +326,10 @@ class _ContentView extends StatelessWidget {
       width: 8,
       height: 8,
       decoration: BoxDecoration(
-        color: active ? AppColors.bioYellow : AppColors.neutral600,
+        // dark-ok: the splash is charcoal in both themes
+        color: active ? AppColors.bioYellow : AppColorsLight.neutral600,
         borderRadius: BorderRadius.circular(4),
       ),
     );
   }
 }
-

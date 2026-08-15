@@ -11,7 +11,7 @@ import 'package:houseiana_mobile_app/shared/widgets/cards/property_card_v2.dart'
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart';
 
 class RecommendationsScreen extends StatefulWidget {
-  const RecommendationsScreen({super.key});
+  RecommendationsScreen({super.key});
 
   @override
   State<RecommendationsScreen> createState() => _RecommendationsScreenState();
@@ -143,21 +143,22 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
     final topRated = [..._allProperties]
       ..sort((a, b) => _scoreOf(b).compareTo(_scoreOf(a)));
 
-    final guestFavorites =
-        _allProperties.where((property) => property.isGuestFavorite == true).toList();
+    final guestFavorites = _allProperties
+        .where((property) => property.isGuestFavorite == true)
+        .toList();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('recommendations.title'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -166,7 +167,7 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
         centerTitle: true,
       ),
       body: _isLoading
-          ? const ListSkeletonLoader(
+          ? ListSkeletonLoader(
               showSearchBar: false,
               showCategories: false,
             )
@@ -194,7 +195,7 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
                           _session.isLoggedIn
                               ? context.tr('recommendations.infoLoggedIn')
                               : context.tr('recommendations.infoLoggedOut'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             color: AppColors.neutral600,
                           ),
@@ -203,10 +204,9 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
                       const SizedBox(height: 24),
                       if (favoriteProperties.isNotEmpty) ...[
                         _SectionHeader(
-                          title:
-                              context.tr('recommendations.savedHomesTitle'),
-                          subtitle: context
-                              .tr('recommendations.savedHomesSubtitle'),
+                          title: context.tr('recommendations.savedHomesTitle'),
+                          subtitle:
+                              context.tr('recommendations.savedHomesSubtitle'),
                         ),
                         const SizedBox(height: 12),
                         ...favoriteProperties.take(3).map(_buildPropertyCard),
@@ -224,8 +224,8 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
                       ],
                       if (guestFavorites.isNotEmpty) ...[
                         _SectionHeader(
-                          title: context
-                              .tr('recommendations.guestFavoritesTitle'),
+                          title:
+                              context.tr('recommendations.guestFavoritesTitle'),
                           subtitle: context
                               .tr('recommendations.guestFavoritesSubtitle'),
                         ),
@@ -289,7 +289,8 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
 
   double _scoreOf(PropertyModel property) {
     final rating = _ratingOf(property);
-    final reviews = (property.reviewsCount ?? property.reviewCount ?? 0).toDouble();
+    final reviews =
+        (property.reviewsCount ?? property.reviewCount ?? 0).toDouble();
     return rating * 1000 + reviews;
   }
 
@@ -302,7 +303,7 @@ class _SectionHeader extends StatelessWidget {
   final String title;
   final String subtitle;
 
-  const _SectionHeader({
+  _SectionHeader({
     required this.title,
     required this.subtitle,
   });
@@ -314,7 +315,7 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: AppColors.charcoal,
@@ -323,7 +324,7 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           subtitle,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             color: AppColors.neutral600,
           ),
@@ -340,7 +341,7 @@ class _RecommendationsMessage extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
 
-  const _RecommendationsMessage({
+  _RecommendationsMessage({
     required this.icon,
     required this.title,
     required this.message,
@@ -361,7 +362,7 @@ class _RecommendationsMessage extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -371,7 +372,7 @@ class _RecommendationsMessage extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.neutral600,
               ),
@@ -382,7 +383,7 @@ class _RecommendationsMessage extends StatelessWidget {
                 onPressed: onAction,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                 ),
                 child: Text(actionLabel!),
               ),

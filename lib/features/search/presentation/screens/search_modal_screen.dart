@@ -10,7 +10,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class SearchModalScreen extends StatefulWidget {
-  const SearchModalScreen({super.key});
+  SearchModalScreen({super.key});
 
   @override
   State<SearchModalScreen> createState() => _SearchModalScreenState();
@@ -188,7 +188,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -238,8 +238,10 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
                     value: _totalGuests == 0
                         ? context.tr('search.addGuests')
                         : _totalGuests == 1
-                            ? context.tr('search.guestCountSingular', args: {'n': _totalGuests})
-                            : context.tr('search.guestCount', args: {'n': _totalGuests}),
+                            ? context.tr('search.guestCountSingular',
+                                args: {'n': _totalGuests})
+                            : context.tr('search.guestCount',
+                                args: {'n': _totalGuests}),
                     isEmpty: _totalGuests == 0,
                     expandedChild: _buildGuestsExpanded(),
                   ),
@@ -257,7 +259,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.neutral200)),
       ),
       child: Row(
@@ -272,7 +274,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: AppColors.neutral200),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.close,
                 size: 18,
                 color: AppColors.charcoal,
@@ -283,7 +285,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
             child: Text(
               context.tr('search.title'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -311,7 +313,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isActive ? AppColors.charcoal : AppColors.neutral200,
@@ -334,7 +336,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 2),
               child: Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.2,
@@ -356,7 +358,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
               ),
             ),
             if (isActive && expandedChild != null) ...[
-              const Divider(height: 1, color: AppColors.neutral200),
+              Divider(height: 1, color: AppColors.neutral200),
               expandedChild,
             ],
           ],
@@ -384,11 +386,11 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
             onChanged: _onLocationChanged,
             decoration: InputDecoration(
               hintText: context.tr('search.searchDestinations'),
-              hintStyle: const TextStyle(
+              hintStyle: TextStyle(
                 color: AppColors.neutral400,
                 fontSize: 14,
               ),
-              prefixIcon: const Icon(
+              prefixIcon: Icon(
                 Icons.search,
                 color: AppColors.neutral600,
                 size: 20,
@@ -409,7 +411,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
         if (isBrowsing) ...[
           _sectionHeader(context.tr('search.availableDestinations')),
           if (_isLoadingLocations)
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: Column(
                 children: [
@@ -449,7 +451,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
             ...regionMatches.take(6).map(_destinationTile),
           ],
           if (_isLoadingPlaces)
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: Column(
                 children: [
@@ -482,7 +484,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
@@ -549,10 +551,10 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
+                color: AppColors.neutral100,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.location_on_outlined,
                 size: 18,
                 color: AppColors.charcoal,
@@ -565,7 +567,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppColors.charcoal,
@@ -576,7 +578,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
                   if (prediction.secondaryText.isNotEmpty)
                     Text(
                       prediction.secondaryText,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         color: AppColors.neutral600,
                       ),
@@ -620,10 +622,10 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
+                color: AppColors.neutral100,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.location_on_outlined,
                 size: 18,
                 color: AppColors.charcoal,
@@ -636,7 +638,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
                 children: [
                   Text(
                     destination.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppColors.charcoal,
@@ -646,9 +648,11 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
                   ),
                   Text(
                     destination.count == 1
-                        ? context.tr('search.staySingular', args: {'n': destination.count})
-                        : context.tr('search.staysCount', args: {'n': destination.count}),
-                    style: const TextStyle(
+                        ? context.tr('search.staySingular',
+                            args: {'n': destination.count})
+                        : context.tr('search.staysCount',
+                            args: {'n': destination.count}),
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppColors.neutral600,
                     ),
@@ -674,7 +678,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
             onDecrement: _adults > 0 ? () => setState(() => _adults--) : null,
             onIncrement: () => setState(() => _adults++),
           ),
-          const Divider(height: 24, color: AppColors.neutral200),
+          Divider(height: 24, color: AppColors.neutral200),
           _buildGuestRow(
             label: context.tr('booking.children'),
             sublabel: context.tr('booking.childrenAge'),
@@ -683,7 +687,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
                 _children > 0 ? () => setState(() => _children--) : null,
             onIncrement: () => setState(() => _children++),
           ),
-          const Divider(height: 24, color: AppColors.neutral200),
+          Divider(height: 24, color: AppColors.neutral200),
           _buildGuestRow(
             label: context.tr('booking.infants'),
             sublabel: context.tr('booking.infantsAge'),
@@ -712,7 +716,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
@@ -721,7 +725,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
               const SizedBox(height: 2),
               Text(
                 sublabel,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   color: AppColors.neutral400,
                 ),
@@ -735,7 +739,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
           child: Text(
             '$value',
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal,
@@ -776,16 +780,6 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
       initialDate: _checkIn ?? DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) => Theme(
-        data: ThemeData.light().copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: AppColors.primaryColor,
-            onPrimary: AppColors.charcoal,
-            surface: Colors.white,
-          ),
-        ),
-        child: child!,
-      ),
     );
 
     if (date != null && mounted) {
@@ -800,24 +794,13 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
   }
 
   Future<void> _pickCheckOut() async {
-    final firstDate =
-        _checkIn?.add(const Duration(days: 1)) ??
-            DateTime.now().add(const Duration(days: 1));
+    final firstDate = _checkIn?.add(const Duration(days: 1)) ??
+        DateTime.now().add(const Duration(days: 1));
     final date = await showDatePicker(
       context: context,
       initialDate: _checkOut ?? firstDate,
       firstDate: firstDate,
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) => Theme(
-        data: ThemeData.light().copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: AppColors.primaryColor,
-            onPrimary: AppColors.charcoal,
-            surface: Colors.white,
-          ),
-        ),
-        child: child!,
-      ),
     );
 
     if (date != null && mounted) {
@@ -832,8 +815,8 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: const Border(top: BorderSide(color: AppColors.neutral200)),
+        color: AppColors.cardBackground,
+        border: Border(top: BorderSide(color: AppColors.neutral200)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -863,7 +846,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
             },
             child: Text(
               context.tr('search.clearAll'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: AppColors.neutral600,
@@ -881,7 +864,7 @@ class _SearchModalScreenState extends State<SearchModalScreen> {
               label: Text(context.tr('common.search')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 28),
                 shape: RoundedRectangleBorder(
@@ -948,7 +931,7 @@ class _InlineMessage extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
 
-  const _InlineMessage({
+  _InlineMessage({
     required this.icon,
     required this.title,
     required this.message,
@@ -967,7 +950,7 @@ class _InlineMessage extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -977,7 +960,7 @@ class _InlineMessage extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               color: AppColors.neutral600,
             ),

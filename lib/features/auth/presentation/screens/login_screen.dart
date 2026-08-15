@@ -8,7 +8,7 @@ import 'package:houseiana_mobile_app/features/auth/presentation/cubit/auth_state
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FA),
+      backgroundColor: AppColors.ghostWhite,
       body: SafeArea(
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
@@ -61,7 +61,8 @@ class _LoginScreenState extends State<LoginScreen> {
             } else if (state is AuthPasswordResetEmailSent) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(context.tr('auth.passwordResetSent', args: {'email': state.email})),
+                  content: Text(context.tr('auth.passwordResetSent',
+                      args: {'email': state.email})),
                   backgroundColor: Colors.green,
                 ),
               );
@@ -78,9 +79,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 constraints: const BoxConstraints(maxHeight: 812),
                 margin: const EdgeInsets.symmetric(vertical: 20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(44),
-                  border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
+                  border: Border.all(color: AppColors.neutral200, width: 2),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.12),
@@ -107,11 +108,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Welcome Back heading
                         Text(
                           context.tr('auth.welcomeBack'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 24,
                             height: 1.25,
-                            color: Color(0xFF1D242B),
+                            color: AppColors.charcoal,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -119,11 +120,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Subtitle
                         Text(
                           context.tr('auth.signInToAccount'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w400,
                             fontSize: 13,
                             height: 1.23,
-                            color: Color(0xFF6B7280),
+                            color: AppColors.neutral500,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -134,11 +135,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             Text(
                               context.tr('auth.email'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w500,
                                 fontSize: 11,
                                 height: 1.27,
-                                color: Color(0xFF000000),
+                                color: AppColors.charcoal,
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -148,23 +149,23 @@ class _LoginScreenState extends State<LoginScreen> {
                               validator: InputValidator.validateEmail,
                               decoration: InputDecoration(
                                 hintText: context.tr('auth.emailPlaceholder'),
-                                hintStyle: const TextStyle(
-                                  color: Color(0xFF9CA3AF),
+                                hintStyle: TextStyle(
+                                  color: AppColors.neutral400,
                                   fontSize: 14,
                                 ),
                                 filled: true,
-                                fillColor: Colors.white,
+                                fillColor: AppColors.cardBackground,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFE5E7EB),
+                                  borderSide: BorderSide(
+                                    color: AppColors.neutral200,
                                     width: 1,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFE5E7EB),
+                                  borderSide: BorderSide(
+                                    color: AppColors.neutral200,
                                     width: 1,
                                   ),
                                 ),
@@ -190,11 +191,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             Text(
                               context.tr('auth.password'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w500,
                                 fontSize: 11,
                                 height: 1.27,
-                                color: Color(0xFF000000),
+                                color: AppColors.charcoal,
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -203,24 +204,25 @@ class _LoginScreenState extends State<LoginScreen> {
                               obscureText: _obscurePassword,
                               validator: InputValidator.validatePassword,
                               decoration: InputDecoration(
-                                hintText: context.tr('auth.passwordPlaceholder'),
-                                hintStyle: const TextStyle(
-                                  color: Color(0xFF9CA3AF),
+                                hintText:
+                                    context.tr('auth.passwordPlaceholder'),
+                                hintStyle: TextStyle(
+                                  color: AppColors.neutral400,
                                   fontSize: 14,
                                 ),
                                 filled: true,
-                                fillColor: Colors.white,
+                                fillColor: AppColors.cardBackground,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFE5E7EB),
+                                  borderSide: BorderSide(
+                                    color: AppColors.neutral200,
                                     width: 1,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFE5E7EB),
+                                  borderSide: BorderSide(
+                                    color: AppColors.neutral200,
                                     width: 1,
                                   ),
                                 ),
@@ -240,7 +242,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     _obscurePassword
                                         ? Icons.visibility_off
                                         : Icons.visibility,
-                                    color: const Color(0xFF9CA3AF),
+                                    color: AppColors.neutral400,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -258,7 +260,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           alignment: Alignment.centerRight,
                           child: TextButton(
                             onPressed: () {
-                              Navigator.of(context).pushNamed(Routes.forgotPassword);
+                              Navigator.of(context)
+                                  .pushNamed(Routes.forgotPassword);
                             },
                             style: TextButton.styleFrom(
                               padding: EdgeInsets.zero,
@@ -293,8 +296,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     }
                                   },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1D242B),
-                              foregroundColor: Colors.white,
+                              backgroundColor: AppColors.brandCharcoal,
+                              foregroundColor: AppColors.textLight,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(25),
                               ),
@@ -304,11 +307,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             child: state is AuthLoading
-                                ? const SizedBox(
+                                ? SizedBox(
                                     height: 18,
                                     width: 18,
                                     child: CircularProgressIndicator(
-                                      color: Colors.white,
+                                      color: AppColors.textLight,
                                       strokeWidth: 2,
                                     ),
                                   )
@@ -331,16 +334,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: state is AuthLoading
                                 ? null
                                 : () {
-                                    Navigator.of(context).pushNamedAndRemoveUntil(
+                                    Navigator.of(context)
+                                        .pushNamedAndRemoveUntil(
                                       Routes.bottomNav,
                                       (route) => false,
                                     );
                                   },
                             style: OutlinedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: const Color(0xFF1D242B),
-                              side: const BorderSide(
-                                color: Color(0xFFE5E7EB),
+                              backgroundColor: AppColors.cardBackground,
+                              foregroundColor: AppColors.charcoal,
+                              side: BorderSide(
+                                color: AppColors.neutral200,
                                 width: 1,
                               ),
                               shape: RoundedRectangleBorder(
@@ -353,11 +357,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             child: Text(
                               context.tr('auth.continueAsGuest'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
                                 height: 1.29,
-                                color: Color(0xFF1D242B),
+                                color: AppColors.charcoal,
                               ),
                             ),
                           ),
@@ -366,18 +370,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Don't have an account
                         RichText(
                           text: TextSpan(
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w400,
                               fontSize: 12,
                               height: 1.25,
-                              color: Color(0xFF6B7280),
+                              color: AppColors.neutral500,
                             ),
                             children: [
-                              TextSpan(text: context.tr('auth.dontHaveAccount')),
+                              TextSpan(
+                                  text: context.tr('auth.dontHaveAccount')),
                               WidgetSpan(
                                 child: GestureDetector(
                                   onTap: () {
-                                    Navigator.of(context).pushNamed(Routes.signUp);
+                                    Navigator.of(context)
+                                        .pushNamed(Routes.signUp);
                                   },
                                   child: Text(
                                     context.tr('auth.signUpLink'),

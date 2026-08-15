@@ -6,7 +6,7 @@ import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.da
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class Step11PricingScreen extends StatefulWidget {
-  const Step11PricingScreen({super.key});
+  Step11PricingScreen({super.key});
 
   @override
   State<Step11PricingScreen> createState() => _Step11PricingScreenState();
@@ -38,7 +38,9 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
     // Set default base price if not set
     if (data.basePrice == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.read<ListingWizardCubit>().updateStepData({'basePrice': 1000.0});
+        context
+            .read<ListingWizardCubit>()
+            .updateStepData({'basePrice': 1000.0});
       });
     }
     // Set default stars if not set
@@ -73,10 +75,10 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
           // Rating Section
           Text(
             context.tr('wizard.wizardPricingRatingTitle'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1D242B),
+              color: AppColors.charcoal,
             ),
           ),
           const SizedBox(height: 16),
@@ -92,21 +94,29 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                 },
                 borderRadius: BorderRadius.circular(100),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primaryColor : Colors.white,
+                    color: isSelected
+                        ? AppColors.primaryColor
+                        : AppColors.cardBackground,
                     borderRadius: BorderRadius.circular(100),
                     border: Border.all(
-                      color: isSelected ? AppColors.primaryColor : const Color(0xFFF0F2F5),
+                      color: isSelected
+                          ? AppColors.primaryColor
+                          : AppColors.neutral100,
                       width: 1.5,
                     ),
-                    boxShadow: isSelected ? [
-                      BoxShadow(
-                        color: AppColors.primaryColor.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      )
-                    ] : null,
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color:
+                                  AppColors.primaryColor.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            )
+                          ]
+                        : null,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -114,7 +124,9 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                       Icon(
                         Icons.star,
                         size: 18,
-                        color: isSelected ? Colors.white : const Color(0xFFD1D5DB),
+                        color: isSelected
+                            ? AppColors.brandCharcoal
+                            : AppColors.neutral300,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -122,7 +134,9 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: isSelected ? Colors.white : const Color(0xFF1D242B),
+                          color: isSelected
+                              ? AppColors.brandCharcoal
+                              : AppColors.charcoal,
                         ),
                       ),
                     ],
@@ -136,10 +150,10 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
           // Nightly Rate Section
           Text(
             context.tr('wizard.wizardPricingSetYourPrice'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1D242B),
+              color: AppColors.charcoal,
             ),
           ),
           const SizedBox(height: 16),
@@ -147,12 +161,12 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: basePriceError != null
                     ? AppColors.error
-                    : const Color(0xFFF0F2F5),
+                    : AppColors.neutral100,
                 width: basePriceError != null ? 1.5 : 1,
               ),
               boxShadow: [
@@ -167,7 +181,7 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
               children: [
                 Text(
                   context.tr('wizard.wizardPricingChangeAnytime'),
-                  style: const TextStyle(fontSize: 15, color: Color(0xFF5E5E5E)),
+                  style: TextStyle(fontSize: 15, color: AppColors.neutral600),
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -177,10 +191,10 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                   children: [
                     Text(
                       context.tr('wizard.wizardPricingCurrencyCode'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2F3A45),
+                        color: AppColors.charcoal,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -190,10 +204,10 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                         keyboardType: TextInputType.number,
                         inputFormatters: const [WesternDigitsInputFormatter()],
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 48,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF2F3A45),
+                          color: AppColors.charcoal,
                         ),
                         decoration: const InputDecoration(
                           border: InputBorder.none,
@@ -202,8 +216,10 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                           hintText: '0',
                         ),
                         onChanged: (v) {
-                          cubit.updateStepData(
-                              {'basePrice': double.tryParse(v.toWesternDigits()) ?? 0.0});
+                          cubit.updateStepData({
+                            'basePrice':
+                                double.tryParse(v.toWesternDigits()) ?? 0.0
+                          });
                         },
                       ),
                     ),
@@ -213,16 +229,16 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                 Container(
                   height: 2,
                   width: 160,
-                  color: const Color(0xFF2F3A45),
+                  color: AppColors.charcoal,
                 ),
                 const SizedBox(height: 12),
                 Text(
                   context.tr('wizard.wizardPricingNightlyRateLabel'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 2,
-                    color: Color(0xFF2F3A45),
+                    color: AppColors.charcoal,
                   ),
                 ),
               ],
@@ -257,10 +273,10 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
           // Fee Section - Vertical Layout
           Text(
             context.tr('wizard.wizardPricingAdditionalFees'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1D242B),
+              color: AppColors.charcoal,
             ),
           ),
           const SizedBox(height: 16),
@@ -269,7 +285,8 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
             title: context.tr('wizard.wizardPricingCleaningFeeTitle'),
             subtitle: context.tr('wizard.wizardPricingCleaningFeeSubtitle'),
             controller: _cleaningFeeController,
-            onChanged: (v) => cubit.updateStepData({'cleaningFee': double.tryParse(v.toWesternDigits()) ?? 0.0}),
+            onChanged: (v) => cubit.updateStepData(
+                {'cleaningFee': double.tryParse(v.toWesternDigits()) ?? 0.0}),
           ),
           const SizedBox(height: 16),
           _buildWeekendSurgeCard(context),
@@ -279,7 +296,8 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
             title: context.tr('wizard.wizardPricingElectricalFeeTitle'),
             subtitle: context.tr('wizard.wizardPricingElectricalFeeSubtitle'),
             controller: _electricalFeeController,
-            onChanged: (v) => cubit.updateStepData({'electricalFee': double.tryParse(v.toWesternDigits()) ?? 0.0}),
+            onChanged: (v) => cubit.updateStepData(
+                {'electricalFee': double.tryParse(v.toWesternDigits()) ?? 0.0}),
           ),
           const SizedBox(height: 16),
           _buildFeeCard(
@@ -287,7 +305,8 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
             title: context.tr('wizard.wizardPricingWaterFeeTitle'),
             subtitle: context.tr('wizard.wizardPricingWaterFeeSubtitle'),
             controller: _waterFeeController,
-            onChanged: (v) => cubit.updateStepData({'waterFee': double.tryParse(v.toWesternDigits()) ?? 0.0}),
+            onChanged: (v) => cubit.updateStepData(
+                {'waterFee': double.tryParse(v.toWesternDigits()) ?? 0.0}),
           ),
           const SizedBox(height: 40),
         ],
@@ -306,9 +325,9 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFFCFCFC),
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF0F2F5)),
+        border: Border.all(color: AppColors.neutral100),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,24 +341,26 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1D242B),
+                        color: AppColors.charcoal,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+                      style:
+                          TextStyle(fontSize: 12, color: AppColors.neutral400),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                  color: AppColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Text(
@@ -347,7 +368,7 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF10B981),
+                    color: AppColors.success,
                   ),
                 ),
               ),
@@ -358,10 +379,10 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
             children: [
               Text(
                 context.tr('wizard.wizardPricingCurrencyCode'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2F3A45),
+                  color: AppColors.charcoal,
                 ),
               ),
               const SizedBox(width: 12),
@@ -375,11 +396,13 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                           child: TextField(
                             controller: controller,
                             keyboardType: TextInputType.number,
-                            inputFormatters: const [WesternDigitsInputFormatter()],
-                            style: const TextStyle(
+                            inputFormatters: const [
+                              WesternDigitsInputFormatter()
+                            ],
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF2F3A45),
+                              color: AppColors.charcoal,
                             ),
                             decoration: const InputDecoration(
                               border: InputBorder.none,
@@ -390,10 +413,13 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                             onChanged: onChanged,
                           ),
                         ),
-                        const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF9CA3AF)),
+                        Icon(Icons.edit_outlined,
+                            size: 18, color: AppColors.neutral400),
                       ],
                     ),
-                    Container(height: 2, color: const Color(0xFF2F3A45).withValues(alpha: 0.2)),
+                    Container(
+                        height: 2,
+                        color: AppColors.charcoal.withValues(alpha: 0.2)),
                   ],
                 ),
               ),
@@ -411,9 +437,9 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFFFCFCFC),
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFF0F2F5)),
+          border: Border.all(color: AppColors.neutral100),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -429,22 +455,28 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                         children: [
                           Text(
                             context.tr('wizard.wizardPricingWeekendSurgeTitle'),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1D242B),
+                              color: AppColors.charcoal,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1D242B),
+                              color: AppColors.brandCharcoal,
                               borderRadius: BorderRadius.circular(100),
                             ),
                             child: Text(
                               context.tr('wizard.wizardPricingSoon'),
-                              style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                // dark-ok: label on the always-dark "Soon" pill
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
@@ -452,15 +484,17 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                       const SizedBox(height: 4),
                       Text(
                         context.tr('wizard.wizardPricingWeekendSurgeSubtitle'),
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+                        style: TextStyle(
+                            fontSize: 12, color: AppColors.neutral400),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                    color: AppColors.success.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(100),
                   ),
                   child: Text(
@@ -468,7 +502,7 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF10B981),
+                      color: AppColors.success,
                     ),
                   ),
                 ),
@@ -477,26 +511,28 @@ class _Step11PricingScreenState extends State<Step11PricingScreen> {
             const SizedBox(height: 24),
             Row(
               children: [
-                const Text(
+                Text(
                   '0',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF2F3A45),
+                    color: AppColors.charcoal,
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   '%',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF2F3A45),
+                    color: AppColors.charcoal,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Container(height: 2, color: const Color(0xFF2F3A45).withValues(alpha: 0.1)),
+                  child: Container(
+                      height: 2,
+                      color: AppColors.charcoal.withValues(alpha: 0.1)),
                 ),
               ],
             ),

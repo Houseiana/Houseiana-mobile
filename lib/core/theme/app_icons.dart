@@ -180,17 +180,17 @@ class AppIcons {
 class AppIconStyle {
   AppIconStyle._();
 
-  static IconThemeData get defaultStyle => const IconThemeData(
+  static IconThemeData get defaultStyle => IconThemeData(
         color: AppColors.charcoal,
         size: AppIcons.sizeLg,
       );
 
-  static IconThemeData get navigationStyle => const IconThemeData(
+  static IconThemeData get navigationStyle => IconThemeData(
         color: AppColors.charcoal,
         size: AppIcons.sizeMd,
       );
 
-  static IconThemeData get actionStyle => const IconThemeData(
+  static IconThemeData get actionStyle => IconThemeData(
         color: AppColors.charcoal,
         size: AppIcons.sizeLg,
       );
@@ -205,17 +205,17 @@ class AppIconStyle {
         size: AppIcons.sizeSm,
       );
 
-  static IconThemeData get propertyCardStyle => const IconThemeData(
+  static IconThemeData get propertyCardStyle => IconThemeData(
         color: AppColors.neutral600,
         size: AppIcons.sizeSm,
       );
 
-  static IconThemeData get bottomNavStyle => const IconThemeData(
+  static IconThemeData get bottomNavStyle => IconThemeData(
         color: AppColors.neutral400,
         size: AppIcons.sizeMd,
       );
 
-  static IconThemeData get bottomNavSelectedStyle => const IconThemeData(
+  static IconThemeData get bottomNavSelectedStyle => IconThemeData(
         color: AppColors.charcoal,
         size: AppIcons.sizeMd,
       );

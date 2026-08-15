@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 
 /// Fade in animation wrapper
 class FadeInWidget extends StatefulWidget {
@@ -7,7 +8,7 @@ class FadeInWidget extends StatefulWidget {
   final Duration delay;
   final Curve curve;
 
-  const FadeInWidget({
+  FadeInWidget({
     super.key,
     required this.child,
     this.duration = const Duration(milliseconds: 400),
@@ -67,7 +68,7 @@ class SlideUpWidget extends StatefulWidget {
   final Duration delay;
   final double offset;
 
-  const SlideUpWidget({
+  SlideUpWidget({
     super.key,
     required this.child,
     this.duration = const Duration(milliseconds: 400),
@@ -138,7 +139,7 @@ class ScaleWidget extends StatefulWidget {
   final Duration delay;
   final double beginScale;
 
-  const ScaleWidget({
+  ScaleWidget({
     super.key,
     required this.child,
     this.duration = const Duration(milliseconds: 300),
@@ -209,7 +210,7 @@ class AnimatedListItem extends StatelessWidget {
   final Duration baseDelay;
   final Duration animationDuration;
 
-  const AnimatedListItem({
+  AnimatedListItem({
     super.key,
     required this.child,
     required this.index,
@@ -235,14 +236,19 @@ class AnimatedListItem extends StatelessWidget {
 /// Shimmer loading effect wrapper
 class ShimmerWidget extends StatefulWidget {
   final Widget child;
-  final Color baseColor;
-  final Color highlightColor;
 
-  const ShimmerWidget({
+  /// Defaults to the theme-aware [AppColors.skeletonBaseColor] when null —
+  /// the token is a getter, so it can't be a `const` default.
+  final Color? baseColor;
+
+  /// Defaults to the theme-aware [AppColors.skeletonHighlightColor] when null.
+  final Color? highlightColor;
+
+  ShimmerWidget({
     super.key,
     required this.child,
-    this.baseColor = const Color(0xFFE8E8E8),
-    this.highlightColor = const Color(0xFFF5F5F5),
+    this.baseColor,
+    this.highlightColor,
   });
 
   @override
@@ -274,6 +280,10 @@ class _ShimmerWidgetState extends State<ShimmerWidget>
 
   @override
   Widget build(BuildContext context) {
+    final baseColor = widget.baseColor ?? AppColors.skeletonBaseColor;
+    final highlightColor =
+        widget.highlightColor ?? AppColors.skeletonHighlightColor;
+
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
@@ -283,9 +293,9 @@ class _ShimmerWidgetState extends State<ShimmerWidget>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                widget.baseColor,
-                widget.highlightColor,
-                widget.baseColor,
+                baseColor,
+                highlightColor,
+                baseColor,
               ],
               stops: [
                 _animation.value - 1,
@@ -308,15 +318,18 @@ class HeartAnimationWidget extends StatefulWidget {
   final VoidCallback? onTap;
   final double size;
   final Color activeColor;
-  final Color inactiveColor;
 
-  const HeartAnimationWidget({
+  /// Defaults to the theme-aware [AppColors.charcoal] when null — the token is
+  /// a getter, so it can't be a `const` default.
+  final Color? inactiveColor;
+
+  HeartAnimationWidget({
     super.key,
     required this.isFavorite,
     this.onTap,
     this.size = 24,
-    this.activeColor = Colors.red,
-    this.inactiveColor = const Color(0xFF1D242B),
+    this.activeColor = AppColors.heartRed,
+    this.inactiveColor,
   });
 
   @override
@@ -367,7 +380,9 @@ class _HeartAnimationWidgetState extends State<HeartAnimationWidget>
         child: Icon(
           widget.isFavorite ? Icons.favorite : Icons.favorite_border,
           size: widget.size,
-          color: widget.isFavorite ? widget.activeColor : widget.inactiveColor,
+          color: widget.isFavorite
+              ? widget.activeColor
+              : (widget.inactiveColor ?? AppColors.charcoal),
         ),
       ),
     );

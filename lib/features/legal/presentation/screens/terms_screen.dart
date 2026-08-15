@@ -4,22 +4,22 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class TermsScreen extends StatelessWidget {
-  const TermsScreen({super.key});
+  TermsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('legal.termsTitle'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -34,7 +34,7 @@ class TermsScreen extends StatelessWidget {
           children: [
             Text(
               context.tr('legal.termsHeading'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -43,21 +43,18 @@ class TermsScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               context.tr('legal.lastUpdated'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.neutral600,
               ),
             ),
             const SizedBox(height: 24),
-
             for (int i = 1; i <= 17; i++)
               _buildSection(
                 title: context.tr('legal.termsSection${i}Title'),
                 content: context.tr('legal.termsSection${i}Content'),
               ),
-
             const SizedBox(height: 32),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -66,7 +63,7 @@ class TermsScreen extends StatelessWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -79,9 +76,7 @@ class TermsScreen extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 12),
-
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
@@ -90,7 +85,7 @@ class TermsScreen extends StatelessWidget {
                 },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.charcoal,
-                  side: const BorderSide(color: Color(0xFFE5E7EB)),
+                  side: BorderSide(color: AppColors.neutral200),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -113,7 +108,7 @@ class TermsScreen extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -122,7 +117,7 @@ class TermsScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             content,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               color: AppColors.neutral600,
               height: 1.6,

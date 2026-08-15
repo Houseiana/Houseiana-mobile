@@ -24,5 +24,14 @@ linter:
     # avoid_print: false  # Uncomment to disable the `avoid_print` rule
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
 
+    # The app's widgets deliberately have non-const constructors.
+    #
+    # Surface/text colors come from brightness-aware `AppColors` getters, and a
+    # const-canonicalised widget instance is identity-equal across rebuilds:
+    # `Element.updateChild` would skip its subtree and leave it painted in the
+    # colors of the previous theme after a light/dark switch. Keeping the
+    # constructors non-const makes that impossible to reintroduce by accident.
+    prefer_const_constructors_in_immutables: false
+
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

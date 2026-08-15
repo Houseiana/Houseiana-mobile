@@ -24,7 +24,7 @@ class MonthCalendarWidget extends StatelessWidget {
   /// details page puts the month name between its prev / next arrows.
   final bool showTitle;
 
-  const MonthCalendarWidget({
+  MonthCalendarWidget({
     super.key,
     required this.month,
     required this.prices,
@@ -44,8 +44,7 @@ class MonthCalendarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).toLanguageTag();
-    final monthTitle =
-        DateFormat.yMMMM(locale).format(month);
+    final monthTitle = DateFormat.yMMMM(locale).format(month);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -56,7 +55,7 @@ class MonthCalendarWidget extends StatelessWidget {
             child: Center(
               child: Text(
                 monthTitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: AppColors.charcoal,
@@ -64,10 +63,7 @@ class MonthCalendarWidget extends StatelessWidget {
               ),
             ),
           ),
-        if (error != null)
-          _buildError(context)
-        else
-          _buildGrid(context),
+        if (error != null) _buildError(context) else _buildGrid(context),
       ],
     );
   }
@@ -77,12 +73,11 @@ class MonthCalendarWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 12),
       child: Column(
         children: [
-          const Icon(Icons.error_outline,
-              color: AppColors.error, size: 32),
+          const Icon(Icons.error_outline, color: AppColors.error, size: 32),
           const SizedBox(height: 8),
           Text(
             context.tr('propertyDetails.calendarLoadError'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               color: AppColors.neutral600,
               fontWeight: FontWeight.w500,
@@ -214,8 +209,7 @@ class MonthCalendarWidget extends StatelessWidget {
     final parts = baseMonthKey!.split('-');
     final baseYear = int.parse(parts[0]);
     final baseMonth = int.parse(parts[1]);
-    final diff =
-        (date.year * 12 + date.month) - (baseYear * 12 + baseMonth);
+    final diff = (date.year * 12 + date.month) - (baseYear * 12 + baseMonth);
     final page = diff + 1;
     return page < 1 || page > totalPages;
   }

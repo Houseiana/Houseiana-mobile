@@ -17,10 +17,11 @@ import 'package:houseiana_mobile_app/i18n/locale_aware_state.dart';
 import 'package:houseiana_mobile_app/shared/widgets/cards/property_list_card.dart';
 import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
 import 'package:houseiana_mobile_app/shared/widgets/empty_state/empty_state_widget.dart';
-import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart' show ListSkeletonLoader;
+import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart'
+    show ListSkeletonLoader;
 
 class PropertiesScreen extends StatefulWidget {
-  const PropertiesScreen({super.key});
+  PropertiesScreen({super.key});
 
   @override
   State<PropertiesScreen> createState() => _PropertiesScreenState();
@@ -315,7 +316,9 @@ class _PropertiesScreenState extends State<PropertiesScreen>
     if (photos is List && photos.isNotEmpty) {
       final first = photos.first;
       if (first is String) return first;
-      if (first is Map) return (first['url'] ?? first['photoUrl'] ?? '').toString();
+      if (first is Map) {
+        return (first['url'] ?? first['photoUrl'] ?? '').toString();
+      }
     }
     if (photos is String && photos.isNotEmpty) return photos;
     return '';
@@ -360,14 +363,15 @@ class _PropertiesScreenState extends State<PropertiesScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       body: SafeArea(
         child: Column(
           children: [
             _buildSearchBar(),
             Expanded(
               child: _isLoading
-                  ? const ListSkeletonLoader(showSearchBar: false, showCategories: false)
+                  ? ListSkeletonLoader(
+                      showSearchBar: false, showCategories: false)
                   // A failed load with nothing to fall back on: offer a retry.
                   // (With results still on screen the failure went to a snack
                   // bar instead — see [_loadData].)
@@ -400,15 +404,16 @@ class _PropertiesScreenState extends State<PropertiesScreen>
               child: Container(
                 height: 44,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF9F9FA),
+                  color: AppColors.ghostWhite,
                   borderRadius: BorderRadius.circular(25),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                  border: Border.all(color: AppColors.neutral200),
                 ),
                 child: Row(
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.only(left: 16, right: 8),
-                      child: Icon(Icons.search, size: 18, color: Color(0xFF9CA3AF)),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16, right: 8),
+                      child: Icon(Icons.search,
+                          size: 18, color: AppColors.neutral400),
                     ),
                     Expanded(
                       child: Text(
@@ -416,8 +421,8 @@ class _PropertiesScreenState extends State<PropertiesScreen>
                         style: TextStyle(
                           fontSize: 14,
                           color: _filterLocation != null
-                              ? const Color(0xFF1D242B)
-                              : const Color(0xFF9CA3AF),
+                              ? AppColors.charcoal
+                              : AppColors.neutral400,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -432,11 +437,11 @@ class _PropertiesScreenState extends State<PropertiesScreen>
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFF1D242B),
+              color: AppColors.charcoal,
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.tune, size: 18, color: Colors.white),
+              icon: Icon(Icons.tune, size: 18, color: AppColors.cardBackground),
               onPressed: _openAdvancedFilters,
             ),
           ),
@@ -595,7 +600,7 @@ class _PropertiesScreenState extends State<PropertiesScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white, // dark-ok: floating pill over the map
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -623,7 +628,7 @@ class _PropertiesScreenState extends State<PropertiesScreen>
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1D242B),
+                color: AppColors.brandCharcoal,
               ),
             ),
           ] else
@@ -632,7 +637,7 @@ class _PropertiesScreenState extends State<PropertiesScreen>
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1D242B),
+                color: AppColors.brandCharcoal,
               ),
             ),
         ],
@@ -659,10 +664,10 @@ class _PropertiesScreenState extends State<PropertiesScreen>
               Flexible(
                 child: Text(
                   context.tr(_countLabelKey, args: {'count': _countLabel}),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1D242B),
+                    color: AppColors.charcoal,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -683,11 +688,12 @@ class _PropertiesScreenState extends State<PropertiesScreen>
                     onTap: () => setState(() => _isMapView = true),
                     child: Row(
                       children: [
-                        const Icon(Icons.map_outlined, size: 14, color: AppColors.neutral600),
+                        Icon(Icons.map_outlined,
+                            size: 14, color: AppColors.neutral600),
                         const SizedBox(width: 4),
                         Text(
                           context.tr('property.map'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             color: AppColors.neutral600,
                             fontWeight: FontWeight.w500,
@@ -712,7 +718,8 @@ class _PropertiesScreenState extends State<PropertiesScreen>
                 return const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
                   child: Center(
-                    child: CircularProgressIndicator(color: AppColors.primaryColor),
+                    child: CircularProgressIndicator(
+                        color: AppColors.primaryColor),
                   ),
                 );
               }
@@ -782,7 +789,7 @@ class _PropertiesScreenState extends State<PropertiesScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.white, // dark-ok: floating pill over the map
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -793,11 +800,13 @@ class _PropertiesScreenState extends State<PropertiesScreen>
           ],
         ),
         child: Text(
-          _isMapView ? context.tr('property.listView') : context.tr('property.map'),
+          _isMapView
+              ? context.tr('property.listView')
+              : context.tr('property.map'),
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF1D242B),
+            color: AppColors.brandCharcoal,
           ),
         ),
       ),
@@ -830,11 +839,12 @@ class _PropertiesScreenState extends State<PropertiesScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.search_off_rounded, size: 80, color: AppColors.neutral400),
+            Icon(Icons.search_off_rounded,
+                size: 80, color: AppColors.neutral400),
             const SizedBox(height: 24),
             Text(
               context.tr('property.noPropertiesFound'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,
@@ -843,7 +853,7 @@ class _PropertiesScreenState extends State<PropertiesScreen>
             const SizedBox(height: 8),
             Text(
               context.tr('property.noPropertiesFoundDescription'),
-              style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+              style: TextStyle(fontSize: 14, color: AppColors.neutral600),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -851,12 +861,15 @@ class _PropertiesScreenState extends State<PropertiesScreen>
               onPressed: _clearFilters,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
-              child: Text(context.tr('property.clearFilters'), style: const TextStyle(fontWeight: FontWeight.w600)),
+              child: Text(context.tr('property.clearFilters'),
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
           ],
         ),
@@ -864,4 +877,3 @@ class _PropertiesScreenState extends State<PropertiesScreen>
     );
   }
 }
-

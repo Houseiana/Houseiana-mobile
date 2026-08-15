@@ -13,7 +13,7 @@ class HostProfileScreen extends StatelessWidget {
   final bool isSuperhost;
   final String? hostId;
 
-  const HostProfileScreen({
+  HostProfileScreen({
     super.key,
     required this.hostName,
     this.hostPhotoUrl,
@@ -28,17 +28,17 @@ class HostProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.charcoal),
+          icon: Icon(Icons.close, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('propertyDetails.hostProfile'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -65,7 +65,7 @@ class HostProfileScreen extends StatelessWidget {
                         child: hostPhotoUrl == null
                             ? Text(
                                 hostName[0].toUpperCase(),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.charcoal,
@@ -83,7 +83,7 @@ class HostProfileScreen extends StatelessWidget {
                               color: AppColors.primaryColor,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.verified,
                               size: 20,
                               color: AppColors.charcoal,
@@ -92,20 +92,16 @@ class HostProfileScreen extends StatelessWidget {
                         ),
                     ],
                   ),
-
                   const SizedBox(height: 16),
-
                   Text(
                     hostName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   if (isSuperhost)
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -118,7 +114,7 @@ class HostProfileScreen extends StatelessWidget {
                       ),
                       child: Text(
                         context.tr('propertyDetails.superhostBadge'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: AppColors.charcoal,
@@ -128,9 +124,7 @@ class HostProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 32),
-
             Row(
               children: [
                 Expanded(
@@ -158,13 +152,11 @@ class HostProfileScreen extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 32),
-
             if (bio != null) ...[
               Text(
                 context.tr('propertyDetails.about'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: AppColors.charcoal,
@@ -173,7 +165,7 @@ class HostProfileScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 bio!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   color: AppColors.neutral600,
                   height: 1.6,
@@ -181,7 +173,6 @@ class HostProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 32),
             ],
-
             SizedBox(
               width: double.infinity,
               height: 54,
@@ -198,7 +189,7 @@ class HostProfileScreen extends StatelessWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -236,7 +227,7 @@ class HostProfileScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -245,7 +236,7 @@ class HostProfileScreen extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               color: AppColors.neutral600,
             ),

@@ -18,7 +18,7 @@ class HostListingCard extends StatelessWidget {
   final VoidCallback? onBlockDates;
   final VoidCallback? onDelete;
 
-  const HostListingCard({
+  HostListingCard({
     super.key,
     required this.property,
     this.onTap,
@@ -37,9 +37,7 @@ class HostListingCard extends StatelessWidget {
       (property.status ?? '').toLowerCase().replaceAll(' ', '');
   bool get _isActive => _status == 'active' || _status == 'published';
   bool get _isDraftLike =>
-      _status == 'draft' ||
-      _status == 'pending' ||
-      _status == 'actionrequired';
+      _status == 'draft' || _status == 'pending' || _status == 'actionrequired';
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +46,7 @@ class HostListingCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -89,7 +87,7 @@ class HostListingCard extends StatelessWidget {
                     height: 200,
                     width: double.infinity,
                     color: AppColors.neutral200,
-                    child: const Icon(Icons.image_not_supported_outlined,
+                    child: Icon(Icons.image_not_supported_outlined,
                         color: AppColors.neutral400, size: 48),
                   ),
                 )
@@ -97,7 +95,7 @@ class HostListingCard extends StatelessWidget {
                   height: 200,
                   width: double.infinity,
                   color: AppColors.neutral200,
-                  child: const Icon(Icons.image_not_supported_outlined,
+                  child: Icon(Icons.image_not_supported_outlined,
                       color: AppColors.neutral400, size: 48),
                 ),
         ),
@@ -108,7 +106,7 @@ class HostListingCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -122,7 +120,7 @@ class HostListingCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   _formatStatus(context, property.status),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -139,7 +137,7 @@ class HostListingCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -147,7 +145,7 @@ class HostListingCard extends StatelessWidget {
               children: [
                 Text(
                   '${property.currency ?? 'EGP'} ${property.displayPrice.toStringAsFixed(0)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: AppColors.charcoal,
@@ -155,7 +153,7 @@ class HostListingCard extends StatelessWidget {
                 ),
                 Text(
                   ' ${context.tr('home.perNight')}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     color: AppColors.neutral500,
                   ),
@@ -177,7 +175,12 @@ class HostListingCard extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.visibility_outlined, color: Colors.white, size: 14),
+                const Icon(
+                  Icons.visibility_outlined,
+                  // dark-ok: icon on the photo scrim
+                  color: Colors.white,
+                  size: 14,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   context.tr('host.cardViewsCount',
@@ -185,6 +188,7 @@ class HostListingCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
+                    // dark-ok: label on the photo scrim
                     color: Colors.white,
                   ),
                 ),
@@ -211,7 +215,7 @@ class HostListingCard extends StatelessWidget {
                   property.displayTitle.isNotEmpty
                       ? property.displayTitle
                       : context.tr('host.untitledProperty'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: AppColors.charcoal,
@@ -227,14 +231,15 @@ class HostListingCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.location_on_outlined, size: 16, color: AppColors.neutral400),
+              Icon(Icons.location_on_outlined,
+                  size: 16, color: AppColors.neutral400),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   property.displayLocation.isNotEmpty
                       ? property.displayLocation
                       : context.tr('propertyDetails.locationNotAvailable'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     color: AppColors.neutral500,
                   ),
@@ -250,17 +255,23 @@ class HostListingCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               if (property.bedrooms != null)
-                _buildFeaturePill(Icons.door_sliding_outlined,
-                    context.tr('propertyDetails.bedrooms', args: {'n': property.bedrooms})),
+                _buildFeaturePill(
+                    Icons.door_sliding_outlined,
+                    context.tr('propertyDetails.bedrooms',
+                        args: {'n': property.bedrooms})),
               if (property.beds != null)
                 _buildFeaturePill(Icons.bed_outlined,
                     context.tr('host.cardBeds', args: {'n': property.beds})),
               if (property.bathrooms != null)
-                _buildFeaturePill(Icons.bathtub_outlined,
-                    context.tr('propertyDetails.bathrooms', args: {'n': property.bathrooms})),
+                _buildFeaturePill(
+                    Icons.bathtub_outlined,
+                    context.tr('propertyDetails.bathrooms',
+                        args: {'n': property.bathrooms})),
               if (property.maxGuests != null)
-                _buildFeaturePill(Icons.people_outline,
-                    context.tr('propertyDetails.guests', args: {'n': property.maxGuests})),
+                _buildFeaturePill(
+                    Icons.people_outline,
+                    context.tr('propertyDetails.guests',
+                        args: {'n': property.maxGuests})),
             ],
           ),
           const SizedBox(height: 20),
@@ -270,8 +281,10 @@ class HostListingCard extends StatelessWidget {
                 child: _buildStatBlock(
                   value: '${(property.occupancyRate ?? 0).toStringAsFixed(0)}%',
                   label: context.tr('host.cardOccupancy'),
-                  valueColor: const Color(0xFFC79100), // Darker yellow for text
-                  backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
+                  // dark-ok: dark amber on the fixed 10% yellow tint
+                  valueColor: const Color(0xFFC79100),
+                  backgroundColor:
+                      AppColors.primaryColor.withValues(alpha: 0.1),
                 ),
               ),
               const SizedBox(width: 12),
@@ -280,7 +293,7 @@ class HostListingCard extends StatelessWidget {
                   value: (property.revenueThisMonth ?? 0).toStringAsFixed(0),
                   label: context.tr('host.cardThisMonth'),
                   valueColor: AppColors.charcoal,
-                  backgroundColor: const Color(0xFFF5F6F8),
+                  backgroundColor: AppColors.neutral100,
                 ),
               ),
               const SizedBox(width: 12),
@@ -289,7 +302,7 @@ class HostListingCard extends StatelessWidget {
                   value: (property.viewCount ?? 0).toString(),
                   label: context.tr('host.cardTotalViews'),
                   valueColor: AppColors.charcoal,
-                  backgroundColor: const Color(0xFFF5F6F8),
+                  backgroundColor: AppColors.neutral100,
                 ),
               ),
             ],
@@ -322,7 +335,7 @@ class HostListingCard extends StatelessWidget {
         border: Border.all(color: AppColors.neutral200),
       ),
       child: PopupMenuButton<HostListingMenuAction>(
-        icon: const Icon(Icons.more_horiz, color: AppColors.neutral600, size: 20),
+        icon: Icon(Icons.more_horiz, color: AppColors.neutral600, size: 20),
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -409,7 +422,8 @@ class HostListingCard extends StatelessWidget {
             icon: const Icon(Icons.edit_outlined, size: 16),
             label: Text(context.tr('host.cardEdit')),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.charcoal,
+              backgroundColor: AppColors.brandCharcoal,
+              // dark-ok: label on the always-dark brand button
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -430,7 +444,7 @@ class HostListingCard extends StatelessWidget {
             label: Text(context.tr('host.cardCalendar')),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.charcoal,
-              side: const BorderSide(color: AppColors.neutral200),
+              side: BorderSide(color: AppColors.neutral200),
               padding: const EdgeInsets.symmetric(vertical: 10),
               textStyle:
                   const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
@@ -449,7 +463,7 @@ class HostListingCard extends StatelessWidget {
             onPressed: onView,
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.neutral600,
-              side: const BorderSide(color: AppColors.neutral200),
+              side: BorderSide(color: AppColors.neutral200),
               padding: EdgeInsets.zero,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
@@ -466,7 +480,7 @@ class HostListingCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9F9FA),
+        color: AppColors.ghostWhite,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.neutral100),
       ),
@@ -477,7 +491,7 @@ class HostListingCard extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               color: AppColors.charcoal,
               fontWeight: FontWeight.w500,
@@ -513,7 +527,7 @@ class HostListingCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               color: AppColors.neutral500,
               fontWeight: FontWeight.w500,
@@ -538,7 +552,9 @@ class HostListingCard extends StatelessWidget {
   }
 
   String _formatStatus(BuildContext context, String? status) {
-    if (status == null || status.isEmpty) return context.tr('host.statusUnknown');
+    if (status == null || status.isEmpty) {
+      return context.tr('host.statusUnknown');
+    }
     switch (status.toUpperCase()) {
       case 'DRAFT':
         return context.tr('host.statusDraft');

@@ -5,12 +5,12 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class BecomeHostScreen extends StatelessWidget {
-  const BecomeHostScreen({super.key});
+  BecomeHostScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -21,20 +21,19 @@ class BecomeHostScreen extends StatelessWidget {
                 children: [
                   Text(
                     context.tr('host.becomeHost'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.charcoal),
+                    icon: Icon(Icons.close, color: AppColors.charcoal),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
-
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -51,24 +50,22 @@ class BecomeHostScreen extends StatelessWidget {
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Container(
                           height: 200,
-                          color: const Color(0xFFF0F0F0),
+                          color: AppColors.neutral100,
                         ),
                         errorWidget: (context, url, error) => Container(
                           height: 200,
-                          color: const Color(0xFFF0F0F0),
-                          child: const Icon(
+                          color: AppColors.neutral100,
+                          child: Icon(
                             Icons.image_not_supported_outlined,
-                            color: Color(0xFF9CA3AF),
+                            color: AppColors.neutral400,
                           ),
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 32),
-
                     Text(
                       context.tr('host.earnMoney'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: AppColors.charcoal,
@@ -77,15 +74,13 @@ class BecomeHostScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text(
                       context.tr('host.earnDescription'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         color: AppColors.neutral600,
                         height: 1.5,
                       ),
                     ),
-
                     const SizedBox(height: 32),
-
                     _buildBenefit(
                       icon: Icons.attach_money,
                       title: context.tr('host.extraIncome'),
@@ -99,7 +94,8 @@ class BecomeHostScreen extends StatelessWidget {
                     _buildBenefit(
                       icon: Icons.calendar_today,
                       title: context.tr('host.flexibleSchedule'),
-                      description: context.tr('host.flexibleScheduleDescription'),
+                      description:
+                          context.tr('host.flexibleScheduleDescription'),
                     ),
                     _buildBenefit(
                       icon: Icons.support_agent,
@@ -111,9 +107,7 @@ class BecomeHostScreen extends StatelessWidget {
                       title: context.tr('host.verifiedGuests'),
                       description: context.tr('host.verifiedGuestsDescription'),
                     ),
-
                     const SizedBox(height: 32),
-
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -125,10 +119,12 @@ class BecomeHostScreen extends StatelessWidget {
                           Row(
                             children: [
                               Expanded(
-                                child: _buildStat('10,000+', context.tr('host.activeHosts')),
+                                child: _buildStat(
+                                    '10,000+', context.tr('host.activeHosts')),
                               ),
                               Expanded(
-                                child: _buildStat('\$2,500', context.tr('host.avgMonthly')),
+                                child: _buildStat(
+                                    '\$2,500', context.tr('host.avgMonthly')),
                               ),
                             ],
                           ),
@@ -136,27 +132,27 @@ class BecomeHostScreen extends StatelessWidget {
                           Row(
                             children: [
                               Expanded(
-                                child: _buildStat('4.8/5', context.tr('host.hostRating')),
+                                child: _buildStat(
+                                    '4.8/5', context.tr('host.hostRating')),
                               ),
                               Expanded(
-                                child: _buildStat('95%', context.tr('host.satisfaction')),
+                                child: _buildStat(
+                                    '95%', context.tr('host.satisfaction')),
                               ),
                             ],
                           ),
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 24),
                   ],
                 ),
               ),
             ),
-
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBackground,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.08),
@@ -174,7 +170,7 @@ class BecomeHostScreen extends StatelessWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
-                    foregroundColor: AppColors.charcoal,
+                    foregroundColor: AppColors.brandCharcoal,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -221,7 +217,7 @@ class BecomeHostScreen extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -230,7 +226,7 @@ class BecomeHostScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     color: AppColors.neutral600,
                   ),
@@ -248,7 +244,7 @@ class BecomeHostScreen extends StatelessWidget {
       children: [
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w700,
             color: AppColors.charcoal,
@@ -257,7 +253,7 @@ class BecomeHostScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             color: AppColors.neutral600,
           ),

@@ -20,8 +20,8 @@ void main() async {
   GoogleFonts.config.allowRuntimeFetching = false;
 
   // Make system nav bar transparent so SafeArea insets work correctly.
-  // Icons are forced dark because the app paints a light scaffold background
-  // behind the (transparent) system nav bar — see `app.dart`.
+  // These icon brightnesses only apply to the frames before the first build;
+  // from then on the AnnotatedRegion in `app.dart` follows the active theme.
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     systemNavigationBarColor: Colors.transparent,
     systemNavigationBarDividerColor: Colors.transparent,
@@ -54,7 +54,7 @@ void main() async {
     Bloc.observer = AppBlocObserver();
   }
 
-  runApp(const HouseianaApp());
+  runApp(HouseianaApp());
 
   // FCM must not block the first frame: requestPermission shows a modal OS
   // dialog on iOS and getToken/upload hit the network. It needs Firebase and

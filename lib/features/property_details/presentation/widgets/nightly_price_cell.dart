@@ -26,7 +26,7 @@ class NightlyPriceCell extends StatelessWidget {
   final String currency;
   final VoidCallback? onTap;
 
-  const NightlyPriceCell({
+  NightlyPriceCell({
     super.key,
     required this.date,
     required this.price,
@@ -59,12 +59,14 @@ class NightlyPriceCell extends StatelessWidget {
 
     if (selected) {
       bg = AppColors.primaryColor;
-      dayColor = AppColors.charcoal;
-      priceColor = AppColors.charcoal;
+      dayColor = AppColors.brandCharcoal;
+      priceColor = AppColors.brandCharcoal;
     } else if (inRange) {
-      bg = const Color(0xFFFFF6D6);
-      dayColor = AppColors.charcoal;
-      priceColor = AppColors.charcoal;
+      // dark-ok: pale brand-yellow in-range fill, light in both themes — its
+      // text is pinned to the light palette to match.
+      bg = const Color(0xFFFFF6D6); // dark-ok
+      dayColor = AppColors.brandCharcoal;
+      priceColor = AppColors.brandCharcoal;
     } else if (isBooked) {
       dayColor = AppColors.neutral400;
       priceColor = AppColors.neutral400;
@@ -91,12 +93,10 @@ class NightlyPriceCell extends StatelessWidget {
     final priceText = (price != null && !isPast && !isOutsideWindow)
         ? _formatPrice(price!)
         : null;
-    final strike = isBooked
-        ? TextDecoration.lineThrough
-        : TextDecoration.none;
+    final strike = isBooked ? TextDecoration.lineThrough : TextDecoration.none;
 
-    // Rose used for the discounted amount + badge (matches the web calendar).
-    const discountColor = Color(0xFFE11D48);
+    // The app's discount red, used for the discounted amount + its badge.
+    const discountColor = AppColors.discountRed;
 
     return InkWell(
       onTap: canTap ? onTap : null,
@@ -118,8 +118,7 @@ class NightlyPriceCell extends StatelessWidget {
                     '${date!.day}',
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight:
-                          selected ? FontWeight.w700 : FontWeight.w600,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                       color: dayColor,
                       decoration: strike,
                       decorationColor: AppColors.neutral400,
@@ -140,7 +139,7 @@ class NightlyPriceCell extends StatelessWidget {
                             fontSize: 9,
                             height: 1.05,
                             color: selected
-                                ? AppColors.charcoal.withValues(alpha: 0.6)
+                                ? AppColors.brandCharcoal.withValues(alpha: 0.6)
                                 : AppColors.neutral400,
                             decoration: TextDecoration.lineThrough,
                             decorationColor: AppColors.neutral400,
@@ -159,8 +158,9 @@ class NightlyPriceCell extends StatelessWidget {
                             fontSize: 11,
                             height: 1.05,
                             fontWeight: FontWeight.w700,
-                            color:
-                                selected ? AppColors.charcoal : discountColor,
+                            color: selected
+                                ? AppColors.brandCharcoal
+                                : discountColor,
                           ),
                         ),
                       ),
@@ -204,6 +204,7 @@ class NightlyPriceCell extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
                   decoration: BoxDecoration(
+                    // dark-ok: white chip on the brand-yellow selected cell
                     color: selected ? Colors.white : discountColor,
                     borderRadius: BorderRadius.circular(6),
                   ),
@@ -213,6 +214,7 @@ class NightlyPriceCell extends StatelessWidget {
                       fontSize: 7.5,
                       height: 1,
                       fontWeight: FontWeight.w700,
+                      // dark-ok: label on the red discount badge fill
                       color: selected ? discountColor : Colors.white,
                     ),
                   ),

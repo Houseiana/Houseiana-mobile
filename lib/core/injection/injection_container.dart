@@ -10,6 +10,7 @@ import 'package:houseiana_mobile_app/core/injection/host_injection.dart';
 import 'package:houseiana_mobile_app/core/injection/notifications_injection.dart';
 import 'package:houseiana_mobile_app/core/injection/profile_injection.dart';
 import 'package:houseiana_mobile_app/core/injection/support_injection.dart';
+import 'package:houseiana_mobile_app/core/injection/theme_injection.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -23,6 +24,7 @@ Future<void> init() async {
   initBooking();
   initChat();
   initI18n();
+  initTheme();
   initProperties();
   initHost();
   initNotifications();

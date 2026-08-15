@@ -12,7 +12,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class PersonalInformationScreen extends StatelessWidget {
-  const PersonalInformationScreen({super.key});
+  PersonalInformationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,17 +21,17 @@ class PersonalInformationScreen extends StatelessWidget {
 
     if (userId == null || userId.isEmpty) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.cardBackground,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+            icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             context.tr('profile.personalInfo'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal,
@@ -48,13 +48,13 @@ class PersonalInformationScreen extends StatelessWidget {
                 Icon(
                   Icons.lock_outline,
                   size: 56,
-                  color: Colors.grey.shade400,
+                  color: AppColors.divider,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   context.tr('profile.personalInfoSignInTitle'),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -64,7 +64,7 @@ class PersonalInformationScreen extends StatelessWidget {
                 Text(
                   context.tr('profile.personalInfoSignInDescription'),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppColors.neutral600,
                   ),
@@ -80,7 +80,7 @@ class PersonalInformationScreen extends StatelessWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
-                    foregroundColor: AppColors.charcoal,
+                    foregroundColor: AppColors.brandCharcoal,
                   ),
                   child: Text(context.tr('auth.signIn')),
                 ),
@@ -131,7 +131,7 @@ class PersonalInformationScreen extends StatelessWidget {
 class _PersonalInformationContent extends StatefulWidget {
   final PersonalInfoState state;
 
-  const _PersonalInformationContent({required this.state});
+  _PersonalInformationContent({required this.state});
 
   @override
   State<_PersonalInformationContent> createState() =>
@@ -255,17 +255,6 @@ class _PersonalInformationContentState
       initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primaryColor,
-              onPrimary: AppColors.charcoal,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null && picked != _selectedDate) {
@@ -349,17 +338,17 @@ class _PersonalInformationContentState
         _genderOptions.any((o) => o.id == _genderId) ? _genderId : null;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('profile.personalInfo'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -368,7 +357,7 @@ class _PersonalInformationContentState
         centerTitle: true,
       ),
       body: isLoading
-          ? const FormSkeleton(
+          ? FormSkeleton(
               fieldCount: 7,
               padding: EdgeInsets.all(24),
             )
@@ -392,7 +381,7 @@ class _PersonalInformationContentState
                         ],
                         Text(
                           context.tr('profile.personalInfoIntro'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             color: AppColors.neutral600,
                           ),
@@ -435,7 +424,8 @@ class _PersonalInformationContentState
                               return context.tr('auth.validation.enterEmail');
                             }
                             if (!value.contains('@')) {
-                              return context.tr('auth.validation.enterValidEmail');
+                              return context
+                                  .tr('auth.validation.enterValidEmail');
                             }
                             return null;
                           },
@@ -464,7 +454,7 @@ class _PersonalInformationContentState
                           hintText: context.tr('profile.selectDateOfBirth'),
                           readOnly: true,
                           onTap: _selectDate,
-                          suffixIcon: const Icon(
+                          suffixIcon: Icon(
                             Icons.calendar_today,
                             color: AppColors.neutral600,
                           ),
@@ -475,7 +465,7 @@ class _PersonalInformationContentState
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           decoration: BoxDecoration(
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                            border: Border.all(color: AppColors.neutral200),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: DropdownButtonHideUnderline(
@@ -512,14 +502,14 @@ class _PersonalInformationContentState
                             onPressed: isSaving ? null : _saveChanges,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryColor,
-                              foregroundColor: AppColors.charcoal,
+                              foregroundColor: AppColors.brandCharcoal,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                             child: isSaving
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 20,
                                     height: 20,
                                     child: CircularProgressIndicator(
@@ -547,13 +537,13 @@ class _PersonalInformationContentState
 class _SectionLabel extends StatelessWidget {
   final String text;
 
-  const _SectionLabel(this.text);
+  _SectionLabel(this.text);
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: AppColors.charcoal,
@@ -572,7 +562,7 @@ class _AppTextField extends StatelessWidget {
   final VoidCallback? onTap;
   final String? Function(String?)? validator;
 
-  const _AppTextField({
+  _AppTextField({
     required this.controller,
     required this.hintText,
     this.keyboardType,
@@ -597,11 +587,11 @@ class _AppTextField extends StatelessWidget {
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: BorderSide(color: AppColors.neutral200),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: BorderSide(color: AppColors.neutral200),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -616,7 +606,7 @@ class _LoadErrorState extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _LoadErrorState({
+  _LoadErrorState({
     required this.message,
     required this.onRetry,
   });
@@ -638,14 +628,14 @@ class _LoadErrorState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.neutral600),
+              style: TextStyle(color: AppColors.neutral600),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
               ),
               child: Text(context.tr('common.retry')),
             ),

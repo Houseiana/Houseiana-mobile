@@ -7,7 +7,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
-  const NotificationSettingsScreen({super.key});
+  NotificationSettingsScreen({super.key});
 
   @override
   State<NotificationSettingsScreen> createState() =>
@@ -109,17 +109,17 @@ class _NotificationSettingsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('profile.notificationSettings'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -132,7 +132,7 @@ class _NotificationSettingsScreenState
         children: [
           Text(
             context.tr('profile.notificationSettingsIntro'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               color: AppColors.neutral600,
               height: 1.45,
@@ -173,7 +173,8 @@ class _NotificationSettingsScreenState
                 duration: const Duration(milliseconds: 180),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: selected ? Colors.white : Colors.transparent,
+                  color:
+                      selected ? AppColors.cardBackground : Colors.transparent,
                   borderRadius: BorderRadius.circular(9),
                   boxShadow: selected
                       ? [
@@ -191,9 +192,7 @@ class _NotificationSettingsScreenState
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: selected
-                        ? AppColors.charcoal
-                        : AppColors.neutral600,
+                    color: selected ? AppColors.charcoal : AppColors.neutral600,
                   ),
                 ),
               ),
@@ -330,7 +329,7 @@ class _NotificationSettingsScreenState
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(row.icon, color: AppColors.neutral600, size: 20),
@@ -342,7 +341,7 @@ class _NotificationSettingsScreenState
                   children: [
                     Text(
                       row.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: AppColors.charcoal,
@@ -351,7 +350,7 @@ class _NotificationSettingsScreenState
                     const SizedBox(height: 4),
                     Text(
                       row.description,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         color: AppColors.neutral600,
                         height: 1.35,
@@ -402,7 +401,7 @@ class _NotificationSettingsScreenState
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral600,
               ),
@@ -424,17 +423,18 @@ class _NotificationSettingsScreenState
       decoration: BoxDecoration(
         color: AppColors.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.3)),
+        border:
+            Border.all(color: AppColors.primaryColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, color: AppColors.charcoal, size: 20),
+          Icon(Icons.info_outline, color: AppColors.charcoal, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               context.tr('profile.criticalMessagesNotice'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.charcoal,
                 height: 1.45,

@@ -11,7 +11,7 @@ class DestinationMessageState extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
 
-  const DestinationMessageState({
+  DestinationMessageState({
     super.key,
     required this.icon,
     required this.title,
@@ -33,7 +33,7 @@ class DestinationMessageState extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -43,7 +43,7 @@ class DestinationMessageState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral600,
                 height: 1.5,
@@ -55,7 +55,7 @@ class DestinationMessageState extends StatelessWidget {
                 onPressed: onAction,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                 ),
                 child: Text(actionLabel!),
               ),

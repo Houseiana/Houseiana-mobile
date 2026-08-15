@@ -8,7 +8,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class SavedAddressesScreen extends StatefulWidget {
-  const SavedAddressesScreen({super.key});
+  SavedAddressesScreen({super.key});
 
   @override
   State<SavedAddressesScreen> createState() => _SavedAddressesScreenState();
@@ -24,17 +24,17 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('profile.savedAddresses'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -52,7 +52,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
         },
         builder: (context, state) {
           if (state is SavedAddressesLoading) {
-            return const TileListSkeleton(
+            return TileListSkeleton(
               itemCount: 6,
               leadingSize: 48,
               showTrailing: true,
@@ -63,7 +63,8 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
           if (state is SavedAddressesError) {
             return _ErrorState(
               message: state.message,
-              onRetry: () => context.read<SavedAddressesCubit>().loadAddresses(),
+              onRetry: () =>
+                  context.read<SavedAddressesCubit>().loadAddresses(),
             );
           }
 
@@ -79,10 +80,10 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                   child: ListView(
                     padding: const EdgeInsets.all(24),
                     children: [
-                      const _AddressNotice(),
+                      _AddressNotice(),
                       const SizedBox(height: 24),
                       if (addresses.isEmpty)
-                        const _EmptyAddresses()
+                        _EmptyAddresses()
                       else
                         ...addresses.map(
                           (address) => _AddressCard(
@@ -100,7 +101,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.cardBackground,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.08),
@@ -124,7 +125,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                     label: Text(context.tr('profile.addNewAddress')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
-                      foregroundColor: AppColors.charcoal,
+                      foregroundColor: AppColors.brandCharcoal,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -185,10 +186,9 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                     hintText: context.tr('profile.addressLabelHint'),
                     border: const OutlineInputBorder(),
                   ),
-                  validator: (value) =>
-                      value == null || value.trim().isEmpty
-                          ? context.tr('profile.addressLabelValidation')
-                          : null,
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? context.tr('profile.addressLabelValidation')
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -199,10 +199,9 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                     labelText: context.tr('profile.street'),
                     border: const OutlineInputBorder(),
                   ),
-                  validator: (value) =>
-                      value == null || value.trim().isEmpty
-                          ? context.tr('profile.streetValidation')
-                          : null,
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? context.tr('profile.streetValidation')
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -316,7 +315,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
 }
 
 class _AddressNotice extends StatelessWidget {
-  const _AddressNotice();
+  _AddressNotice();
 
   @override
   Widget build(BuildContext context) {
@@ -325,16 +324,17 @@ class _AddressNotice extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.3)),
+        border:
+            Border.all(color: AppColors.primaryColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.location_on, color: AppColors.charcoal, size: 20),
+          Icon(Icons.location_on, color: AppColors.charcoal, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               context.tr('profile.savedAddressesNotice'),
-              style: const TextStyle(fontSize: 13, color: AppColors.charcoal),
+              style: TextStyle(fontSize: 13, color: AppColors.charcoal),
             ),
           ),
         ],
@@ -350,7 +350,7 @@ class _AddressCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  const _AddressCard({
+  _AddressCard({
     required this.address,
     required this.isBusy,
     required this.onSetDefault,
@@ -371,7 +371,7 @@ class _AddressCard extends StatelessWidget {
         border: Border.all(
           color: address.isDefault == true
               ? AppColors.primaryColor
-              : const Color(0xFFE5E7EB),
+              : AppColors.neutral200,
           width: address.isDefault == true ? 2 : 1,
         ),
         borderRadius: BorderRadius.circular(12),
@@ -385,7 +385,7 @@ class _AddressCard extends StatelessWidget {
               color: AppColors.ghostWhite,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.location_on, color: AppColors.charcoal),
+            child: Icon(Icons.location_on, color: AppColors.charcoal),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -398,7 +398,7 @@ class _AddressCard extends StatelessWidget {
                       child: Text(
                         address.label ?? 'Address',
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: AppColors.charcoal,
@@ -418,7 +418,7 @@ class _AddressCard extends StatelessWidget {
                         ),
                         child: Text(
                           context.tr('profile.defaultBadge'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: AppColors.charcoal,
@@ -432,7 +432,7 @@ class _AddressCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     line,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       color: AppColors.neutral600,
                     ),
@@ -449,7 +449,7 @@ class _AddressCard extends StatelessWidget {
             )
           else
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: AppColors.neutral600),
+              icon: Icon(Icons.more_vert, color: AppColors.neutral600),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -479,9 +479,11 @@ class _AddressCard extends StatelessWidget {
                   value: 'delete',
                   child: Row(
                     children: [
-                      const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                      const Icon(Icons.delete_outline,
+                          size: 20, color: Colors.red),
                       const SizedBox(width: 12),
-                      Text(context.tr('profile.deleteAction'), style: const TextStyle(color: Colors.red)),
+                      Text(context.tr('profile.deleteAction'),
+                          style: const TextStyle(color: Colors.red)),
                     ],
                   ),
                 ),
@@ -503,23 +505,23 @@ class _AddressCard extends StatelessWidget {
 }
 
 class _EmptyAddresses extends StatelessWidget {
-  const _EmptyAddresses();
+  _EmptyAddresses();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.neutral200),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
-          const Icon(Icons.location_off, size: 42, color: AppColors.neutral500),
+          Icon(Icons.location_off, size: 42, color: AppColors.neutral500),
           const SizedBox(height: 12),
           Text(
             context.tr('profile.noSavedAddresses'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -529,7 +531,7 @@ class _EmptyAddresses extends StatelessWidget {
           Text(
             context.tr('profile.noSavedAddressesDesc'),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: AppColors.neutral600),
+            style: TextStyle(fontSize: 13, color: AppColors.neutral600),
           ),
         ],
       ),
@@ -541,7 +543,7 @@ class _ErrorState extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _ErrorState({
+  _ErrorState({
     required this.message,
     required this.onRetry,
   });
@@ -559,7 +561,7 @@ class _ErrorState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.neutral600),
+              style: TextStyle(color: AppColors.neutral600),
             ),
             const SizedBox(height: 16),
             ElevatedButton(

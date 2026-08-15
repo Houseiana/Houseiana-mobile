@@ -3,7 +3,7 @@ import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class PriceRangeFilterScreen extends StatefulWidget {
-  const PriceRangeFilterScreen({super.key});
+  PriceRangeFilterScreen({super.key});
 
   @override
   State<PriceRangeFilterScreen> createState() => _PriceRangeFilterScreenState();
@@ -57,17 +57,17 @@ class _PriceRangeFilterScreenState extends State<PriceRangeFilterScreen> {
     final averagePrice = _averageNightlyPrice;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.charcoal),
+          icon: Icon(Icons.close, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('filters.priceRange'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -138,7 +138,7 @@ class _PriceRangeFilterScreenState extends State<PriceRangeFilterScreen> {
                     },
                   ),
                   const SizedBox(height: 8),
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
@@ -160,7 +160,7 @@ class _PriceRangeFilterScreenState extends State<PriceRangeFilterScreen> {
                   const SizedBox(height: 32),
                   Text(
                     context.tr('filters.quickSelection'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppColors.charcoal,
@@ -191,7 +191,7 @@ class _PriceRangeFilterScreenState extends State<PriceRangeFilterScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.info_outline,
                             color: AppColors.charcoal,
                             size: 20,
@@ -199,8 +199,9 @@ class _PriceRangeFilterScreenState extends State<PriceRangeFilterScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              context.tr('filters.averageNightlyInfo', args: {'price': '\$${averagePrice.round()}'}),
-                              style: const TextStyle(
+                              context.tr('filters.averageNightlyInfo',
+                                  args: {'price': '\$${averagePrice.round()}'}),
+                              style: TextStyle(
                                 fontSize: 14,
                                 color: AppColors.charcoal,
                               ),
@@ -217,7 +218,7 @@ class _PriceRangeFilterScreenState extends State<PriceRangeFilterScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.08),
@@ -233,7 +234,7 @@ class _PriceRangeFilterScreenState extends State<PriceRangeFilterScreen> {
                 onPressed: () => Navigator.pop(context, _priceRange),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -241,7 +242,8 @@ class _PriceRangeFilterScreenState extends State<PriceRangeFilterScreen> {
                 ),
                 child: Text(
                   _resultCount != null
-                      ? context.tr('filters.showResultsCount', args: {'count': _resultCount})
+                      ? context.tr('filters.showResultsCount',
+                          args: {'count': _resultCount})
                       : context.tr('filters.applyPriceRange'),
                   style: const TextStyle(
                     fontSize: 16,
@@ -264,11 +266,10 @@ class _PriceRangeFilterScreenState extends State<PriceRangeFilterScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryColor : Colors.white,
+          color: isSelected ? AppColors.primaryColor : AppColors.cardBackground,
           borderRadius: BorderRadius.circular(25),
           border: Border.all(
-            color:
-                isSelected ? AppColors.primaryColor : const Color(0xFFE5E7EB),
+            color: isSelected ? AppColors.primaryColor : AppColors.neutral200,
           ),
         ),
         child: Text(
@@ -276,7 +277,9 @@ class _PriceRangeFilterScreenState extends State<PriceRangeFilterScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: AppColors.charcoal,
+            // The selected chip is the brand yellow in both themes, so its
+            // label has to stay dark.
+            color: isSelected ? AppColors.brandCharcoal : AppColors.charcoal,
           ),
         ),
       ),
@@ -289,7 +292,7 @@ class _PriceValueColumn extends StatelessWidget {
   final String value;
   final CrossAxisAlignment crossAxisAlignment;
 
-  const _PriceValueColumn({
+  _PriceValueColumn({
     required this.label,
     required this.value,
     required this.crossAxisAlignment,
@@ -302,7 +305,7 @@ class _PriceValueColumn extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             color: AppColors.neutral600,
           ),
@@ -310,7 +313,7 @@ class _PriceValueColumn extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w700,
             color: AppColors.charcoal,

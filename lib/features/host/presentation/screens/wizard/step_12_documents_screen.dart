@@ -6,14 +6,14 @@ import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.da
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class Step12DocumentsScreen extends StatelessWidget {
-  const Step12DocumentsScreen({super.key});
+  Step12DocumentsScreen({super.key});
 
   Future<void> _pickDocument(BuildContext context, String fieldName) async {
     final picker = ImagePicker();
     final cubit = context.read<ListingWizardCubit>();
-    
+
     // Design allows PDF, but image_picker only does images/videos.
-    // For a production app, we would use file_picker. 
+    // For a production app, we would use file_picker.
     // Here we use gallery as a proxy for document selection.
     final XFile? image = await picker.pickImage(
       source: ImageSource.gallery,
@@ -37,15 +37,14 @@ class Step12DocumentsScreen extends StatelessWidget {
         children: [
           Text(
             context.tr('wizard.uploadDocs'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF1D242B),
+              color: AppColors.charcoal,
               height: 1.5,
             ),
           ),
           const SizedBox(height: 24),
-
           _buildUploadSection(
             context,
             title: context.tr('wizard.propertyDocument'),
@@ -53,9 +52,7 @@ class Step12DocumentsScreen extends StatelessWidget {
             fieldName: 'propertyDocument',
             currentValue: data.propertyDocument,
           ),
-
           const SizedBox(height: 24),
-
           _buildUploadSection(
             context,
             title: context.tr('wizard.hostIdentityCard'),
@@ -63,11 +60,8 @@ class Step12DocumentsScreen extends StatelessWidget {
             fieldName: 'hostIdentityCard',
             currentValue: data.hostIdentityCard,
           ),
-
           const SizedBox(height: 24),
-
           _buildOwnershipToggle(context, cubit, data.isPropertyOwner ?? true),
-
           if (!(data.isPropertyOwner ?? true)) ...[
             const SizedBox(height: 24),
             _buildUploadSection(
@@ -78,7 +72,6 @@ class Step12DocumentsScreen extends StatelessWidget {
               currentValue: data.powerOfAttorney,
             ),
           ],
-          
           const SizedBox(height: 40),
         ],
       ),
@@ -101,18 +94,18 @@ class Step12DocumentsScreen extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1D242B),
+                color: AppColors.charcoal,
               ),
             ),
             const SizedBox(width: 8),
             Text(
               context.tr('wizard.docOptional'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF9CA3AF),
+                color: AppColors.neutral400,
               ),
             ),
           ],
@@ -120,9 +113,9 @@ class Step12DocumentsScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           subtitle,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: Color(0xFF6B7280),
+            color: AppColors.neutral500,
             height: 1.4,
           ),
         ),
@@ -134,36 +127,40 @@ class Step12DocumentsScreen extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 40),
             decoration: BoxDecoration(
-              color: const Color(0xFFF9FAFB),
+              color: AppColors.ghostWhite,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: const Color(0xFFF0F2F5),
-                style: BorderStyle.solid, // In real app use dotted_border package
+                color: AppColors.neutral100,
+                style:
+                    BorderStyle.solid, // In real app use dotted_border package
               ),
             ),
             child: Column(
               children: [
                 if (isUploaded) ...[
-                  const Icon(Icons.check_circle, color: Colors.green, size: 40),
+                  Icon(Icons.check_circle, color: AppColors.success, size: 40),
                   const SizedBox(height: 12),
                   Text(
                     currentValue.split('/').last,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF1D242B),
+                      color: AppColors.charcoal,
                       fontWeight: FontWeight.w500,
                     ),
                     textAlign: TextAlign.center,
                   ),
                   TextButton(
-                    onPressed: () => context.read<ListingWizardCubit>().updateStepData({fieldName: null}),
-                    child: Text(context.tr('wizard.changeDoc'), style: const TextStyle(color: AppColors.primaryColor)),
+                    onPressed: () => context
+                        .read<ListingWizardCubit>()
+                        .updateStepData({fieldName: null}),
+                    child: Text(context.tr('wizard.changeDoc'),
+                        style: const TextStyle(color: AppColors.primaryColor)),
                   ),
                 ] else ...[
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.cardBackground,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -172,27 +169,27 @@ class Step12DocumentsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.upload_outlined,
-                      color: Color(0xFF6B7280),
+                      color: AppColors.neutral500,
                       size: 24,
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     context.tr('wizard.clickToUpload'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1D242B),
+                      color: AppColors.charcoal,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     context.tr('wizard.fileTypes'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF9CA3AF),
+                      color: AppColors.neutral400,
                     ),
                   ),
                 ],
@@ -204,13 +201,14 @@ class Step12DocumentsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOwnershipToggle(BuildContext context, ListingWizardCubit cubit, bool isOwner) {
+  Widget _buildOwnershipToggle(
+      BuildContext context, ListingWizardCubit cubit, bool isOwner) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF0F2F5)),
+        border: Border.all(color: AppColors.neutral100),
       ),
       child: Row(
         children: [
@@ -220,18 +218,18 @@ class Step12DocumentsScreen extends StatelessWidget {
               children: [
                 Text(
                   context.tr('wizard.areYouOwner'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1D242B),
+                    color: AppColors.charcoal,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   context.tr('wizard.areYouOwnerDesc'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.neutral500,
                     height: 1.4,
                   ),
                 ),

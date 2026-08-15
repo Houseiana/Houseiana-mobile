@@ -11,7 +11,7 @@ class ContactHostScreen extends StatefulWidget {
   final String? propertyName;
   final String? hostName;
 
-  const ContactHostScreen({
+  ContactHostScreen({
     super.key,
     this.propertyName,
     this.hostName,
@@ -44,11 +44,16 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
       _property = args['property'] is Map<String, dynamic>
           ? args['property'] as Map<String, dynamic>
           : {};
-      _propertyId = (args['propertyId'] ?? _property['_id'] ?? _property['id'] ?? '').toString();
+      _propertyId =
+          (args['propertyId'] ?? _property['_id'] ?? _property['id'] ?? '')
+              .toString();
       _hostId = (args['hostId'] ??
-              (_property['host'] is Map ? (_property['host']['_id'] ?? _property['host']['id'] ?? '') : '') ??
+              (_property['host'] is Map
+                  ? (_property['host']['_id'] ?? _property['host']['id'] ?? '')
+                  : '') ??
               _property['hostId'] ??
-              '').toString();
+              '')
+          .toString();
     }
   }
 
@@ -77,17 +82,17 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
     final imageUrl = _propertyImageUrl;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.charcoal),
+          icon: Icon(Icons.close, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('messages.contactHost'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -122,12 +127,12 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
                               placeholder: (context, url) => Container(
                                 width: 60,
                                 height: 60,
-                                color: const Color(0xFFF0F0F0),
+                                color: AppColors.neutral100,
                               ),
                               errorWidget: (context, url, error) =>
-                                  const _PropertyImageFallback(),
+                                  _PropertyImageFallback(),
                             )
-                          : const _PropertyImageFallback(),
+                          : _PropertyImageFallback(),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -136,7 +141,7 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
                         children: [
                           Text(
                             propertyName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: AppColors.charcoal,
@@ -147,14 +152,14 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
                             children: [
                               Text(
                                 context.tr('messages.hostLabel'),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   color: AppColors.neutral600,
                                 ),
                               ),
                               Text(
                                 hostName,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
                                   color: AppColors.charcoal,
@@ -180,7 +185,7 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
               // Topic Selection
               Text(
                 context.tr('messages.topic'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
@@ -190,7 +195,7 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                  border: Border.all(color: AppColors.neutral200),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: DropdownButtonHideUnderline(
@@ -220,7 +225,7 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
               // Message Input
               Text(
                 context.tr('messages.message'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
@@ -232,14 +237,14 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
                 maxLines: 8,
                 decoration: InputDecoration(
                   hintText: context.tr('messages.writeMessage'),
-                  hintStyle: const TextStyle(color: AppColors.neutral400),
+                  hintStyle: TextStyle(color: AppColors.neutral400),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderSide: BorderSide(color: AppColors.neutral200),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderSide: BorderSide(color: AppColors.neutral200),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -262,7 +267,7 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
               // Quick Message Templates
               Text(
                 context.tr('messages.quickTemplates'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
@@ -296,7 +301,7 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.info_outline,
                       color: AppColors.charcoal,
                       size: 20,
@@ -305,7 +310,7 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
                     Expanded(
                       child: Text(
                         context.tr('messages.messageInfo'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: AppColors.charcoal,
                         ),
@@ -331,14 +336,14 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
-                    foregroundColor: AppColors.charcoal,
+                    foregroundColor: AppColors.brandCharcoal,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: _isSending
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
@@ -372,13 +377,13 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.neutral200),
         ),
         child: Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             color: AppColors.charcoal,
           ),
@@ -400,7 +405,7 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.chat_bubble_outline,
+            Icon(Icons.chat_bubble_outline,
                 color: AppColors.charcoal, size: 20),
             const SizedBox(width: 12),
             Expanded(
@@ -409,7 +414,7 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
                 children: [
                   Text(
                     context.tr('messages.openChatDirect'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
@@ -418,14 +423,12 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
                   const SizedBox(height: 2),
                   Text(
                     context.tr('messages.openChatDirectSubtitle'),
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.neutral600),
+                    style: TextStyle(fontSize: 12, color: AppColors.neutral600),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios,
-                size: 14, color: AppColors.charcoal),
+            Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.charcoal),
           ],
         ),
       ),
@@ -455,7 +458,7 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(context.tr('messages.missingHostInfo')),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
       return;
@@ -532,7 +535,7 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(context.tr('messages.missingHostInfo')),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
         setState(() => _isSending = false);
@@ -595,7 +598,7 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(context.tr('messages.messageFailed')),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
       setState(() => _isSending = false);
@@ -613,7 +616,8 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
   String _resolvedHostName(BuildContext context) {
     final host = _property['host'];
     if (host is Map) {
-      final firstName = (host['firstName'] ?? host['first_name'] ?? '').toString();
+      final firstName =
+          (host['firstName'] ?? host['first_name'] ?? '').toString();
       final lastName = (host['lastName'] ?? host['last_name'] ?? '').toString();
       final name = '$firstName $lastName'.trim();
       if (name.isNotEmpty) return name;
@@ -634,13 +638,15 @@ class _ContactHostScreenState extends State<ContactHostScreen> {
     }
     final cover = _property['coverPhoto'];
     if (cover is String) return cover;
-    if (cover is Map) return (cover['url'] ?? cover['photoUrl'] ?? '').toString();
+    if (cover is Map) {
+      return (cover['url'] ?? cover['photoUrl'] ?? '').toString();
+    }
     return '';
   }
 }
 
 class _PropertyImageFallback extends StatelessWidget {
-  const _PropertyImageFallback();
+  _PropertyImageFallback();
 
   @override
   Widget build(BuildContext context) {
@@ -648,7 +654,7 @@ class _PropertyImageFallback extends StatelessWidget {
       width: 60,
       height: 60,
       color: AppColors.ghostWhite,
-      child: const Icon(Icons.home_outlined, color: AppColors.neutral600),
+      child: Icon(Icons.home_outlined, color: AppColors.neutral600),
     );
   }
 }

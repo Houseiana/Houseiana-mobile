@@ -10,7 +10,7 @@ import 'package:houseiana_mobile_app/core/services/lookups_cache.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class AdvancedFiltersScreen extends StatefulWidget {
-  const AdvancedFiltersScreen({super.key});
+  AdvancedFiltersScreen({super.key});
 
   @override
   State<AdvancedFiltersScreen> createState() => _AdvancedFiltersScreenState();
@@ -19,8 +19,7 @@ class AdvancedFiltersScreen extends StatefulWidget {
 class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
   /// Price filter operates in EGP and opens up to this nightly ceiling.
   static const double _maxPriceLimit = 200000;
-  static const RangeValues _defaultPriceRange =
-      RangeValues(0, _maxPriceLimit);
+  static const RangeValues _defaultPriceRange = RangeValues(0, _maxPriceLimit);
 
   final NumberFormat _priceFormatter = NumberFormat('#,##0');
 
@@ -91,8 +90,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
   /// Live update while typing in the MAX box. An empty box means "no maximum"
   /// (the ceiling). Keeps end >= start so the slider stays valid.
   void _onMaxPriceChanged(String value) {
-    final parsed =
-        value.trim().isEmpty ? _maxPriceLimit : _parsePrice(value);
+    final parsed = value.trim().isEmpty ? _maxPriceLimit : _parsePrice(value);
     setState(() {
       final end = parsed < _priceRange.start ? _priceRange.start : parsed;
       _priceRange = RangeValues(_priceRange.start, end);
@@ -174,17 +172,17 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.charcoal),
+          icon: Icon(Icons.close, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('filters.title'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -205,7 +203,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
             },
             child: Text(
               context.tr('common.clearAll'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.charcoal,
                 fontWeight: FontWeight.w600,
@@ -223,7 +221,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                 // Price Range
                 Text(
                   context.tr('filters.priceRange'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -281,7 +279,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                 // Bedrooms
                 Text(
                   context.tr('filters.bedrooms'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -297,7 +295,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                 // Beds
                 Text(
                   context.tr('filters.beds'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -313,7 +311,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                 // Bathrooms
                 Text(
                   context.tr('filters.bathrooms'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -333,7 +331,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                 // Amenities
                 Text(
                   context.tr('filters.amenities'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -344,8 +342,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: _amenities.map((amenity) {
-                    final isSelected =
-                        _selectedAmenityIds.contains(amenity.id);
+                    final isSelected = _selectedAmenityIds.contains(amenity.id);
                     return FilterChip(
                       label: Text(amenity.name),
                       selected: isSelected,
@@ -377,7 +374,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.08),
@@ -411,7 +408,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -444,10 +441,10 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
       decoration: BoxDecoration(
         color: active
             ? AppColors.primaryColor.withValues(alpha: 0.08)
-            : Colors.white,
+            : AppColors.cardBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: active ? AppColors.primaryColor : const Color(0xFFE5E7EB),
+          color: active ? AppColors.primaryColor : AppColors.neutral200,
         ),
       ),
       child: Column(
@@ -455,7 +452,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(fontSize: 11, color: AppColors.neutral600),
+            style: TextStyle(fontSize: 11, color: AppColors.neutral600),
           ),
           const SizedBox(height: 2),
           Row(
@@ -472,7 +469,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                     FocusScope.of(context).unfocus();
                     _commitPriceFields();
                   },
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -482,7 +479,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                     contentPadding: EdgeInsets.zero,
                     border: InputBorder.none,
                     hintText: hint,
-                    hintStyle: const TextStyle(
+                    hintStyle: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppColors.neutral400,
@@ -491,7 +488,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
                 ),
               ),
               const SizedBox(width: 6),
-              const Text(
+              Text(
                 'EGP',
                 style: TextStyle(
                   fontSize: 13,
@@ -519,7 +516,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
           alignment: Alignment.center,
           child: Text(
             value == 0 ? context.tr('filters.any') : value.toString(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal,
@@ -543,9 +540,9 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9F9FA),
+        color: AppColors.ghostWhite,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.neutral200),
       ),
       child: Row(
         children: [
@@ -554,7 +551,7 @@ class _AdvancedFiltersScreenState extends State<AdvancedFiltersScreen> {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppColors.neutral600,
               ),

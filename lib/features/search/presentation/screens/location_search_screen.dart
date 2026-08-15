@@ -8,7 +8,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class LocationSearchScreen extends StatefulWidget {
-  const LocationSearchScreen({super.key});
+  LocationSearchScreen({super.key});
 
   @override
   State<LocationSearchScreen> createState() => _LocationSearchScreenState();
@@ -110,12 +110,12 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: TextField(
@@ -124,13 +124,13 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
           decoration: InputDecoration(
             hintText: context.tr('search.searchLocations'),
             border: InputBorder.none,
-            hintStyle: const TextStyle(color: AppColors.neutral400),
+            hintStyle: TextStyle(color: AppColors.neutral400),
           ),
           style: const TextStyle(fontSize: 16),
         ),
       ),
       body: _isLoading
-          ? const TileListSkeleton(
+          ? TileListSkeleton(
               itemCount: 8,
               leadingSize: 40,
               padding: EdgeInsets.fromLTRB(24, 16, 24, 24),
@@ -160,7 +160,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                           query.isEmpty
                               ? context.tr('search.liveDestinations')
                               : context.tr('search.matchingLocations'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: AppColors.charcoal,
@@ -170,8 +170,9 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
                         Text(
                           query.isEmpty
                               ? context.tr('search.suggestionsInfo')
-                              : context.tr('search.matchesFound', args: {'count': filtered.length}),
-                          style: const TextStyle(
+                              : context.tr('search.matchesFound',
+                                  args: {'count': filtered.length}),
+                          style: TextStyle(
                             fontSize: 13,
                             color: AppColors.neutral600,
                           ),
@@ -193,7 +194,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
           color: AppColors.ghostWhite,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.location_on_outlined,
           color: AppColors.charcoal,
           size: 20,
@@ -201,7 +202,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
       ),
       title: Text(
         location.name,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,
           color: AppColors.charcoal,
@@ -209,7 +210,7 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
       ),
       subtitle: Text(
         context.tr(location.typeKey),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           color: AppColors.neutral600,
         ),
@@ -242,7 +243,7 @@ class _LocationMessageState extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
 
-  const _LocationMessageState({
+  _LocationMessageState({
     required this.icon,
     required this.title,
     required this.message,
@@ -263,7 +264,7 @@ class _LocationMessageState extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -273,7 +274,7 @@ class _LocationMessageState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.neutral600,
               ),
@@ -284,7 +285,7 @@ class _LocationMessageState extends StatelessWidget {
                 onPressed: onAction,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                 ),
                 child: Text(actionLabel!),
               ),

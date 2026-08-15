@@ -6,14 +6,14 @@ import 'package:houseiana_mobile_app/core/theme/app_spacing.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class PaymobPhoneBottomSheet extends StatefulWidget {
-  const PaymobPhoneBottomSheet({super.key});
+  PaymobPhoneBottomSheet({super.key});
 
   static Future<String?> show(BuildContext context) {
     return showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const PaymobPhoneBottomSheet(),
+      builder: (_) => PaymobPhoneBottomSheet(),
     );
   }
 
@@ -56,7 +56,7 @@ class _PaymobPhoneBottomSheetState extends State<PaymobPhoneBottomSheet> {
       padding: EdgeInsets.only(bottom: bottomInset),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: AppRadius.bottomSheetTopRadius,
         ),
         padding: const EdgeInsets.fromLTRB(
@@ -84,7 +84,7 @@ class _PaymobPhoneBottomSheetState extends State<PaymobPhoneBottomSheet> {
               AppSpacing.verticalSpaceLg,
               Text(
                 context.tr('booking.paymobPhoneTitle'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: AppColors.charcoal,
@@ -93,7 +93,7 @@ class _PaymobPhoneBottomSheetState extends State<PaymobPhoneBottomSheet> {
               AppSpacing.verticalSpaceSm,
               Text(
                 context.tr('booking.paymobPhoneSubtitle'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   color: AppColors.neutral600,
                 ),
@@ -110,7 +110,7 @@ class _PaymobPhoneBottomSheetState extends State<PaymobPhoneBottomSheet> {
                 validator: _validate,
                 decoration: InputDecoration(
                   hintText: context.tr('booking.paymobPhoneHint'),
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     Icons.phone_outlined,
                     color: AppColors.neutral500,
                   ),
@@ -157,14 +157,14 @@ class _PaymobPhoneBottomSheetState extends State<PaymobPhoneBottomSheet> {
                         padding: const EdgeInsets.symmetric(
                           vertical: AppSpacing.md,
                         ),
-                        side: const BorderSide(color: AppColors.neutral300),
+                        side: BorderSide(color: AppColors.neutral300),
                         shape: RoundedRectangleBorder(
                           borderRadius: AppRadius.buttonRadiusAll,
                         ),
                       ),
                       child: Text(
                         context.tr('common.cancel'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: AppColors.charcoal,
@@ -178,7 +178,7 @@ class _PaymobPhoneBottomSheetState extends State<PaymobPhoneBottomSheet> {
                       onPressed: _onConfirm,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryColor,
-                        foregroundColor: AppColors.charcoal,
+                        foregroundColor: AppColors.brandCharcoal,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(
                           vertical: AppSpacing.md,

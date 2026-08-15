@@ -9,7 +9,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'dart:io';
 
 class Step13ReviewPublishScreen extends StatelessWidget {
-  const Step13ReviewPublishScreen({super.key});
+  Step13ReviewPublishScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -31,10 +31,10 @@ class Step13ReviewPublishScreen extends StatelessWidget {
               children: [
                 Text(
                   context.tr('wizard.reviewIntro'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1D242B),
+                    color: AppColors.charcoal,
                     height: 1.4,
                   ),
                 ),
@@ -46,7 +46,8 @@ class Step13ReviewPublishScreen extends StatelessWidget {
 
                 _buildSectionBox(
                   title: context.tr('wizard.descriptionHeader'),
-                  content: data.description ?? context.tr('wizard.noDescription'),
+                  content:
+                      data.description ?? context.tr('wizard.noDescription'),
                 ),
 
                 const SizedBox(height: 12),
@@ -59,9 +60,17 @@ class Step13ReviewPublishScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildIconText(Icons.access_time, context.tr('wizard.inLabel', args: {'time': data.checkInTime ?? '3:00 PM'})),
+                            _buildIconText(
+                                Icons.access_time,
+                                context.tr('wizard.inLabel', args: {
+                                  'time': data.checkInTime ?? '3:00 PM'
+                                })),
                             const SizedBox(height: 4),
-                            _buildIconText(Icons.access_time, context.tr('wizard.outLabel', args: {'time': data.checkOutTime ?? '11:00 AM'})),
+                            _buildIconText(
+                                Icons.access_time,
+                                context.tr('wizard.outLabel', args: {
+                                  'time': data.checkOutTime ?? '11:00 AM'
+                                })),
                           ],
                         ),
                       ),
@@ -73,11 +82,15 @@ class Step13ReviewPublishScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildIconText(Icons.cancel_outlined, data.cancellationPolicyType ?? context.tr('wizard.policyFlexible')),
+                            _buildIconText(
+                                Icons.cancel_outlined,
+                                data.cancellationPolicyType ??
+                                    context.tr('wizard.policyFlexible')),
                             const SizedBox(height: 4),
                             Text(
                               _cancellationSummary(context, data),
-                              style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+                              style: TextStyle(
+                                  fontSize: 11, color: AppColors.neutral400),
                             ),
                           ],
                         ),
@@ -95,7 +108,7 @@ class Step13ReviewPublishScreen extends StatelessWidget {
                     data.instantBook ?? true
                         ? context.tr('wizard.instantBookOn')
                         : context.tr('wizard.instantBookOff'),
-                    iconColor: Colors.amber,
+                    iconColor: Colors.amber, // dark-ok
                   ),
                 ),
 
@@ -107,12 +120,21 @@ class Step13ReviewPublishScreen extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      if (!(data.allowPets ?? false)) _buildRuleChip(context.tr('wizard.rulePets')),
-                      if (!(data.allowSmoking ?? false)) _buildRuleChip(context.tr('wizard.ruleSmoking')),
-                      if (!(data.allowEvents ?? false)) _buildRuleChip(context.tr('wizard.ruleEvents')),
-                      if (data.allowPets ?? false) _buildRuleChip(context.tr('wizard.rulePets'), allowed: true),
-                      if (data.allowSmoking ?? false) _buildRuleChip(context.tr('wizard.ruleSmoking'), allowed: true),
-                      if (data.allowEvents ?? false) _buildRuleChip(context.tr('wizard.ruleEvents'), allowed: true),
+                      if (!(data.allowPets ?? false))
+                        _buildRuleChip(context.tr('wizard.rulePets')),
+                      if (!(data.allowSmoking ?? false))
+                        _buildRuleChip(context.tr('wizard.ruleSmoking')),
+                      if (!(data.allowEvents ?? false))
+                        _buildRuleChip(context.tr('wizard.ruleEvents')),
+                      if (data.allowPets ?? false)
+                        _buildRuleChip(context.tr('wizard.rulePets'),
+                            allowed: true),
+                      if (data.allowSmoking ?? false)
+                        _buildRuleChip(context.tr('wizard.ruleSmoking'),
+                            allowed: true),
+                      if (data.allowEvents ?? false)
+                        _buildRuleChip(context.tr('wizard.ruleEvents'),
+                            allowed: true),
                     ],
                   ),
                 ),
@@ -121,10 +143,10 @@ class Step13ReviewPublishScreen extends StatelessWidget {
 
                 Text(
                   context.tr('wizard.whatsNext'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1D242B),
+                    color: AppColors.charcoal,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -146,7 +168,7 @@ class Step13ReviewPublishScreen extends StatelessWidget {
   Widget _buildPreviewCard(BuildContext context, WizardData data) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -173,11 +195,12 @@ class Step13ReviewPublishScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        data.title ?? context.tr('wizard.propertyTitleFallback'),
-                        style: const TextStyle(
+                        data.title ??
+                            context.tr('wizard.propertyTitleFallback'),
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF1D242B),
+                          color: AppColors.charcoal,
                         ),
                       ),
                     ),
@@ -186,18 +209,22 @@ class Step13ReviewPublishScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.location_on, size: 14, color: Color(0xFF9CA3AF)),
+                    Icon(Icons.location_on,
+                        size: 14, color: AppColors.neutral400),
                     const SizedBox(width: 4),
                     Text(
                       '${data.city ?? 'Abdin'}, ${data.country ?? 'Egypt'}',
-                      style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                      style:
+                          TextStyle(fontSize: 13, color: AppColors.neutral500),
                     ),
                     const Spacer(),
-                    const Icon(Icons.star, size: 16, color: Colors.amber),
+                    const Icon(Icons.star,
+                        size: 16, color: Colors.amber), // dark-ok
                     const SizedBox(width: 4),
                     Text(
                       '${data.stars ?? 3}',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w700),
                     ),
                   ],
                 ),
@@ -205,28 +232,52 @@ class Step13ReviewPublishScreen extends StatelessWidget {
                 Wrap(
                   spacing: 12,
                   children: [
-                    _buildInfoItem(Icons.people_outline, context.tr('wizard.guestsCount', args: {'n': data.maxGuests ?? 4})),
-                    _buildInfoItem(Icons.bed, context.tr('wizard.bedroomsCount', args: {'n': data.bedrooms ?? 2})),
-                    _buildInfoItem(Icons.bed_outlined, context.tr('wizard.bedsCount', args: {'n': data.beds ?? 2})),
-                    _buildInfoItem(Icons.bathtub_outlined, context.tr('wizard.bathroomsCount', args: {'n': data.bathrooms ?? 1})),
-                    _buildInfoItem(Icons.square_foot, context.tr('wizard.areaCount', args: {'n': (data.totalArea ?? 25).toInt()})),
+                    _buildInfoItem(
+                        Icons.people_outline,
+                        context.tr('wizard.guestsCount',
+                            args: {'n': data.maxGuests ?? 4})),
+                    _buildInfoItem(
+                        Icons.bed,
+                        context.tr('wizard.bedroomsCount',
+                            args: {'n': data.bedrooms ?? 2})),
+                    _buildInfoItem(
+                        Icons.bed_outlined,
+                        context.tr('wizard.bedsCount',
+                            args: {'n': data.beds ?? 2})),
+                    _buildInfoItem(
+                        Icons.bathtub_outlined,
+                        context.tr('wizard.bathroomsCount',
+                            args: {'n': data.bathrooms ?? 1})),
+                    _buildInfoItem(
+                        Icons.square_foot,
+                        context.tr('wizard.areaCount',
+                            args: {'n': (data.totalArea ?? 25).toInt()})),
                   ],
                 ),
                 const SizedBox(height: 16),
                 RichText(
                   text: TextSpan(
                     children: [
-                      const TextSpan(
+                      TextSpan(
                         text: '\$ ',
-                        style: TextStyle(fontSize: 14, color: Color(0xFF1D242B), fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.charcoal,
+                            fontWeight: FontWeight.w500),
                       ),
                       TextSpan(
-                        text: context.tr('wizard.currencyEgp', args: {'price': data.basePrice?.toStringAsFixed(0) ?? '1000'}),
-                        style: const TextStyle(fontSize: 18, color: Color(0xFF1D242B), fontWeight: FontWeight.w800),
+                        text: context.tr('wizard.currencyEgp', args: {
+                          'price': data.basePrice?.toStringAsFixed(0) ?? '1000'
+                        }),
+                        style: TextStyle(
+                            fontSize: 18,
+                            color: AppColors.charcoal,
+                            fontWeight: FontWeight.w800),
                       ),
                       TextSpan(
                         text: context.tr('wizard.perNight'),
-                        style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                        style: TextStyle(
+                            fontSize: 14, color: AppColors.neutral500),
                       ),
                     ],
                   ),
@@ -244,8 +295,9 @@ class Step13ReviewPublishScreen extends StatelessWidget {
       return Container(
         height: 220,
         width: double.infinity,
-        color: const Color(0xFFF3F4F6),
-        child: const Icon(Icons.image_outlined, size: 48, color: Color(0xFF9CA3AF)),
+        color: AppColors.neutral100,
+        child:
+            Icon(Icons.image_outlined, size: 48, color: AppColors.neutral400),
       );
     }
     if (path.startsWith('http')) {
@@ -257,48 +309,51 @@ class Step13ReviewPublishScreen extends StatelessWidget {
         placeholder: (context, url) => Container(
           height: 220,
           width: double.infinity,
-          color: const Color(0xFFF0F0F0),
+          color: AppColors.neutral100,
         ),
         errorWidget: (context, url, error) => Container(
           height: 220,
           width: double.infinity,
-          color: const Color(0xFFF0F0F0),
-          child: const Icon(Icons.image_not_supported_outlined, color: Color(0xFF9CA3AF)),
+          color: AppColors.neutral100,
+          child: Icon(Icons.image_not_supported_outlined,
+              color: AppColors.neutral400),
         ),
       );
     }
-    return Image.file(File(path), height: 220, width: double.infinity, fit: BoxFit.cover);
+    return Image.file(File(path),
+        height: 220, width: double.infinity, fit: BoxFit.cover);
   }
 
   Widget _buildInfoItem(IconData icon, String text) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: const Color(0xFF9CA3AF)),
+        Icon(icon, size: 14, color: AppColors.neutral400),
         const SizedBox(width: 4),
-        Text(text, style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+        Text(text, style: TextStyle(fontSize: 12, color: AppColors.neutral500)),
       ],
     );
   }
 
-  Widget _buildSectionBox({required String title, String? content, Widget? child}) {
+  Widget _buildSectionBox(
+      {required String title, String? content, Widget? child}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: AppColors.ghostWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF0F2F5)),
+        border: Border.all(color: AppColors.neutral100),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF9CA3AF),
+              color: AppColors.neutral400,
               letterSpacing: 0.5,
             ),
           ),
@@ -306,9 +361,9 @@ class Step13ReviewPublishScreen extends StatelessWidget {
           if (content != null)
             Text(
               content,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFF1D242B),
+                color: AppColors.charcoal,
                 height: 1.5,
               ),
             ),
@@ -337,14 +392,14 @@ class Step13ReviewPublishScreen extends StatelessWidget {
   Widget _buildIconText(IconData icon, String text, {Color? iconColor}) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: iconColor ?? const Color(0xFF6B7280)),
+        Icon(icon, size: 16, color: iconColor ?? AppColors.neutral500),
         const SizedBox(width: 8),
         Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF1D242B),
+            color: AppColors.charcoal,
           ),
         ),
       ],
@@ -355,7 +410,9 @@ class Step13ReviewPublishScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: allowed ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+        color: allowed
+            ? const Color(0xFFECFDF5) // dark-ok
+            : const Color(0xFFFEF2F2), // dark-ok
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -364,7 +421,7 @@ class Step13ReviewPublishScreen extends StatelessWidget {
           Icon(
             allowed ? Icons.check : Icons.close,
             size: 12,
-            color: allowed ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+            color: allowed ? AppColors.success : AppColors.error,
           ),
           const SizedBox(width: 4),
           Text(
@@ -372,7 +429,9 @@ class Step13ReviewPublishScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: allowed ? const Color(0xFF065F46) : const Color(0xFF991B1B),
+              color: allowed
+                  ? const Color(0xFF065F46) // dark-ok
+                  : const Color(0xFF991B1B), // dark-ok
             ),
           ),
         ],
@@ -413,29 +472,29 @@ class Step13ReviewPublishScreen extends StatelessWidget {
       margin: const EdgeInsets.only(right: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF0F2F5)),
+        border: Border.all(color: AppColors.neutral100),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 24, color: const Color(0xFF9CA3AF)),
+          Icon(icon, size: 24, color: AppColors.neutral400),
           const SizedBox(height: 16),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1D242B),
+              color: AppColors.charcoal,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             description,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: Color(0xFF6B7280),
+              color: AppColors.neutral500,
               height: 1.4,
             ),
             maxLines: 4,
@@ -452,7 +511,7 @@ class Step13ReviewPublishScreen extends StatelessWidget {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Icon(Icons.check_circle, color: Colors.green, size: 60),
+        title: Icon(Icons.check_circle, color: AppColors.success, size: 60),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -465,7 +524,7 @@ class Step13ReviewPublishScreen extends StatelessWidget {
             Text(
               context.tr('wizard.publishedCongrats'),
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFF6B7280)),
+              style: TextStyle(color: AppColors.neutral500),
             ),
           ],
         ),
@@ -479,10 +538,12 @@ class Step13ReviewPublishScreen extends StatelessWidget {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: const Color(0xFF1D242B),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                foregroundColor: AppColors.charcoal,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
-              child: Text(context.tr('wizard.goToDashboard'), style: const TextStyle(fontWeight: FontWeight.w700)),
+              child: Text(context.tr('wizard.goToDashboard'),
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
             ),
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
 
@@ -17,7 +18,7 @@ class FavoriteHeartButton extends StatelessWidget {
   final double iconSize;
   final bool withShadow;
 
-  const FavoriteHeartButton({
+  FavoriteHeartButton({
     super.key,
     required this.propertyId,
     required this.onPressed,
@@ -38,7 +39,8 @@ class FavoriteHeartButton extends StatelessWidget {
             width: size,
             height: size,
             decoration: BoxDecoration(
-              color: Colors.white,
+              // white chip sitting over the property photo
+              color: Colors.white, // dark-ok
               shape: BoxShape.circle,
               boxShadow: withShadow
                   ? [
@@ -52,9 +54,7 @@ class FavoriteHeartButton extends StatelessWidget {
             child: Icon(
               isFavorite ? Icons.favorite : Icons.favorite_border,
               size: iconSize,
-              color: isFavorite
-                  ? const Color(0xFFEF4444)
-                  : const Color(0xFF9CA3AF),
+              color: isFavorite ? AppColors.heartRed : AppColors.neutral400,
             ),
           ),
         );

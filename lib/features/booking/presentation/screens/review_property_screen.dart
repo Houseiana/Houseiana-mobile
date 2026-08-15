@@ -10,7 +10,7 @@ class ReviewPropertyScreen extends StatelessWidget {
   final String? bookingId;
   final String? propertyId;
 
-  const ReviewPropertyScreen({
+  ReviewPropertyScreen({
     super.key,
     this.bookingId,
     this.propertyId,
@@ -32,7 +32,7 @@ class _ReviewPropertyBody extends StatefulWidget {
   final String? bookingId;
   final String? propertyId;
 
-  const _ReviewPropertyBody({this.bookingId, this.propertyId});
+  _ReviewPropertyBody({this.bookingId, this.propertyId});
 
   @override
   State<_ReviewPropertyBody> createState() => _ReviewPropertyBodyState();
@@ -75,12 +75,12 @@ class _ReviewPropertyBodyState extends State<_ReviewPropertyBody> {
   Widget build(BuildContext context) {
     if (!_session.isLoggedIn) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         appBar: _buildAppBar(),
         body: Center(
           child: Text(
             context.tr('review.pleaseLoginToReview'),
-            style: const TextStyle(color: AppColors.neutral600),
+            style: TextStyle(color: AppColors.neutral600),
           ),
         ),
       );
@@ -92,6 +92,7 @@ class _ReviewPropertyBodyState extends State<_ReviewPropertyBody> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(context.tr('review.reviewSubmitted')),
+              // dark-ok: success snackbar fill, fixed in both themes
               backgroundColor: Colors.green.shade600,
             ),
           );
@@ -100,6 +101,7 @@ class _ReviewPropertyBodyState extends State<_ReviewPropertyBody> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
+              // dark-ok: error snackbar fill, fixed in both themes
               backgroundColor: Colors.red.shade700,
             ),
           );
@@ -108,7 +110,7 @@ class _ReviewPropertyBodyState extends State<_ReviewPropertyBody> {
       builder: (context, state) {
         final isLoading = state is ReviewSubmissionLoading;
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.cardBackground,
           appBar: _buildAppBar(),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -117,7 +119,7 @@ class _ReviewPropertyBodyState extends State<_ReviewPropertyBody> {
               children: [
                 Text(
                   context.tr('review.howWasStay'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal,
@@ -126,17 +128,16 @@ class _ReviewPropertyBodyState extends State<_ReviewPropertyBody> {
                 const SizedBox(height: 8),
                 Text(
                   context.tr('review.honestFeedback'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     color: AppColors.neutral600,
                     height: 1.5,
                   ),
                 ),
                 const SizedBox(height: 32),
-
                 Text(
                   context.tr('review.overallRating'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -169,7 +170,7 @@ class _ReviewPropertyBodyState extends State<_ReviewPropertyBody> {
                   const SizedBox(height: 8),
                   Text(
                     _ratingLabel(context, _rating),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: AppColors.neutral600,
@@ -177,10 +178,9 @@ class _ReviewPropertyBodyState extends State<_ReviewPropertyBody> {
                   ),
                 ],
                 const SizedBox(height: 32),
-
                 Text(
                   context.tr('review.yourReview'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -194,19 +194,17 @@ class _ReviewPropertyBodyState extends State<_ReviewPropertyBody> {
                   enabled: !isLoading,
                   decoration: InputDecoration(
                     hintText: context.tr('review.reviewPlaceholder'),
-                    hintStyle: const TextStyle(
+                    hintStyle: TextStyle(
                       color: AppColors.neutral400,
                       fontSize: 14,
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: Color(0xFFE5E7EB)),
+                      borderSide: BorderSide(color: AppColors.neutral200),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: Color(0xFFE5E7EB)),
+                      borderSide: BorderSide(color: AppColors.neutral200),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -217,7 +215,6 @@ class _ReviewPropertyBodyState extends State<_ReviewPropertyBody> {
                   ),
                 ),
                 const SizedBox(height: 32),
-
                 SizedBox(
                   width: double.infinity,
                   height: 54,
@@ -225,14 +222,14 @@ class _ReviewPropertyBodyState extends State<_ReviewPropertyBody> {
                     onPressed: isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
-                      foregroundColor: AppColors.charcoal,
+                      foregroundColor: AppColors.brandCharcoal,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     child: isLoading
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(
@@ -259,15 +256,15 @@ class _ReviewPropertyBodyState extends State<_ReviewPropertyBody> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+        icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
         context.tr('review.writeReview'),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: AppColors.charcoal,

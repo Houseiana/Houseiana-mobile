@@ -123,4 +123,5 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/google_fonts/
+    - assets/map_styles/
     - lib/i18n/translations/

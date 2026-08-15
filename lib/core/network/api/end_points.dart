@@ -12,6 +12,8 @@ class EndPoints {
   // GET  /api/auth/version-check?version={v}&platform={IOS|ANDROID}
   // Force-update gate. Response: { success, data: { forceUpdate: bool, updateUrl: String } }
   static const String versionCheck = '/api/auth/version-check';
+  // POST /api/auth/device-token         → register FCM token { token } (Bearer required)
+  static const String deviceToken = '/api/auth/device-token';
 
   // ── Properties ──────────────────────────────────────────────────────────────
   // GET  /api/property-search           → search / list properties

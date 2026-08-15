@@ -4,6 +4,7 @@ import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
+import 'package:houseiana_mobile_app/core/services/fcm_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/features/bottom_nav/presentation/cubit/cubit.dart';
@@ -11,7 +12,7 @@ import 'package:houseiana_mobile_app/features/bottom_nav/presentation/cubit/stat
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -78,29 +79,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildScaffold(BuildContext context, bool isLoggedIn) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FA),
+      backgroundColor: AppColors.ghostWhite,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                color: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                color: AppColors.cardBackground,
                 child: Row(
                   children: [
                     Text(
                       context.tr('profile.title'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1D242B),
+                        color: AppColors.charcoal,
                       ),
                     ),
                     const Spacer(),
                     if (isLoggedIn)
                       IconButton(
-                        icon: const Icon(Icons.notifications_none_outlined, color: Color(0xFF1D242B)),
-                        onPressed: () => Navigator.pushNamed(context, Routes.notifications),
+                        icon: Icon(Icons.notifications_none_outlined,
+                            color: AppColors.charcoal),
+                        onPressed: () =>
+                            Navigator.pushNamed(context, Routes.notifications),
                       ),
                   ],
                 ),
@@ -122,22 +126,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _MenuItem(
                     icon: Icons.person_outline,
                     label: context.tr('profile.personalInfo'),
-                    onTap: () => Navigator.pushNamed(context, Routes.personalInformation),
+                    onTap: () => Navigator.pushNamed(
+                        context, Routes.personalInformation),
                   ),
                   _MenuItem(
                     icon: Icons.settings_outlined,
                     label: context.tr('profile.accountSettings'),
-                    onTap: () => Navigator.pushNamed(context, Routes.accountSettings),
+                    onTap: () =>
+                        Navigator.pushNamed(context, Routes.accountSettings),
                   ),
                   _MenuItem(
                     icon: Icons.lock_outline,
                     label: context.tr('profile.changePassword'),
-                    onTap: () => Navigator.pushNamed(context, Routes.changePassword),
+                    onTap: () =>
+                        Navigator.pushNamed(context, Routes.changePassword),
                   ),
                   _MenuItem(
                     icon: Icons.verified_user_outlined,
                     label: context.tr('profile.kycVerification'),
-                    onTap: () => Navigator.pushNamed(context, Routes.kycVerification),
+                    onTap: () =>
+                        Navigator.pushNamed(context, Routes.kycVerification),
                   ),
                 ]),
 
@@ -149,17 +157,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _MenuItem(
                     icon: Icons.dashboard_outlined,
                     label: context.tr('profile.hostDashboard'),
-                    onTap: () => Navigator.pushNamed(context, Routes.hostDashboard),
+                    onTap: () =>
+                        Navigator.pushNamed(context, Routes.hostDashboard),
                   ),
                   _MenuItem(
                     icon: Icons.add_home_outlined,
                     label: context.tr('profile.listProperty'),
-                    onTap: () => Navigator.pushNamed(context, Routes.listProperty),
+                    onTap: () =>
+                        Navigator.pushNamed(context, Routes.listProperty),
                   ),
                   _MenuItem(
                     icon: Icons.account_balance,
                     label: context.tr('profile.payoutMethods'),
-                    onTap: () => Navigator.pushNamed(context, Routes.hostPayout),
+                    onTap: () =>
+                        Navigator.pushNamed(context, Routes.hostPayout),
                   ),
                 ]),
 
@@ -181,12 +192,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _MenuItem(
                     icon: Icons.message_outlined,
                     label: context.tr('messages.title'),
-                    onTap: () => Navigator.pushNamed(context, Routes.conversations),
+                    onTap: () =>
+                        Navigator.pushNamed(context, Routes.conversations),
                   ),
                   _MenuItem(
                     icon: Icons.notifications_outlined,
                     label: context.tr('notifications.title'),
-                    onTap: () => Navigator.pushNamed(context, Routes.notifications),
+                    onTap: () =>
+                        Navigator.pushNamed(context, Routes.notifications),
                   ),
                 ]),
 
@@ -200,12 +213,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _MenuItem(
                     icon: Icons.notifications_active_outlined,
                     label: context.tr('profile.notificationSettings'),
-                    onTap: () => Navigator.pushNamed(context, Routes.notificationSettings),
+                    onTap: () => Navigator.pushNamed(
+                        context, Routes.notificationSettings),
                   ),
                 _MenuItem(
                   icon: Icons.language_outlined,
                   label: context.tr('profile.language'),
-                  onTap: () => Navigator.pushNamed(context, Routes.languageSettings),
+                  onTap: () =>
+                      Navigator.pushNamed(context, Routes.languageSettings),
+                ),
+                _MenuItem(
+                  icon: Icons.brightness_6_outlined,
+                  label: context.tr('profile.appearance'),
+                  onTap: () =>
+                      Navigator.pushNamed(context, Routes.appearanceSettings),
                 ),
               ]),
 
@@ -222,7 +243,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _MenuItem(
                   icon: Icons.support_agent_outlined,
                   label: context.tr('profile.contactUs'),
-                  onTap: () => Navigator.pushNamed(context, Routes.contactSupport),
+                  onTap: () =>
+                      Navigator.pushNamed(context, Routes.contactSupport),
                 ),
               ]),
 
@@ -234,7 +256,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _MenuItem(
                   icon: Icons.privacy_tip_outlined,
                   label: context.tr('profile.privacyPolicy'),
-                  onTap: () => Navigator.pushNamed(context, Routes.privacyPolicy),
+                  onTap: () =>
+                      Navigator.pushNamed(context, Routes.privacyPolicy),
                 ),
                 _MenuItem(
                   icon: Icons.description_outlined,
@@ -244,7 +267,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _MenuItem(
                   icon: Icons.cookie_outlined,
                   label: context.tr('profile.cookiePolicy'),
-                  onTap: () => Navigator.pushNamed(context, Routes.cookiePolicy),
+                  onTap: () =>
+                      Navigator.pushNamed(context, Routes.cookiePolicy),
                 ),
               ]),
 
@@ -253,79 +277,95 @@ class _ProfileScreenState extends State<ProfileScreen> {
               // Logout
               if (isLoggedIn)
                 Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: ListTile(
-                  leading: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF2F2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.logout, size: 20, color: Color(0xFFEF4444)),
-                  ),
-                  title: Text(
-                    context.tr('profile.logout'),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFEF4444),
-                    ),
-                  ),
-                  trailing: const Icon(
-                    Icons.chevron_right,
-                    color: Color(0xFF9CA3AF),
-                    size: 20,
-                  ),
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        title: Text(context.tr('profile.logoutConfirmTitle')),
-                        content: Text(context.tr('profile.logoutConfirmMessage')),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            child: Text(context.tr('common.cancel')),
-                          ),
-                          TextButton(
-                            onPressed: () async {
-                              Navigator.pop(ctx);
-                              await sl<UserSession>().clear();
-                              // Hearts must not leak into the next account.
-                              sl<FavoritesNotifier>().clear();
-                              if (!context.mounted) return;
-                              Navigator.pushNamedAndRemoveUntil(
-                                context,
-                                Routes.login,
-                                (route) => false,
-                              );
-                            },
-                            child: Text(
-                              context.tr('profile.logout'),
-                              style: const TextStyle(color: Color(0xFFEF4444)),
-                            ),
-                          ),
-                        ],
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
                       ),
-                    );
-                  },
+                    ],
+                  ),
+                  // Own Material so the tap ripple paints above this
+                  // Container's fill instead of under it.
+                  child: Material(
+                    type: MaterialType.transparency,
+                    borderRadius: BorderRadius.circular(16),
+                    clipBehavior: Clip.antiAlias,
+                    child: ListTile(
+                      leading: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.logout,
+                          size: 20,
+                          color: AppColors.error,
+                        ),
+                      ),
+                      title: Text(
+                        context.tr('profile.logout'),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.error,
+                        ),
+                      ),
+                      trailing: Icon(
+                        Icons.chevron_right,
+                        color: AppColors.neutral400,
+                        size: 20,
+                      ),
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            title: Text(
+                              context.tr('profile.logoutConfirmTitle'),
+                            ),
+                            content: Text(
+                              context.tr('profile.logoutConfirmMessage'),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: Text(context.tr('common.cancel')),
+                              ),
+                              TextButton(
+                                onPressed: () async {
+                                  Navigator.pop(ctx);
+                                  await FCMService.instance.onLogout();
+                                  await sl<UserSession>().clear();
+                                  // Hearts must not leak into the next account.
+                                  sl<FavoritesNotifier>().clear();
+                                  if (!context.mounted) return;
+                                  Navigator.pushNamedAndRemoveUntil(
+                                    context,
+                                    Routes.login,
+                                    (route) => false,
+                                  );
+                                },
+                                child: Text(
+                                  context.tr('profile.logout'),
+                                  style: TextStyle(color: AppColors.error),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
 
               const SizedBox(height: 20),
 
@@ -334,17 +374,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   children: [
                     Text(
                       context.tr('profile.safeSecurePayments'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1D242B),
+                        color: AppColors.charcoal,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -353,17 +393,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       runSpacing: 12,
                       alignment: WrapAlignment.center,
                       children: [
-                        _TrustBadge(icon: Icons.credit_card, label: context.tr('profile.trustVisa')),
-                        _TrustBadge(icon: Icons.verified_outlined, label: context.tr('profile.trustVerifiedHost')),
-                        _TrustBadge(icon: Icons.lock_outline, label: context.tr('profile.trustEncryption')),
-                        _TrustBadge(icon: Icons.security_outlined, label: context.tr('profile.trustSecureSsl')),
-                        _TrustBadge(icon: Icons.support_agent_outlined, label: context.tr('profile.trustSupport')),
+                        _TrustBadge(
+                            icon: Icons.credit_card,
+                            label: context.tr('profile.trustVisa')),
+                        _TrustBadge(
+                            icon: Icons.verified_outlined,
+                            label: context.tr('profile.trustVerifiedHost')),
+                        _TrustBadge(
+                            icon: Icons.lock_outline,
+                            label: context.tr('profile.trustEncryption')),
+                        _TrustBadge(
+                            icon: Icons.security_outlined,
+                            label: context.tr('profile.trustSecureSsl')),
+                        _TrustBadge(
+                            icon: Icons.support_agent_outlined,
+                            label: context.tr('profile.trustSupport')),
                       ],
                     ),
                     const SizedBox(height: 16),
                     Text(
                       context.tr('profile.copyright'),
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+                      style:
+                          TextStyle(fontSize: 11, color: AppColors.neutral400),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -386,7 +437,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 20),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -405,7 +456,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: AppColors.bioYellow.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(32),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.person,
                 size: 36,
                 color: AppColors.charcoal,
@@ -420,18 +471,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Text(
                       session.fullName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1D242B),
+                        color: AppColors.charcoal,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       session.email ?? '',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: Color(0xFF6B7280),
+                        color: AppColors.neutral500,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -450,9 +501,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // Disclosure chevron: `chevron_right` sets `matchTextDirection`,
             // so Flutter mirrors it for us in Arabic. Do not swap it manually
             // — that double-flips it back to pointing right.
-            const Icon(
+            Icon(
               Icons.chevron_right,
-              color: Color(0xFF9CA3AF),
+              color: AppColors.neutral400,
             ),
           ],
         ),
@@ -467,7 +518,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -482,8 +533,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             width: 64,
             height: 64,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFF9E6),
+            decoration: BoxDecoration(
+              color: AppColors.primaryColor.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -496,19 +547,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Text(
             context.tr('bottomNav.signInToViewProfile'),
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1D242B),
+              color: AppColors.charcoal,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             context.tr('bottomNav.signInDescription'),
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: Color(0xFF6B7280),
+              color: AppColors.neutral500,
               height: 1.5,
             ),
           ),
@@ -520,7 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: () => Navigator.pushNamed(context, Routes.login),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: const Color(0xFF1D242B),
+                foregroundColor: AppColors.brandCharcoal,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -528,7 +579,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Text(
                 context.tr('auth.signIn'),
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                style:
+                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -539,15 +591,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: OutlinedButton(
               onPressed: () => Navigator.pushNamed(context, Routes.signUp),
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF1D242B),
-                side: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+                foregroundColor: AppColors.charcoal,
+                side: BorderSide(color: AppColors.neutral200, width: 1.5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
               child: Text(
                 context.tr('bottomNav.createAccountAction'),
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                style:
+                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -563,10 +616,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         alignment: AlignmentDirectional.centerStart,
         child: Text(
           title.toUpperCase(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF9CA3AF),
+            color: AppColors.neutral400,
             letterSpacing: 1.0,
           ),
         ),
@@ -578,7 +631,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -588,42 +641,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-      child: Column(
-        children: items.asMap().entries.map((entry) {
-          final index = entry.key;
-          final item = entry.value;
-          return Column(
-            children: [
-              ListTile(
-                leading: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF9F9FA),
-                    borderRadius: BorderRadius.circular(10),
+      // A ListTile paints its background and ink splash on the nearest Material
+      // ancestor, which here sits *under* this Container's fill — the tap
+      // ripple would be painted over and never seen (Flutter asserts about it
+      // in debug). Its own transparent Material puts the ink layer on top, and
+      // the clip keeps the first/last tile's splash inside the rounded corners.
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: items.asMap().entries.map((entry) {
+            final index = entry.key;
+            final item = entry.value;
+            return Column(
+              children: [
+                ListTile(
+                  leading: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.ghostWhite,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(item.icon, size: 20, color: AppColors.charcoal),
                   ),
-                  child: Icon(item.icon, size: 20, color: AppColors.charcoal),
-                ),
-                title: Text(
-                  item.label,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF1D242B),
+                  title: Text(
+                    item.label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.charcoal,
+                    ),
                   ),
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: AppColors.neutral400,
+                    size: 20,
+                  ),
+                  onTap: item.onTap,
                 ),
-                trailing: const Icon(
-                  Icons.chevron_right,
-                  color: Color(0xFF9CA3AF),
-                  size: 20,
-                ),
-                onTap: item.onTap,
-              ),
-              if (index < items.length - 1)
-                const Divider(height: 1, indent: 72, endIndent: 20, color: Color(0xFFF0F0F0)),
-            ],
-          );
-        }).toList(),
+                if (index < items.length - 1)
+                  Divider(
+                      height: 1,
+                      indent: 72,
+                      endIndent: 20,
+                      color: AppColors.neutral100),
+              ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -645,7 +712,7 @@ class _TrustBadge extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _TrustBadge({required this.icon, required this.label});
+  _TrustBadge({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -658,9 +725,9 @@ class _TrustBadge extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
-              color: Color(0xFF6B7280),
+              color: AppColors.neutral500,
             ),
             textAlign: TextAlign.center,
           ),

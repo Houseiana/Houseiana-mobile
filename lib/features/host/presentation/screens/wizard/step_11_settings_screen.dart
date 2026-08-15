@@ -6,7 +6,7 @@ import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.da
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class Step11SettingsScreen extends StatefulWidget {
-  const Step11SettingsScreen({super.key});
+  Step11SettingsScreen({super.key});
 
   @override
   State<Step11SettingsScreen> createState() => _Step11SettingsScreenState();
@@ -21,7 +21,8 @@ class _Step11SettingsScreenState extends State<Step11SettingsScreen> {
     super.initState();
     final data = context.read<ListingWizardCubit>().state.data;
     _primaryPhoneController = TextEditingController(text: data.primaryPhone);
-    _emergencyPhoneController = TextEditingController(text: data.emergencyPhone);
+    _emergencyPhoneController =
+        TextEditingController(text: data.emergencyPhone);
   }
 
   @override
@@ -43,14 +44,13 @@ class _Step11SettingsScreenState extends State<Step11SettingsScreen> {
         children: [
           Text(
             context.tr('wizard.contactInfo'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1D242B),
+              color: AppColors.charcoal,
             ),
           ),
           const SizedBox(height: 16),
-
           _buildPhoneField(
             context: context,
             label: context.tr('wizard.primaryPhone'),
@@ -58,9 +58,7 @@ class _Step11SettingsScreenState extends State<Step11SettingsScreen> {
             controller: _primaryPhoneController,
             onChanged: (v) => cubit.updateStepData({'primaryPhone': v}),
           ),
-
           const SizedBox(height: 20),
-
           _buildPhoneField(
             context: context,
             label: context.tr('wizard.emergencyPhone'),
@@ -68,58 +66,47 @@ class _Step11SettingsScreenState extends State<Step11SettingsScreen> {
             controller: _emergencyPhoneController,
             onChanged: (v) => cubit.updateStepData({'emergencyPhone': v}),
           ),
-
           const SizedBox(height: 32),
-
           Text(
             context.tr('wizard.personalizeExperience'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1D242B),
+              color: AppColors.charcoal,
             ),
           ),
           const SizedBox(height: 16),
-
           _buildSwitchCard(
             title: context.tr('wizard.instantBook'),
             description: context.tr('wizard.instantBookDesc'),
             value: data.instantBook ?? true,
             onChanged: (v) => cubit.updateStepData({'instantBook': v}),
           ),
-
           const SizedBox(height: 32),
-
           Text(
             context.tr('wizard.anyOfThese'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1D242B),
+              color: AppColors.charcoal,
             ),
           ),
           const SizedBox(height: 16),
-
           _buildSwitchCard(
             title: context.tr('wizard.securityCameras'),
             description: context.tr('wizard.securityCamerasDesc'),
             value: data.hasSecurityCameras ?? false,
             onChanged: (v) => cubit.updateStepData({'hasSecurityCameras': v}),
           ),
-
           const SizedBox(height: 12),
-
           _buildSwitchCard(
             title: context.tr('wizard.noiseMonitors'),
             description: context.tr('wizard.noiseMonitorsDesc'),
             value: data.hasNoiseMonitors ?? false,
             onChanged: (v) => cubit.updateStepData({'hasNoiseMonitors': v}),
           ),
-
           const SizedBox(height: 24),
-
           _buildDisclosureBox(context),
-          
           const SizedBox(height: 40),
         ],
       ),
@@ -144,14 +131,14 @@ class _Step11SettingsScreenState extends State<Step11SettingsScreen> {
       children: [
         Row(
           children: [
-            const Icon(Icons.phone_outlined, size: 16, color: Color(0xFF4B5563)),
+            Icon(Icons.phone_outlined, size: 16, color: AppColors.neutral600),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1D242B),
+                color: AppColors.charcoal,
               ),
             ),
           ],
@@ -159,37 +146,40 @@ class _Step11SettingsScreenState extends State<Step11SettingsScreen> {
         const SizedBox(height: 4),
         Text(
           description,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
-            color: Color(0xFF6B7280),
+            color: AppColors.neutral500,
           ),
         ),
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFF0F2F5)),
+            border: Border.all(color: AppColors.neutral100),
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: const BoxDecoration(
-                  border: Border(right: BorderSide(color: Color(0xFFF0F2F5))),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  border:
+                      Border(right: BorderSide(color: AppColors.neutral100)),
                 ),
                 child: Row(
-                  children: const [
+                  children: [
                     Text(
                       '+20 Egypt',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF1D242B),
+                        color: AppColors.charcoal,
                       ),
                     ),
                     SizedBox(width: 8),
-                    Icon(Icons.keyboard_arrow_down, size: 16, color: Color(0xFF9CA3AF)),
+                    Icon(Icons.keyboard_arrow_down,
+                        size: 16, color: AppColors.neutral400),
                   ],
                 ),
               ),
@@ -201,7 +191,8 @@ class _Step11SettingsScreenState extends State<Step11SettingsScreen> {
                   onChanged: onChanged,
                   decoration: InputDecoration(
                     hintText: context.tr('wizard.enterPhone'),
-                    hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
+                    hintStyle:
+                        TextStyle(fontSize: 14, color: AppColors.neutral400),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     border: InputBorder.none,
                   ),
@@ -223,9 +214,9 @@ class _Step11SettingsScreenState extends State<Step11SettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF0F2F5)),
+        border: Border.all(color: AppColors.neutral100),
       ),
       child: Row(
         children: [
@@ -235,18 +226,18 @@ class _Step11SettingsScreenState extends State<Step11SettingsScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1D242B),
+                    color: AppColors.charcoal,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.neutral500,
                     height: 1.4,
                   ),
                 ),
@@ -268,14 +259,15 @@ class _Step11SettingsScreenState extends State<Step11SettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB),
+        color: const Color(0xFFFFFBEB), // dark-ok
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFEF3C7)),
+        border: Border.all(color: const Color(0xFFFEF3C7)), // dark-ok
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, size: 20, color: Color(0xFFD97706)),
+          const Icon(Icons.info_outline,
+              size: 20, color: Color(0xFFD97706)), // dark-ok
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -286,7 +278,7 @@ class _Step11SettingsScreenState extends State<Step11SettingsScreen> {
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF92400E),
+                    color: Color(0xFF92400E), // dark-ok
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -294,7 +286,7 @@ class _Step11SettingsScreenState extends State<Step11SettingsScreen> {
                   context.tr('wizard.disclosureDesc'),
                   style: const TextStyle(
                     fontSize: 11,
-                    color: Color(0xFFB45309),
+                    color: Color(0xFFB45309), // dark-ok
                     height: 1.5,
                   ),
                 ),

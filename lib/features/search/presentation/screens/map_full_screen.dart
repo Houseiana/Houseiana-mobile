@@ -3,7 +3,7 @@ import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class MapFullScreen extends StatelessWidget {
-  const MapFullScreen({super.key});
+  MapFullScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,16 +16,17 @@ class MapFullScreen extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
+                // dark-ok: stand-in map canvas, light in both themes
                 colors: [Color(0xFFE8F4F3), Color(0xFFD4EBE8)],
               ),
             ),
-            child: const Stack(
+            child: Stack(
               children: [
                 Center(
                   child: Icon(
                     Icons.map_outlined,
                     size: 100,
-                    color: AppColors.neutral400,
+                    color: AppColorsLight.neutral400,
                   ),
                 ),
               ],
@@ -44,7 +45,7 @@ class MapFullScreen extends StatelessWidget {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.white, // dark-ok: chip over the map
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -55,6 +56,7 @@ class MapFullScreen extends StatelessWidget {
                       ),
                       child: IconButton(
                         icon: const Icon(Icons.arrow_back),
+                        color: AppColors.brandCharcoal,
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
@@ -64,7 +66,7 @@ class MapFullScreen extends StatelessWidget {
                         height: 48,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Colors.white, // dark-ok: chip over the map
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
@@ -75,13 +77,14 @@ class MapFullScreen extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.search, color: AppColors.neutral400),
+                            Icon(Icons.search,
+                                color: AppColorsLight.neutral400),
                             const SizedBox(width: 12),
                             Text(
                               context.tr('home.searchAnywhere'),
                               style: const TextStyle(
                                 fontSize: 15,
-                                color: AppColors.charcoal,
+                                color: AppColors.brandCharcoal,
                               ),
                             ),
                           ],
@@ -101,9 +104,11 @@ class MapFullScreen extends StatelessWidget {
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.charcoal,
+                  // dark-ok: floating pill over the map, dark in both themes
+                  color: AppColors.brandCharcoal,
                   borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
@@ -115,12 +120,13 @@ class MapFullScreen extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.list, color: Colors.white, size: 20),
+                    const Icon(Icons.list,
+                        color: Colors.white, size: 20), // dark-ok: on the pill
                     const SizedBox(width: 8),
                     Text(
                       context.tr('filters.showList'),
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: Colors.white, // dark-ok: on the dark pill
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),

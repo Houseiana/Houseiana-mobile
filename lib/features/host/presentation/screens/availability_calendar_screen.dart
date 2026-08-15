@@ -7,13 +7,15 @@ import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class AvailabilityCalendarScreen extends StatefulWidget {
-  const AvailabilityCalendarScreen({super.key});
+  AvailabilityCalendarScreen({super.key});
 
   @override
-  State<AvailabilityCalendarScreen> createState() => _AvailabilityCalendarScreenState();
+  State<AvailabilityCalendarScreen> createState() =>
+      _AvailabilityCalendarScreenState();
 }
 
-class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen> {
+class _AvailabilityCalendarScreenState
+    extends State<AvailabilityCalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   final Set<DateTime> _blockedDates = {};
   bool _isSaving = false;
@@ -37,7 +39,8 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
     _didInit = true;
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is Map) {
-      _propertyId = (args['propertyId'] ?? args['_id'] ?? args['id'] ?? '').toString();
+      _propertyId =
+          (args['propertyId'] ?? args['_id'] ?? args['id'] ?? '').toString();
     }
     if (_propertyId.isNotEmpty) _loadCalendar();
   }
@@ -68,16 +71,17 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
   Future<void> _saveCalendar() async {
     if (_propertyId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('host.noPropertySelected')), backgroundColor: Colors.orange),
+        SnackBar(
+            content: Text(context.tr('host.noPropertySelected')),
+            backgroundColor: AppColors.warning),
       );
       return;
     }
 
     setState(() => _isSaving = true);
 
-    final blockedList = _blockedDates
-        .map((d) => d.toIso8601String().split('T').first)
-        .toList();
+    final blockedList =
+        _blockedDates.map((d) => d.toIso8601String().split('T').first).toList();
 
     final result = await _calendarService.updateBlockedDates(
       propertyId: _propertyId,
@@ -90,15 +94,19 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(result['message']?.toString() ?? context.tr('host.calendarUpdated')),
-        backgroundColor: result['success'] == true ? Colors.green : Colors.red,
+        content: Text(result['message']?.toString() ??
+            context.tr('host.calendarUpdated')),
+        backgroundColor:
+            result['success'] == true ? AppColors.success : AppColors.error,
       ),
     );
   }
 
   void _toggleDate(DateTime day) {
     final normalized = DateTime(day.year, day.month, day.day);
-    if (normalized.isBefore(DateTime.now().subtract(const Duration(days: 1)))) return;
+    if (normalized.isBefore(DateTime.now().subtract(const Duration(days: 1)))) {
+      return;
+    }
     setState(() {
       if (_blockedDates.contains(normalized)) {
         _blockedDates.remove(normalized);
@@ -128,17 +136,20 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
     final weekDays = context.tr('host.weekDayInitials').split(',');
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('host.availabilityCalendarTitle'),
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.charcoal),
+          style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.charcoal),
         ),
         centerTitle: true,
       ),
@@ -156,16 +167,19 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
                     decoration: BoxDecoration(
                       color: AppColors.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.3)),
+                      border: Border.all(
+                          color: AppColors.primaryColor.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline, color: AppColors.charcoal, size: 20),
+                        Icon(Icons.info_outline,
+                            color: AppColors.charcoal, size: 20),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             context.tr('host.calendarInfo'),
-                            style: const TextStyle(fontSize: 13, color: AppColors.charcoal),
+                            style: TextStyle(
+                                fontSize: 13, color: AppColors.charcoal),
                           ),
                         ),
                       ],
@@ -178,7 +192,7 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                      border: Border.all(color: AppColors.neutral200),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -191,14 +205,15 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
                               icon: const Icon(Icons.chevron_left),
                               onPressed: () {
                                 setState(() {
-                                  _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1);
+                                  _focusedDay = DateTime(
+                                      _focusedDay.year, _focusedDay.month - 1);
                                 });
                                 if (_propertyId.isNotEmpty) _loadCalendar();
                               },
                             ),
                             Text(
                               '${_monthName(context, _focusedDay.month)} ${_focusedDay.year}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.charcoal,
@@ -208,7 +223,8 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
                               icon: const Icon(Icons.chevron_right),
                               onPressed: () {
                                 setState(() {
-                                  _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1);
+                                  _focusedDay = DateTime(
+                                      _focusedDay.year, _focusedDay.month + 1);
                                 });
                                 if (_propertyId.isNotEmpty) _loadCalendar();
                               },
@@ -220,18 +236,20 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
 
                         // Weekday headers
                         Row(
-                          children: weekDays.map((d) => Expanded(
-                            child: Center(
-                              child: Text(
-                                d,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.neutral600,
-                                ),
-                              ),
-                            ),
-                          )).toList(),
+                          children: weekDays
+                              .map((d) => Expanded(
+                                    child: Center(
+                                      child: Text(
+                                        d,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.neutral600,
+                                        ),
+                                      ),
+                                    ),
+                                  ))
+                              .toList(),
                         ),
 
                         const SizedBox(height: 8),
@@ -240,7 +258,8 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
                         GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 7,
                             childAspectRatio: 1,
                           ),
@@ -248,9 +267,12 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
                           itemBuilder: (context, i) {
                             final day = days[i];
                             if (day == null) return const SizedBox();
-                            final normalized = DateTime(day.year, day.month, day.day);
-                            final isBlocked = _blockedDates.contains(normalized);
-                            final isPast = day.isBefore(DateTime.now().subtract(const Duration(days: 1)));
+                            final normalized =
+                                DateTime(day.year, day.month, day.day);
+                            final isBlocked =
+                                _blockedDates.contains(normalized);
+                            final isPast = day.isBefore(DateTime.now()
+                                .subtract(const Duration(days: 1)));
                             final isToday = day.year == DateTime.now().year &&
                                 day.month == DateTime.now().month &&
                                 day.day == DateTime.now().day;
@@ -262,11 +284,13 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
                                   color: isBlocked
                                       ? AppColors.primaryColor
                                       : isToday
-                                          ? AppColors.primaryColor.withValues(alpha: 0.15)
+                                          ? AppColors.primaryColor
+                                              .withValues(alpha: 0.15)
                                           : Colors.transparent,
                                   borderRadius: BorderRadius.circular(8),
                                   border: isToday && !isBlocked
-                                      ? Border.all(color: AppColors.primaryColor)
+                                      ? Border.all(
+                                          color: AppColors.primaryColor)
                                       : null,
                                 ),
                                 child: Center(
@@ -274,7 +298,9 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
                                     '${day.day}',
                                     style: TextStyle(
                                       fontSize: 13,
-                                      fontWeight: isBlocked ? FontWeight.w700 : FontWeight.w400,
+                                      fontWeight: isBlocked
+                                          ? FontWeight.w700
+                                          : FontWeight.w400,
                                       color: isPast
                                           ? AppColors.neutral400
                                           : isBlocked
@@ -296,9 +322,11 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
                   // Legend
                   Row(
                     children: [
-                      _legend(AppColors.primaryColor, context.tr('host.blockedLabel')),
+                      _legend(AppColors.primaryColor,
+                          context.tr('host.blockedLabel')),
                       const SizedBox(width: 20),
-                      _legend(Colors.green, context.tr('host.availableLabel')),
+                      _legend(
+                          AppColors.success, context.tr('host.availableLabel')),
                     ],
                   ),
 
@@ -306,9 +334,11 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
                     const SizedBox(height: 16),
                     Text(
                       _blockedDates.length == 1
-                          ? context.tr('host.dateBlocked', args: {'n': _blockedDates.length})
-                          : context.tr('host.datesBlocked', args: {'n': _blockedDates.length}),
-                      style: const TextStyle(
+                          ? context.tr('host.dateBlocked',
+                              args: {'n': _blockedDates.length})
+                          : context.tr('host.datesBlocked',
+                              args: {'n': _blockedDates.length}),
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.charcoal,
@@ -324,7 +354,7 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.08),
@@ -352,21 +382,24 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _isSaving
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.charcoal),
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: AppColors.charcoal),
                       )
                     : Text(
                         _propertyId.isNotEmpty
                             ? context.tr('host.saveCalendar')
                             : context.tr('host.finishSetup'),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
                       ),
               ),
             ),
@@ -381,10 +414,12 @@ class _AvailabilityCalendarScreenState extends State<AvailabilityCalendarScreen>
           Container(
             width: 16,
             height: 16,
-            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+            decoration: BoxDecoration(
+                color: color, borderRadius: BorderRadius.circular(4)),
           ),
           const SizedBox(width: 8),
-          Text(label, style: const TextStyle(fontSize: 13, color: AppColors.neutral600)),
+          Text(label,
+              style: TextStyle(fontSize: 13, color: AppColors.neutral600)),
         ],
       );
 

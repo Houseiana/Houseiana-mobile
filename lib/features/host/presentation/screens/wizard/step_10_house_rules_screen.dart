@@ -5,7 +5,7 @@ import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.da
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class Step10HouseRulesScreen extends StatefulWidget {
-  const Step10HouseRulesScreen({super.key});
+  Step10HouseRulesScreen({super.key});
 
   @override
   State<Step10HouseRulesScreen> createState() => _Step10HouseRulesScreenState();
@@ -13,10 +13,30 @@ class Step10HouseRulesScreen extends StatefulWidget {
 
 class _Step10HouseRulesScreenState extends State<Step10HouseRulesScreen> {
   final List<String> _times = [
-    '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM',
-    '06:00 PM', '07:00 PM', '08:00 PM', '09:00 PM', '10:00 PM', '11:00 PM',
-    '12:00 AM', '01:00 AM', '02:00 AM', '03:00 AM', '04:00 AM', '05:00 AM',
-    '06:00 AM', '07:00 AM', '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',
+    '12:00 PM',
+    '01:00 PM',
+    '02:00 PM',
+    '03:00 PM',
+    '04:00 PM',
+    '05:00 PM',
+    '06:00 PM',
+    '07:00 PM',
+    '08:00 PM',
+    '09:00 PM',
+    '10:00 PM',
+    '11:00 PM',
+    '12:00 AM',
+    '01:00 AM',
+    '02:00 AM',
+    '03:00 AM',
+    '04:00 AM',
+    '05:00 AM',
+    '06:00 AM',
+    '07:00 AM',
+    '08:00 AM',
+    '09:00 AM',
+    '10:00 AM',
+    '11:00 AM',
   ];
 
   @override
@@ -31,7 +51,7 @@ class _Step10HouseRulesScreenState extends State<Step10HouseRulesScreen> {
         children: [
           Text(
             context.tr('wizard.setRules'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: AppColors.charcoal,
@@ -75,7 +95,7 @@ class _Step10HouseRulesScreenState extends State<Step10HouseRulesScreen> {
           const SizedBox(height: 32),
           Text(
             context.tr('wizard.checkInOutTimes'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: AppColors.charcoal,
@@ -89,11 +109,13 @@ class _Step10HouseRulesScreenState extends State<Step10HouseRulesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(context.tr('wizard.checkInAfter'),
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     _buildTimeDropdown(
                       value: data.checkInTime ?? '03:00 PM',
-                      onChanged: (v) => cubit.updateStepData({'checkInTime': v}),
+                      onChanged: (v) =>
+                          cubit.updateStepData({'checkInTime': v}),
                     ),
                   ],
                 ),
@@ -104,11 +126,13 @@ class _Step10HouseRulesScreenState extends State<Step10HouseRulesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(context.tr('wizard.checkoutBefore'),
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     _buildTimeDropdown(
                       value: data.checkOutTime ?? '11:00 AM',
-                      onChanged: (v) => cubit.updateStepData({'checkOutTime': v}),
+                      onChanged: (v) =>
+                          cubit.updateStepData({'checkOutTime': v}),
                     ),
                   ],
                 ),
@@ -130,7 +154,7 @@ class _Step10HouseRulesScreenState extends State<Step10HouseRulesScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.neutral200),
       ),
@@ -141,7 +165,7 @@ class _Step10HouseRulesScreenState extends State<Step10HouseRulesScreen> {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
                 color: AppColors.charcoal,
@@ -151,7 +175,8 @@ class _Step10HouseRulesScreenState extends State<Step10HouseRulesScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: Colors.amber, // As per screenshot
+            // dark-ok: fixed amber thumb (design reference)
+            activeThumbColor: Colors.amber,
           ),
         ],
       ),
@@ -172,7 +197,7 @@ class _Step10HouseRulesScreenState extends State<Step10HouseRulesScreen> {
         child: DropdownButton<String>(
           value: value,
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.neutral600),
+          icon: Icon(Icons.keyboard_arrow_down, color: AppColors.neutral600),
           items: _times.map((time) {
             return DropdownMenuItem(
               value: time,

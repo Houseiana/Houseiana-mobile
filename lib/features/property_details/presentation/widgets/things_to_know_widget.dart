@@ -25,7 +25,7 @@ class ThingsToKnowWidget extends StatefulWidget {
   final VoidCallback? onShowAllRules;
   final VoidCallback? onShowAllSafety;
 
-  const ThingsToKnowWidget({
+  ThingsToKnowWidget({
     super.key,
     this.checkInTime,
     this.checkOutTime,
@@ -76,7 +76,7 @@ class _ThingsToKnowWidgetState extends State<ThingsToKnowWidget>
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
             context.tr('propertyDetails.thingsToKnow'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -84,7 +84,6 @@ class _ThingsToKnowWidgetState extends State<ThingsToKnowWidget>
           ),
         ),
         const SizedBox(height: 16),
-
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(
@@ -94,7 +93,7 @@ class _ThingsToKnowWidgetState extends State<ThingsToKnowWidget>
           child: TabBar(
             controller: _tabController,
             indicator: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
@@ -123,9 +122,7 @@ class _ThingsToKnowWidgetState extends State<ThingsToKnowWidget>
             ],
           ),
         ),
-
         const SizedBox(height: 16),
-
         SizedBox(
           height: 280,
           child: TabBarView(
@@ -147,14 +144,16 @@ class _ThingsToKnowWidgetState extends State<ThingsToKnowWidget>
     if (widget.checkInTime != null && widget.checkInTime!.isNotEmpty) {
       rules.add(_RuleItem(
         icon: Icons.login,
-        text: context.tr('propertyDetails.checkInAfterRule', args: {'time': widget.checkInTime!}),
+        text: context.tr('propertyDetails.checkInAfterRule',
+            args: {'time': widget.checkInTime!}),
       ));
     }
 
     if (widget.checkOutTime != null && widget.checkOutTime!.isNotEmpty) {
       rules.add(_RuleItem(
         icon: Icons.logout,
-        text: context.tr('propertyDetails.checkOutBeforeRule', args: {'time': widget.checkOutTime!}),
+        text: context.tr('propertyDetails.checkOutBeforeRule',
+            args: {'time': widget.checkOutTime!}),
       ));
     }
 
@@ -224,7 +223,7 @@ class _ThingsToKnowWidgetState extends State<ThingsToKnowWidget>
           Expanded(
             child: Text(
               rule.text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.charcoal,
                 height: 1.4,
@@ -291,24 +290,30 @@ class _ThingsToKnowWidgetState extends State<ThingsToKnowWidget>
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
+              // dark-ok: amber cancellation-policy callout — the tinted panel
+              // and its amber-on-amber content stay a self-contained light
+              // island in both themes.
+              color: const Color(0xFFFEF3C7), // dark-ok
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFDE68A)),
+              border: Border.all(color: const Color(0xFFFDE68A)), // dark-ok
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // dark-ok: on the amber notice panel
                 const Icon(
                   Icons.policy_outlined,
                   size: 20,
-                  color: Color(0xFFB45309),
+                  color: Color(0xFFB45309), // dark-ok
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    widget.cancellationPolicy ?? context.tr('propertyDetails.flexibleCancellation'),
+                    widget.cancellationPolicy ??
+                        context.tr('propertyDetails.flexibleCancellation'),
                     style: const TextStyle(
                       fontSize: 13,
+                      // dark-ok: on the amber notice panel
                       color: Color(0xFF92400E),
                       height: 1.5,
                     ),
@@ -323,7 +328,7 @@ class _ThingsToKnowWidgetState extends State<ThingsToKnowWidget>
               context.tr('propertyDetails.freeCancellationUntil', args: {
                 'date': _formatDate(context, widget.cancellationDeadline!),
               }),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.charcoal,
                 fontWeight: FontWeight.w500,
@@ -334,9 +339,9 @@ class _ThingsToKnowWidgetState extends State<ThingsToKnowWidget>
           if (widget.hasCancellationWindow)
             Text(
               context.tr('propertyDetails.noRefundAfterWindow'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: Color(0xFF6B7280),
+                color: AppColors.neutral500,
                 height: 1.5,
               ),
             ),

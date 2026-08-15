@@ -14,7 +14,7 @@ class SadadWebViewScreen extends StatefulWidget {
   final String? formAction;
   final Map<String, dynamic>? formData;
 
-  const SadadWebViewScreen({
+  SadadWebViewScreen({
     super.key,
     required this.paymentUrl,
     required this.bookingId,
@@ -74,7 +74,8 @@ class _SadadWebViewScreenState extends State<SadadWebViewScreen> {
 
     final formAction = widget.formAction;
     if (formAction != null && formAction.isNotEmpty) {
-      final body = Uri(queryParameters: widget.formData?.map(
+      final body = Uri(
+          queryParameters: widget.formData?.map(
         (key, value) => MapEntry(key, value.toString()),
       )).query;
       _controller.loadRequest(
@@ -90,15 +91,15 @@ class _SadadWebViewScreenState extends State<SadadWebViewScreen> {
 
   Future<void> _handleSuccess() async {
     final fallbackMessage = context.tr('booking.paymentVerificationFailed');
-    final paymentId = widget.orderId.isNotEmpty ? widget.orderId : widget.bookingId;
+    final paymentId =
+        widget.orderId.isNotEmpty ? widget.orderId : widget.bookingId;
     final result = await _paymentService.verifySadadPayment(paymentId);
     if (!mounted) return;
 
     if (result['success'] == true || result['status'] == 'COMPLETED') {
       Navigator.pop(context, 'success');
     } else {
-      Navigator.pop(context,
-          'failed:${result['message'] ?? fallbackMessage}');
+      Navigator.pop(context, 'failed:${result['message'] ?? fallbackMessage}');
     }
   }
 
@@ -109,17 +110,17 @@ class _SadadWebViewScreenState extends State<SadadWebViewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.charcoal),
+          icon: Icon(Icons.close, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('booking.sadadPayment'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -132,7 +133,7 @@ class _SadadWebViewScreenState extends State<SadadWebViewScreen> {
           WebViewWidget(controller: _controller),
           if (_isLoading || _isProcessing)
             Container(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: AppColors.cardBackground.withValues(alpha: 0.9),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -144,7 +145,7 @@ class _SadadWebViewScreenState extends State<SadadWebViewScreen> {
                       _isProcessing
                           ? context.tr('booking.processingPayment')
                           : context.tr('common.loading'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         color: AppColors.neutral600,
                       ),

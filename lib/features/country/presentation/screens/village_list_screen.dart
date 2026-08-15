@@ -17,7 +17,7 @@ class VillageListScreen extends StatefulWidget {
   final int regionId;
   final String regionName;
 
-  const VillageListScreen({
+  VillageListScreen({
     super.key,
     required this.regionId,
     required this.regionName,
@@ -110,7 +110,7 @@ class _VillageListScreenState extends State<VillageListScreen>
             _buildHeader(),
             Expanded(
               child: _isLoading
-                  ? const TileListSkeleton(
+                  ? TileListSkeleton(
                       itemCount: 8,
                       leadingCircle: true,
                       leadingSize: 44,
@@ -134,8 +134,7 @@ class _VillageListScreenState extends State<VillageListScreen>
                               color: AppColors.primaryColor,
                               onRefresh: () => _loadVillages(force: true),
                               child: ListView.separated(
-                                physics:
-                                    const AlwaysScrollableScrollPhysics(),
+                                physics: const AlwaysScrollableScrollPhysics(),
                                 padding: const EdgeInsets.all(16),
                                 itemCount: _villages.length,
                                 separatorBuilder: (_, __) =>
@@ -156,13 +155,12 @@ class _VillageListScreenState extends State<VillageListScreen>
 
   Widget _buildHeader() {
     return Container(
-      color: Colors.white,
+      color: AppColors.cardBackground,
       padding: const EdgeInsets.fromLTRB(8, 12, 20, 16),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back,
-                color: AppColors.charcoal, size: 22),
+            icon: Icon(Icons.arrow_back, color: AppColors.charcoal, size: 22),
             onPressed: () => Navigator.pop(context),
           ),
           const SizedBox(width: 4),
@@ -172,7 +170,7 @@ class _VillageListScreenState extends State<VillageListScreen>
               children: [
                 Text(
                   _regionName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal,
@@ -187,7 +185,7 @@ class _VillageListScreenState extends State<VillageListScreen>
                             args: {'count': _villages.length})
                         : context.tr('country.villagesCount',
                             args: {'count': _villages.length}),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppColors.neutral600,
                     ),
@@ -209,7 +207,7 @@ class _VillageTile extends StatelessWidget {
   final int regionId;
   final String regionName;
 
-  const _VillageTile({
+  _VillageTile({
     required this.village,
     required this.regionId,
     required this.regionName,
@@ -237,7 +235,7 @@ class _VillageTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -252,12 +250,12 @@ class _VillageTile extends StatelessWidget {
             Container(
               width: 44,
               height: 44,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.neutral100,
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: const Icon(
+              child: Icon(
                 Icons.holiday_village_outlined,
                 size: 22,
                 color: AppColors.neutral600,
@@ -270,7 +268,7 @@ class _VillageTile extends StatelessWidget {
                 children: [
                   Text(
                     village.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
@@ -282,7 +280,7 @@ class _VillageTile extends StatelessWidget {
                   Text(
                     context.tr('country.propertyCountValue',
                         args: {'count': village.propertyCount}),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppColors.neutral600,
                     ),
@@ -292,7 +290,7 @@ class _VillageTile extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right,
               size: 20,
               color: AppColors.neutral400,

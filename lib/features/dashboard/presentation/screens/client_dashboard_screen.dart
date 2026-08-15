@@ -10,7 +10,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart';
 
 class ClientDashboardScreen extends StatefulWidget {
-  const ClientDashboardScreen({super.key});
+  ClientDashboardScreen({super.key});
 
   @override
   State<ClientDashboardScreen> createState() => _ClientDashboardScreenState();
@@ -60,17 +60,17 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   Widget build(BuildContext context) {
     final name = _session.firstName ?? _session.fullName;
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FA),
+      backgroundColor: AppColors.ghostWhite,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('dashboard.myDashboard'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -79,14 +79,13 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined,
-                color: AppColors.charcoal),
+            icon: Icon(Icons.notifications_outlined, color: AppColors.charcoal),
             onPressed: () => Navigator.pushNamed(context, Routes.notifications),
           ),
         ],
       ),
       body: _isLoading
-          ? const ListSkeletonLoader(itemCount: 4)
+          ? ListSkeletonLoader(itemCount: 4)
           : RefreshIndicator(
               onRefresh: _loadData,
               color: AppColors.primaryColor,
@@ -129,7 +128,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
               color: AppColors.primaryColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(28),
             ),
-            child: const Icon(Icons.person, size: 32, color: AppColors.charcoal),
+            child: Icon(Icons.person, size: 32, color: AppColors.charcoal),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -138,7 +137,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
               children: [
                 Text(
                   context.tr('dashboard.welcomeBackName', args: {'name': name}),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal,
@@ -147,7 +146,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                 const SizedBox(height: 4),
                 Text(
                   _session.email ?? '',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppColors.neutral600,
                   ),
@@ -170,7 +169,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
               icon: Icons.calendar_today,
               label: context.tr('dashboard.upcoming'),
               value: '${_upcomingTrips.length}',
-              color: Colors.blue,
+              color: AppColors.info,
               onTap: () => Navigator.pushNamed(context, Routes.trips),
             ),
           ),
@@ -180,7 +179,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
               icon: Icons.favorite,
               label: context.tr('dashboard.favorites'),
               value: '$_favoritesCount',
-              color: Colors.red,
+              color: AppColors.error,
               onTap: () => Navigator.pushNamed(context, Routes.wishlists),
             ),
           ),
@@ -190,7 +189,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
               icon: Icons.history,
               label: context.tr('dashboard.pastTrips'),
               value: '$_pastTripsCount',
-              color: Colors.green,
+              color: AppColors.success,
               onTap: () => Navigator.pushNamed(context, Routes.trips),
             ),
           ),
@@ -221,7 +220,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
             const SizedBox(height: 8),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -230,7 +229,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
             const SizedBox(height: 2),
             Text(
               label,
-              style: const TextStyle(fontSize: 11, color: AppColors.neutral600),
+              style: TextStyle(fontSize: 11, color: AppColors.neutral600),
               textAlign: TextAlign.center,
             ),
           ],
@@ -250,7 +249,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
             children: [
               Text(
                 context.tr('dashboard.upcomingTrips'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                   color: AppColors.charcoal,
@@ -281,18 +280,17 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.neutral200),
       ),
       child: Column(
         children: [
-          const Icon(Icons.luggage_outlined,
-              size: 48, color: AppColors.neutral400),
+          Icon(Icons.luggage_outlined, size: 48, color: AppColors.neutral400),
           const SizedBox(height: 12),
           Text(
             context.tr('dashboard.noUpcomingTrips'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal,
@@ -301,14 +299,14 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           const SizedBox(height: 4),
           Text(
             context.tr('dashboard.nextAdventureAwaits'),
-            style: const TextStyle(fontSize: 13, color: AppColors.neutral600),
+            style: TextStyle(fontSize: 13, color: AppColors.neutral600),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () => Navigator.pushNamed(context, Routes.properties),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryColor,
-              foregroundColor: AppColors.charcoal,
+              foregroundColor: AppColors.brandCharcoal,
               elevation: 0,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
@@ -321,7 +319,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   }
 
   Widget _buildTripCard(BuildContext context, TripModel trip) {
-    final title = trip.property?.displayTitle ?? context.tr('property.untitled');
+    final title =
+        trip.property?.displayTitle ?? context.tr('property.untitled');
     final imageUrl = trip.property?.firstImageUrl ?? '';
     final checkIn = trip.formattedCheckIn;
     final checkOut = trip.formattedCheckOut;
@@ -334,8 +333,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          color: AppColors.cardBackground,
+          border: Border.all(color: AppColors.neutral200),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -359,7 +358,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppColors.charcoal,
@@ -370,30 +369,29 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                   const SizedBox(height: 4),
                   Text(
                     '$checkIn → $checkOut',
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.neutral600),
+                    style: TextStyle(fontSize: 12, color: AppColors.neutral600),
                   ),
                   const SizedBox(height: 6),
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.1),
+                      color: AppColors.success.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       status,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: Colors.green,
+                        color: AppColors.success,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right,
               color: AppColors.neutral400,
             ),
@@ -409,18 +407,24 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
       height: 80,
       color: AppColors.ghostWhite,
       child:
-          const Icon(Icons.home_work_outlined, size: 32, color: AppColors.neutral400),
+          Icon(Icons.home_work_outlined, size: 32, color: AppColors.neutral400),
     );
   }
 
   Widget _buildQuickActionsSection(BuildContext context) {
     final actions = [
-      _ActionItem(Icons.search, context.tr('dashboard.actionSearch'), Routes.searchModal),
-      _ActionItem(Icons.message, context.tr('dashboard.actionMessages'), Routes.messages),
-      _ActionItem(Icons.favorite, context.tr('dashboard.actionWishlists'), Routes.wishlists),
-      _ActionItem(Icons.flight_takeoff, context.tr('dashboard.actionTrips'), Routes.trips),
-      _ActionItem(Icons.receipt_long, context.tr('dashboard.actionPayments'), Routes.paymentHistory),
-      _ActionItem(Icons.help_outline, context.tr('dashboard.actionHelp'), Routes.helpCenter),
+      _ActionItem(Icons.search, context.tr('dashboard.actionSearch'),
+          Routes.searchModal),
+      _ActionItem(Icons.message, context.tr('dashboard.actionMessages'),
+          Routes.messages),
+      _ActionItem(Icons.favorite, context.tr('dashboard.actionWishlists'),
+          Routes.wishlists),
+      _ActionItem(Icons.flight_takeoff, context.tr('dashboard.actionTrips'),
+          Routes.trips),
+      _ActionItem(Icons.receipt_long, context.tr('dashboard.actionPayments'),
+          Routes.paymentHistory),
+      _ActionItem(Icons.help_outline, context.tr('dashboard.actionHelp'),
+          Routes.helpCenter),
     ];
 
     return Padding(
@@ -430,7 +434,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
         children: [
           Text(
             context.tr('dashboard.quickActions'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -444,9 +448,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
             childAspectRatio: 1.1,
-            children: actions
-                .map((a) => _buildActionCard(context, a))
-                .toList(),
+            children: actions.map((a) => _buildActionCard(context, a)).toList(),
           ),
         ],
       ),
@@ -458,8 +460,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
       onTap: () => Navigator.pushNamed(context, action.route),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          color: AppColors.cardBackground,
+          border: Border.all(color: AppColors.neutral200),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -469,7 +471,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
             const SizedBox(height: 8),
             Text(
               action.label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 color: AppColors.charcoal,

@@ -9,7 +9,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class BookingConfirmationScreen extends StatefulWidget {
-  const BookingConfirmationScreen({super.key});
+  BookingConfirmationScreen({super.key});
 
   @override
   State<BookingConfirmationScreen> createState() =>
@@ -148,7 +148,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
   void _showReceiptSheet() {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -173,21 +173,32 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                 const SizedBox(height: 20),
                 Text(
                   context.tr('booking.receiptSummary'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal,
                   ),
                 ),
                 const SizedBox(height: 16),
-                _ReceiptRow(label: context.tr('booking.bookingId'), value: _displayBookingId),
-                _ReceiptRow(label: context.tr('booking.property'), value: _displayPropertyName),
-                _ReceiptRow(label: context.tr('booking.checkInDate'), value: _displayCheckIn),
-                _ReceiptRow(label: context.tr('booking.checkOutDate'), value: _displayCheckOut),
-                _ReceiptRow(label: context.tr('booking.guestsTitle'), value: _displayGuests),
+                _ReceiptRow(
+                    label: context.tr('booking.bookingId'),
+                    value: _displayBookingId),
+                _ReceiptRow(
+                    label: context.tr('booking.property'),
+                    value: _displayPropertyName),
+                _ReceiptRow(
+                    label: context.tr('booking.checkInDate'),
+                    value: _displayCheckIn),
+                _ReceiptRow(
+                    label: context.tr('booking.checkOutDate'),
+                    value: _displayCheckOut),
+                _ReceiptRow(
+                    label: context.tr('booking.guestsTitle'),
+                    value: _displayGuests),
                 _ReceiptRow(
                   label: context.tr('booking.totalPaid'),
-                  value: context.tr('booking.totalPaidValue', args: {'amount': _displayTotal}),
+                  value: context.tr('booking.totalPaidValue',
+                      args: {'amount': _displayTotal}),
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
@@ -199,7 +210,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
-                      foregroundColor: AppColors.charcoal,
+                      foregroundColor: AppColors.brandCharcoal,
                     ),
                     child: Text(context.tr('booking.copyReceiptDetails')),
                   ),
@@ -215,13 +226,13 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
               child: _isLoading
-                  ? const DetailsPageSkeleton(
+                  ? DetailsPageSkeleton(
                       heroHeight: 120,
                       circularHero: true,
                       sectionCount: 2,
@@ -247,7 +258,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                           const SizedBox(height: 32),
                           Text(
                             context.tr('booking.bookingConfirmed'),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.w700,
                               color: AppColors.charcoal,
@@ -257,7 +268,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                           const SizedBox(height: 12),
                           Text(
                             context.tr('booking.bookingConfirmedDesc'),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               color: AppColors.neutral600,
                               height: 1.5,
@@ -268,8 +279,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              border:
-                                  Border.all(color: const Color(0xFFE5E7EB)),
+                              border: Border.all(color: AppColors.neutral200),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Column(
@@ -277,7 +287,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                               children: [
                                 Text(
                                   context.tr('booking.bookingDetails'),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.charcoal,
@@ -326,15 +336,16 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                                     children: [
                                       Text(
                                         context.tr('booking.totalPaid'),
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
                                           color: AppColors.charcoal,
                                         ),
                                       ),
                                       Text(
-                                        context.tr('booking.totalPaidValue', args: {'amount': _displayTotal}),
-                                        style: const TextStyle(
+                                        context.tr('booking.totalPaidValue',
+                                            args: {'amount': _displayTotal}),
+                                        style: TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.w700,
                                           color: AppColors.charcoal,
@@ -364,7 +375,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                                 Container(
                                   width: 1,
                                   height: 40,
-                                  color: const Color(0xFFE5E7EB),
+                                  color: AppColors.neutral200,
                                 ),
                                 _buildActionButton(
                                   icon: Icons.copy_outlined,
@@ -374,7 +385,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                                 Container(
                                   width: 1,
                                   height: 40,
-                                  color: const Color(0xFFE5E7EB),
+                                  color: AppColors.neutral200,
                                 ),
                                 _buildActionButton(
                                   icon: Icons.chat_outlined,
@@ -391,7 +402,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBackground,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.08),
@@ -418,7 +429,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                           : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryColor,
-                        foregroundColor: AppColors.charcoal,
+                        foregroundColor: AppColors.brandCharcoal,
                         disabledBackgroundColor: AppColors.neutral400,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -448,7 +459,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.charcoal,
-                        side: const BorderSide(
+                        side: BorderSide(
                           color: AppColors.charcoal,
                           width: 2,
                         ),
@@ -489,7 +500,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   color: AppColors.neutral600,
                 ),
@@ -497,7 +508,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
@@ -524,7 +535,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
           const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: AppColors.charcoal,
@@ -540,7 +551,7 @@ class _ReceiptRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _ReceiptRow({
+  _ReceiptRow({
     required this.label,
     required this.value,
   });
@@ -556,7 +567,7 @@ class _ReceiptRow extends StatelessWidget {
             width: 92,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.neutral600,
               ),
@@ -566,7 +577,7 @@ class _ReceiptRow extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,

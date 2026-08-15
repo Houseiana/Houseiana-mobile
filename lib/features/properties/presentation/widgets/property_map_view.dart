@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
@@ -27,7 +28,7 @@ class PropertyMapView extends StatefulWidget {
   /// bottom "List" toggle) so they don't collide with the preview card.
   final ValueChanged<bool>? onSelectionChanged;
 
-  const PropertyMapView({
+  PropertyMapView({
     super.key,
     required this.properties,
     this.onAreaChanged,
@@ -86,10 +87,21 @@ class _PropertyMapViewState extends State<PropertyMapView> {
   // can't interleave and double-fire onAreaChanged across the await.
   bool _emitting = false;
 
+  /// Google's night-mode styling for the map tiles, applied only while the app
+  /// is in dark mode. Null until the (cached) asset resolves.
+  String? _darkMapStyle;
+
   @override
   void initState() {
     super.initState();
     _buildMarkers();
+    _loadDarkMapStyle();
+  }
+
+  Future<void> _loadDarkMapStyle() async {
+    final style = await _darkMapStyleAsset();
+    if (!mounted || style == null) return;
+    setState(() => _darkMapStyle = style);
   }
 
   @override
@@ -266,8 +278,7 @@ class _PropertyMapViewState extends State<PropertyMapView> {
       ),
     );
     await Future.delayed(const Duration(milliseconds: 300));
-    await _controller!
-        .animateCamera(CameraUpdate.newLatLngBounds(bounds, 60));
+    await _controller!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 60));
   }
 
   /// Fired by [GoogleMap.onCameraIdle] once the camera stops moving. Debounces
@@ -405,7 +416,12 @@ class _PropertyMapViewState extends State<PropertyMapView> {
     return Stack(
       children: [
         GoogleMap(
-          initialCameraPosition: CameraPosition(target: initialTarget, zoom: 11),
+          initialCameraPosition:
+              CameraPosition(target: initialTarget, zoom: 11),
+          // Null restores the default (light) Google styling.
+          style: Theme.of(context).brightness == Brightness.dark
+              ? _darkMapStyle
+              : null,
           markers: _markers,
           onMapCreated: _onMapCreated,
           onCameraIdle: interactive ? _onCameraIdle : null,
@@ -451,7 +467,7 @@ class _PropertyMapViewState extends State<PropertyMapView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.white, // dark-ok: floating pill over the map
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -467,7 +483,7 @@ class _PropertyMapViewState extends State<PropertyMapView> {
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF1D242B),
+            color: AppColors.brandCharcoal,
           ),
         ),
       ),
@@ -481,27 +497,46 @@ class _PropertyMapViewState extends State<PropertyMapView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.map_outlined, size: 64, color: Color(0xFFD1D5DB)),
+            Icon(Icons.map_outlined, size: 64, color: AppColors.neutral300),
             const SizedBox(height: 16),
             Text(
               context.tr('property.noPropertiesOnMap'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1D242B),
+                color: AppColors.charcoal,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               context.tr('property.noPropertiesOnMapDescription'),
-              style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+              style: TextStyle(fontSize: 13, color: AppColors.neutral500),
               textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+/// Google's night-mode map style JSON, read from the bundle at most once per
+/// process and shared by every map in the app. Returns null when the asset is
+/// missing so the map simply falls back to the default styling.
+String? _darkMapStyleJson;
+Future<String>? _darkMapStyleFuture;
+
+Future<String?> _darkMapStyleAsset() async {
+  if (_darkMapStyleJson != null) return _darkMapStyleJson;
+  try {
+    _darkMapStyleFuture ??=
+        rootBundle.loadString('assets/map_styles/map_dark.json');
+    _darkMapStyleJson = await _darkMapStyleFuture!;
+    return _darkMapStyleJson;
+  } catch (_) {
+    _darkMapStyleFuture = null;
+    return null;
   }
 }
 
@@ -521,7 +556,7 @@ class _MapArea {
 class _PreviewCard extends StatelessWidget {
   final Map<String, dynamic> property;
 
-  const _PreviewCard({required this.property});
+  _PreviewCard({required this.property});
 
   String _extractImage(Map<String, dynamic> p) {
     final photos = p['photos'] ?? p['images'] ?? p['coverPhoto'];
@@ -547,8 +582,7 @@ class _PreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final id = (property['id'] ?? property['_id'] ?? '').toString();
-    final title =
-        (property['title'] ?? property['name'] ?? '').toString();
+    final title = (property['title'] ?? property['name'] ?? '').toString();
     final image = _extractImage(property);
     final price = property['pricePerNight'] ?? property['price'] ?? 0;
     final priceNum = price is num
@@ -570,7 +604,7 @@ class _PreviewCard extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -600,7 +634,7 @@ class _PreviewCard extends StatelessWidget {
                           placeholder: (context, url) => Container(
                             width: 110,
                             height: 110,
-                            color: const Color(0xFFF0F0F0),
+                            color: AppColors.neutral100,
                           ),
                           errorWidget: (context, url, error) => _placeholder(),
                         )
@@ -614,7 +648,7 @@ class _PreviewCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD00416),
+                        color: AppColors.discountRed,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -622,7 +656,7 @@ class _PreviewCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: Colors.white, // dark-ok: on the red badge
                         ),
                       ),
                     ),
@@ -640,7 +674,7 @@ class _PreviewCard extends StatelessWidget {
                       Row(
                         children: [
                           const Icon(Icons.star,
-                              size: 13, color: Color(0xFFFCC519)),
+                              size: 13, color: AppColors.primaryColor),
                           const SizedBox(width: 3),
                           Text(
                             rating.toStringAsFixed(2),
@@ -657,10 +691,10 @@ class _PreviewCard extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1D242B),
+                        color: AppColors.charcoal,
                       ),
                     ),
                     if (location.isNotEmpty)
@@ -668,9 +702,9 @@ class _PreviewCard extends StatelessWidget {
                         location,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: Color(0xFF6B7280),
+                          color: AppColors.neutral500,
                         ),
                       ),
                     const SizedBox(height: 6),
@@ -678,21 +712,21 @@ class _PreviewCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       text: TextSpan(
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF1D242B),
+                          color: AppColors.charcoal,
                         ),
                         children: [
                           if (showOriginal)
                             TextSpan(
                               text: '${Money.format(original, currency)} ',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w400,
-                                color: Color(0xFF979797),
+                                color: AppColors.neutral400,
                                 decoration: TextDecoration.lineThrough,
-                                decorationColor: Color(0xFF979797),
+                                decorationColor: AppColors.neutral400,
                               ),
                             ),
                           TextSpan(text: Money.format(priceNum, currency)),
@@ -713,11 +747,11 @@ class _PreviewCard extends StatelessWidget {
     return Container(
       width: 110,
       height: 110,
-      color: const Color(0xFFF3F4F6),
-      child: const Icon(
+      color: AppColors.neutral100,
+      child: Icon(
         Icons.home_work_outlined,
         size: 36,
-        color: Color(0xFFD1D5DB),
+        color: AppColors.neutral300,
       ),
     );
   }
@@ -758,8 +792,8 @@ Future<BitmapDescriptor> _circularMarkerFromUrl(String url) async {
     shadowPaint,
   );
 
-  // White outer disc
-  final discPaint = Paint()..color = Colors.white;
+  // White outer disc — dark-ok: the marker sits on the map in both themes
+  final discPaint = Paint()..color = Colors.white; // dark-ok
   canvas.drawCircle(center, imageRadius + ringWidth, discPaint);
 
   if (photo != null) {
@@ -777,6 +811,7 @@ Future<BitmapDescriptor> _circularMarkerFromUrl(String url) async {
     canvas.drawImageRect(photo, src, dst, Paint()..isAntiAlias = true);
     canvas.restore();
   } else {
+    // dark-ok: photo-less marker fill, on the map in both themes
     final fallbackPaint = Paint()..color = const Color(0xFFFEF3C7);
     canvas.drawCircle(center, imageRadius, fallbackPaint);
   }
@@ -827,4 +862,3 @@ Future<ui.Image> _loadNetworkImage(String url) async {
   stream.addListener(listener);
   return completer.future;
 }
-

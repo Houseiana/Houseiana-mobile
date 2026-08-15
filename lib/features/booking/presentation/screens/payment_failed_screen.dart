@@ -9,7 +9,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class PaymentFailedScreen extends StatefulWidget {
-  const PaymentFailedScreen({super.key});
+  PaymentFailedScreen({super.key});
 
   @override
   State<PaymentFailedScreen> createState() => _PaymentFailedScreenState();
@@ -89,17 +89,17 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.charcoal),
+          icon: Icon(Icons.close, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('booking.paymentStatus'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -138,13 +138,15 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
                             width: iconSize,
                             height: iconSize,
                             decoration: BoxDecoration(
+                              // dark-ok: payment-failure status red, fixed in
+                              // both themes
                               color: Colors.red.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.error_outline,
                               size: iconInner,
-                              color: Colors.red,
+                              color: Colors.red, // dark-ok: failure status red
                             ),
                           ),
                         ),
@@ -161,7 +163,7 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
                         const SizedBox(height: 12),
                         Text(
                           context.tr('booking.paymentFailedDescription'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             color: AppColors.neutral600,
                             height: 1.5,
@@ -175,15 +177,14 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
                           decoration: BoxDecoration(
                             color: AppColors.neutral100,
                             borderRadius: BorderRadius.circular(12),
-                            border:
-                                Border.all(color: const Color(0xFFE5E7EB)),
+                            border: Border.all(color: AppColors.neutral200),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 context.tr('booking.paymentDetails'),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.charcoal,
@@ -191,7 +192,7 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
                               ),
                               const SizedBox(height: 16),
                               if (_isLoading)
-                                const _PaymentDetailsSkeleton()
+                                _PaymentDetailsSkeleton()
                               else ...[
                                 _buildDetailRow(
                                   '${context.tr('booking.transactionId')}:',
@@ -222,6 +223,8 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
+                            // dark-ok: failure-reasons callout keeps the status
+                            // red tint in both themes
                             color: Colors.red.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
@@ -233,7 +236,7 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
                             children: [
                               Text(
                                 context.tr('booking.commonReasonsFailure'),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.charcoal,
@@ -242,7 +245,7 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
                               const SizedBox(height: 12),
                               Text(
                                 context.tr('booking.failureReasons'),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   color: AppColors.charcoal,
                                   height: 1.6,
@@ -256,18 +259,16 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
                           onPressed: () => Navigator.pop(context),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryColor,
-                            foregroundColor: AppColors.charcoal,
+                            foregroundColor: AppColors.brandCharcoal,
                             elevation: 0,
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           child: Text(
                             context.tr('common.tryAgain'),
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w600),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -278,10 +279,8 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
                           ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.charcoal,
-                            side:
-                                const BorderSide(color: Color(0xFFE5E7EB)),
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 16),
+                            side: BorderSide(color: AppColors.neutral200),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -299,7 +298,7 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
                           },
                           child: Text(
                             context.tr('booking.goToDashboard'),
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.neutral600,
                               fontWeight: FontWeight.w500,
                             ),
@@ -325,7 +324,7 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               color: AppColors.neutral600,
             ),
@@ -339,6 +338,7 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
+              // dark-ok: "Failed" status value keeps the status red
               color: isStatus ? Colors.red : AppColors.charcoal,
             ),
           ),
@@ -351,7 +351,7 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
 /// Skeleton matching the four label/value detail rows shown while the
 /// booking details are loading.
 class _PaymentDetailsSkeleton extends StatelessWidget {
-  const _PaymentDetailsSkeleton();
+  _PaymentDetailsSkeleton();
 
   @override
   Widget build(BuildContext context) {

@@ -26,7 +26,7 @@ class RegionListScreen extends StatefulWidget {
   final String countryName;
   final String countryFlag;
 
-  const RegionListScreen({
+  RegionListScreen({
     super.key,
     required this.countryId,
     required this.countryName,
@@ -135,7 +135,7 @@ class _RegionListScreenState extends State<RegionListScreen>
             _buildHeader(),
             Expanded(
               child: _isLoading
-                  ? const GridSkeleton(
+                  ? GridSkeleton(
                       itemCount: 6,
                       crossAxisCount: 2,
                       childAspectRatio: 0.82,
@@ -159,8 +159,7 @@ class _RegionListScreenState extends State<RegionListScreen>
                               color: AppColors.primaryColor,
                               onRefresh: () => _loadRegions(force: true),
                               child: GridView.builder(
-                                physics:
-                                    const AlwaysScrollableScrollPhysics(),
+                                physics: const AlwaysScrollableScrollPhysics(),
                                 padding: const EdgeInsets.all(16),
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
@@ -183,13 +182,12 @@ class _RegionListScreenState extends State<RegionListScreen>
 
   Widget _buildHeader() {
     return Container(
-      color: Colors.white,
+      color: AppColors.cardBackground,
       padding: const EdgeInsets.fromLTRB(8, 12, 20, 16),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back,
-                color: AppColors.charcoal, size: 22),
+            icon: Icon(Icons.arrow_back, color: AppColors.charcoal, size: 22),
             onPressed: () => Navigator.pop(context),
           ),
           const SizedBox(width: 4),
@@ -206,7 +204,7 @@ class _RegionListScreenState extends State<RegionListScreen>
               children: [
                 Text(
                   _countryName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal,
@@ -221,7 +219,7 @@ class _RegionListScreenState extends State<RegionListScreen>
                             args: {'count': _regions.length})
                         : context.tr('country.regionsCount',
                             args: {'count': _regions.length}),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppColors.neutral600,
                     ),
@@ -238,7 +236,7 @@ class _RegionListScreenState extends State<RegionListScreen>
 class _RegionCard extends StatelessWidget {
   final RegionCategory region;
 
-  const _RegionCard({required this.region});
+  _RegionCard({required this.region});
 
   @override
   Widget build(BuildContext context) {
@@ -255,7 +253,7 @@ class _RegionCard extends StatelessWidget {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -279,10 +277,9 @@ class _RegionCard extends StatelessWidget {
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Container(
                           width: double.infinity,
-                          color: const Color(0xFFF0F0F0),
+                          color: AppColors.neutral100,
                         ),
-                        errorWidget: (context, url, error) =>
-                            _imageFallback(),
+                        errorWidget: (context, url, error) => _imageFallback(),
                       )
                     : _imageFallback(),
               ),
@@ -294,7 +291,7 @@ class _RegionCard extends StatelessWidget {
                 children: [
                   Text(
                     region.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
@@ -305,7 +302,7 @@ class _RegionCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.home_outlined,
                         size: 12,
                         color: AppColors.neutral600,
@@ -315,7 +312,7 @@ class _RegionCard extends StatelessWidget {
                         child: Text(
                           context.tr('country.propertyCountValue',
                               args: {'count': region.propertyCount}),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
                             color: AppColors.neutral600,
                           ),
@@ -323,7 +320,7 @@ class _RegionCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const Icon(
+                      Icon(
                         Icons.chevron_right,
                         size: 14,
                         color: AppColors.neutral400,
@@ -343,7 +340,7 @@ class _RegionCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: AppColors.neutral200,
-      child: const Icon(
+      child: Icon(
         Icons.landscape_outlined,
         size: 40,
         color: AppColors.neutral400,

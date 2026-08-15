@@ -7,7 +7,7 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class PricingSetupScreen extends StatefulWidget {
-  const PricingSetupScreen({super.key});
+  PricingSetupScreen({super.key});
 
   @override
   State<PricingSetupScreen> createState() => _PricingSetupScreenState();
@@ -45,7 +45,9 @@ class _PricingSetupScreenState extends State<PricingSetupScreen> {
   Future<void> _submit() async {
     if (_pricePerNight <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('host.enterValidPrice')), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text(context.tr('host.enterValidPrice')),
+            backgroundColor: AppColors.error),
       );
       return;
     }
@@ -71,7 +73,7 @@ class _PricingSetupScreenState extends State<PricingSetupScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(context.tr('host.propertyListedSuccess')),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ),
       );
       Navigator.pushNamedAndRemoveUntil(
@@ -84,7 +86,7 @@ class _PricingSetupScreenState extends State<PricingSetupScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(context.tr('host.failedToListProperty')),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     }
@@ -93,17 +95,20 @@ class _PricingSetupScreenState extends State<PricingSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('host.pricingSetupTitle'),
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.charcoal),
+          style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.charcoal),
         ),
         centerTitle: true,
       ),
@@ -120,7 +125,6 @@ class _PricingSetupScreenState extends State<PricingSetupScreen> {
               onChanged: (_) => setState(() {}),
               decoration: _decor('\$ ', '0'),
             ),
-
             const SizedBox(height: 24),
             _label(context.tr('host.cleaningFee')),
             const SizedBox(height: 8),
@@ -129,42 +133,43 @@ class _PricingSetupScreenState extends State<PricingSetupScreen> {
               keyboardType: TextInputType.number,
               decoration: _decor('\$ ', '0'),
             ),
-
             const SizedBox(height: 24),
             _label(context.tr('host.minimumNights')),
             const SizedBox(height: 8),
-            _nightsRow(_minNights,
-                () { if (_minNights > 1) setState(() => _minNights--); },
-                () => setState(() => _minNights++)),
-
+            _nightsRow(_minNights, () {
+              if (_minNights > 1) setState(() => _minNights--);
+            }, () => setState(() => _minNights++)),
             const SizedBox(height: 16),
             _label(context.tr('host.maximumNights')),
             const SizedBox(height: 8),
-            _nightsRow(_maxNights,
-                () { if (_maxNights > 1) setState(() => _maxNights--); },
-                () => setState(() => _maxNights++)),
-
+            _nightsRow(_maxNights, () {
+              if (_maxNights > 1) setState(() => _maxNights--);
+            }, () => setState(() => _maxNights++)),
             const SizedBox(height: 32),
-
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: AppColors.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.3)),
+                border: Border.all(
+                    color: AppColors.primaryColor.withValues(alpha: 0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     context.tr('host.estimatedEarnings'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.charcoal),
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.charcoal),
                   ),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(context.tr('host.perWeek'), style: const TextStyle(color: AppColors.neutral600)),
+                      Text(context.tr('host.perWeek'),
+                          style: TextStyle(color: AppColors.neutral600)),
                       Text('\$${_weeklyEstimate.toStringAsFixed(0)}',
                           style: const TextStyle(fontWeight: FontWeight.w600)),
                     ],
@@ -173,7 +178,8 @@ class _PricingSetupScreenState extends State<PricingSetupScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(context.tr('host.perMonth'), style: const TextStyle(color: AppColors.neutral600)),
+                      Text(context.tr('host.perMonth'),
+                          style: TextStyle(color: AppColors.neutral600)),
                       Text('\$${_monthlyEstimate.toStringAsFixed(0)}',
                           style: const TextStyle(fontWeight: FontWeight.w600)),
                     ],
@@ -181,9 +187,7 @@ class _PricingSetupScreenState extends State<PricingSetupScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 32),
-
             SizedBox(
               width: double.infinity,
               height: 54,
@@ -191,19 +195,22 @@ class _PricingSetupScreenState extends State<PricingSetupScreen> {
                 onPressed: _isSubmitting ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _isSubmitting
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.charcoal),
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: AppColors.charcoal),
                       )
                     : Text(
                         context.tr('host.listMyProperty'),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
                       ),
               ),
             ),
@@ -215,7 +222,10 @@ class _PricingSetupScreenState extends State<PricingSetupScreen> {
 
   Widget _label(String text) => Text(
         text,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.charcoal),
+        style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.charcoal),
       );
 
   InputDecoration _decor(String prefix, String hint) => InputDecoration(
@@ -224,7 +234,7 @@ class _PricingSetupScreenState extends State<PricingSetupScreen> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: BorderSide(color: AppColors.neutral200),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -236,19 +246,24 @@ class _PricingSetupScreenState extends State<PricingSetupScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(context.tr('host.nightsLabel'), style: const TextStyle(color: AppColors.neutral600)),
+        Text(context.tr('host.nightsLabel'),
+            style: TextStyle(color: AppColors.neutral600)),
         Row(
           children: [
-            IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: onDec),
+            IconButton(
+                icon: const Icon(Icons.remove_circle_outline),
+                onPressed: onDec),
             SizedBox(
               width: 40,
               child: Text(
                 '$value',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
-            IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: onInc),
+            IconButton(
+                icon: const Icon(Icons.add_circle_outline), onPressed: onInc),
           ],
         ),
       ],

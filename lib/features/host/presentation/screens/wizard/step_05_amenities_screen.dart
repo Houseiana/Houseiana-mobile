@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
-import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.dart' hide sl;
+import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.dart'
+    hide sl;
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/end_points.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class Step05AmenitiesScreen extends StatefulWidget {
-  const Step05AmenitiesScreen({super.key});
+  Step05AmenitiesScreen({super.key});
 
   @override
   State<Step05AmenitiesScreen> createState() => _Step05AmenitiesScreenState();
@@ -92,7 +93,7 @@ class _Step05AmenitiesScreenState extends State<Step05AmenitiesScreen> {
         children: [
           Text(
             context.tr('wizard.whatAmenities'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -101,7 +102,7 @@ class _Step05AmenitiesScreenState extends State<Step05AmenitiesScreen> {
           const SizedBox(height: 8),
           Text(
             context.tr('wizard.selectAllAmenities'),
-            style: const TextStyle(fontSize: 15, color: AppColors.neutral600),
+            style: TextStyle(fontSize: 15, color: AppColors.neutral600),
           ),
           const SizedBox(height: 32),
           Skeletonizer(
@@ -129,13 +130,13 @@ class _Step05AmenitiesScreenState extends State<Step05AmenitiesScreen> {
                           }
                           cubit.updateStepData({'amenities': updated.toList()});
                         },
-                  backgroundColor: Colors.white,
+                  backgroundColor: AppColors.cardBackground,
                   selectedColor: AppColors.primaryColor,
                   checkmarkColor: AppColors.charcoal,
                   side: BorderSide(
                     color: isSelected
                         ? AppColors.primaryColor
-                        : const Color(0xFFE5E7EB),
+                        : AppColors.neutral200,
                   ),
                 );
               }).toList(),

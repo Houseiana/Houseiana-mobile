@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 
 /// Enhanced animations for better user experience
 class EnhancedAnimations {
@@ -26,7 +27,7 @@ class ScaleOnTap extends StatefulWidget {
   final double scaleValue;
   final Duration duration;
 
-  const ScaleOnTap({
+  ScaleOnTap({
     super.key,
     required this.child,
     this.onTap,
@@ -69,7 +70,7 @@ class BounceOnTap extends StatefulWidget {
   final VoidCallback? onTap;
   final double bounceValue;
 
-  const BounceOnTap({
+  BounceOnTap({
     super.key,
     required this.child,
     this.onTap,
@@ -93,8 +94,10 @@ class _BounceOnTapState extends State<BounceOnTap>
       duration: const Duration(milliseconds: 300),
     );
     _animation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: widget.bounceValue), weight: 50),
-      TweenSequenceItem(tween: Tween(begin: widget.bounceValue, end: 1.05), weight: 25),
+      TweenSequenceItem(
+          tween: Tween(begin: 1.0, end: widget.bounceValue), weight: 50),
+      TweenSequenceItem(
+          tween: Tween(begin: widget.bounceValue, end: 1.05), weight: 25),
       TweenSequenceItem(tween: Tween(begin: 1.05, end: 1.0), weight: 25),
     ]).animate(CurvedAnimation(
       parent: _controller,
@@ -136,7 +139,7 @@ class HeartBeatAnimation extends StatefulWidget {
   final bool animate;
   final Duration duration;
 
-  const HeartBeatAnimation({
+  HeartBeatAnimation({
     super.key,
     required this.child,
     this.animate = false,
@@ -207,7 +210,7 @@ class StaggeredListItem extends StatefulWidget {
   final Duration animationDuration;
   final double offset;
 
-  const StaggeredListItem({
+  StaggeredListItem({
     super.key,
     required this.child,
     required this.index,
@@ -278,7 +281,7 @@ class RefreshIndicatorAnimation extends StatefulWidget {
   final Future<void> Function() onRefresh;
   final Widget? indicator;
 
-  const RefreshIndicatorAnimation({
+  RefreshIndicatorAnimation({
     super.key,
     required this.child,
     required this.onRefresh,
@@ -290,14 +293,13 @@ class RefreshIndicatorAnimation extends StatefulWidget {
       _RefreshIndicatorAnimationState();
 }
 
-class _RefreshIndicatorAnimationState
-    extends State<RefreshIndicatorAnimation> {
+class _RefreshIndicatorAnimationState extends State<RefreshIndicatorAnimation> {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
-      color: const Color(0xFFFCC519),
-      backgroundColor: Colors.white,
+      color: AppColors.primaryColor,
+      backgroundColor: AppColors.cardBackground,
       displacement: 50,
       strokeWidth: 2,
       child: widget.child,
@@ -308,15 +310,20 @@ class _RefreshIndicatorAnimationState
 /// Loading shimmer effect
 class ShimmerLoading extends StatefulWidget {
   final Widget child;
-  final Color baseColor;
-  final Color highlightColor;
+
+  /// Defaults to the theme-aware [AppColors.skeletonBaseColor] when null —
+  /// the token is a getter, so it can't be a `const` default.
+  final Color? baseColor;
+
+  /// Defaults to the theme-aware [AppColors.skeletonHighlightColor] when null.
+  final Color? highlightColor;
   final bool enabled;
 
-  const ShimmerLoading({
+  ShimmerLoading({
     super.key,
     required this.child,
-    this.baseColor = const Color(0xFFE8E8E8),
-    this.highlightColor = const Color(0xFFF5F5F5),
+    this.baseColor,
+    this.highlightColor,
     this.enabled = true,
   });
 
@@ -364,6 +371,10 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
   Widget build(BuildContext context) {
     if (!widget.enabled) return widget.child;
 
+    final baseColor = widget.baseColor ?? AppColors.skeletonBaseColor;
+    final highlightColor =
+        widget.highlightColor ?? AppColors.skeletonHighlightColor;
+
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
@@ -373,9 +384,9 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                widget.baseColor,
-                widget.highlightColor,
-                widget.baseColor,
+                baseColor,
+                highlightColor,
+                baseColor,
               ],
               stops: [
                 (_animation.value - 1).clamp(0.0, 1.0),

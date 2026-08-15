@@ -8,7 +8,7 @@ import 'package:houseiana_mobile_app/features/auth/presentation/cubit/auth_state
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+  SignUpScreen({super.key});
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
@@ -33,7 +33,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FA),
+      backgroundColor: AppColors.ghostWhite,
       body: SafeArea(
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
@@ -62,9 +62,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 constraints: const BoxConstraints(maxHeight: 812),
                 margin: const EdgeInsets.symmetric(vertical: 20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(44),
-                  border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
+                  border: Border.all(color: AppColors.neutral200, width: 2),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.12),
@@ -74,7 +74,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ],
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -87,15 +88,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               width: 36,
                               height: 36,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF9F9FA),
+                                color: AppColors.ghostWhite,
                                 borderRadius: BorderRadius.circular(18),
                               ),
                               child: IconButton(
                                 padding: EdgeInsets.zero,
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.arrow_back,
                                   size: 18,
-                                  color: Color(0xFF1D242B),
+                                  color: AppColors.charcoal,
                                 ),
                                 onPressed: () {
                                   Navigator.of(context).pop();
@@ -105,11 +106,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             const SizedBox(width: 12),
                             Text(
                               context.tr('auth.createAccount'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 18,
                                 height: 1.22,
-                                color: Color(0xFF1D242B),
+                                color: AppColors.charcoal,
                               ),
                             ),
                           ],
@@ -125,11 +126,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         // Subtitle
                         Text(
                           context.tr('auth.joinHouseiana'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w400,
                             fontSize: 13,
                             height: 1.23,
-                            color: Color(0xFF6B7280),
+                            color: AppColors.neutral500,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -140,11 +141,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           children: [
                             Text(
                               context.tr('auth.fullName'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w400,
                                 fontSize: 11,
                                 height: 1.27,
-                                color: Color(0xFF6B7280),
+                                color: AppColors.neutral500,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -152,24 +153,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               controller: _nameController,
                               validator: InputValidator.validateName,
                               decoration: InputDecoration(
-                                hintText: context.tr('auth.fullNamePlaceholder'),
-                                hintStyle: const TextStyle(
-                                  color: Color(0xFF9CA3AF),
+                                hintText:
+                                    context.tr('auth.fullNamePlaceholder'),
+                                hintStyle: TextStyle(
+                                  color: AppColors.neutral400,
                                   fontSize: 14,
                                 ),
                                 filled: true,
-                                fillColor: Colors.white,
+                                fillColor: AppColors.cardBackground,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFE5E7EB),
+                                  borderSide: BorderSide(
+                                    color: AppColors.neutral200,
                                     width: 1,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFE5E7EB),
+                                  borderSide: BorderSide(
+                                    color: AppColors.neutral200,
                                     width: 1,
                                   ),
                                 ),
@@ -195,11 +197,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           children: [
                             Text(
                               context.tr('auth.email'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w400,
                                 fontSize: 11,
                                 height: 1.27,
-                                color: Color(0xFF6B7280),
+                                color: AppColors.neutral500,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -208,24 +210,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               keyboardType: TextInputType.emailAddress,
                               validator: InputValidator.validateEmail,
                               decoration: InputDecoration(
-                                hintText: context.tr('auth.emailPlaceholderSignUp'),
-                                hintStyle: const TextStyle(
-                                  color: Color(0xFF9CA3AF),
+                                hintText:
+                                    context.tr('auth.emailPlaceholderSignUp'),
+                                hintStyle: TextStyle(
+                                  color: AppColors.neutral400,
                                   fontSize: 14,
                                 ),
                                 filled: true,
-                                fillColor: Colors.white,
+                                fillColor: AppColors.cardBackground,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFE5E7EB),
+                                  borderSide: BorderSide(
+                                    color: AppColors.neutral200,
                                     width: 1,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFE5E7EB),
+                                  borderSide: BorderSide(
+                                    color: AppColors.neutral200,
                                     width: 1,
                                   ),
                                 ),
@@ -251,11 +254,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           children: [
                             Text(
                               context.tr('auth.password'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w400,
                                 fontSize: 11,
                                 height: 1.27,
-                                color: Color(0xFF6B7280),
+                                color: AppColors.neutral500,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -264,24 +267,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               obscureText: _obscurePassword,
                               validator: InputValidator.validatePassword,
                               decoration: InputDecoration(
-                                hintText: context.tr('auth.passwordPlaceholderSignUp'),
-                                hintStyle: const TextStyle(
-                                  color: Color(0xFF9CA3AF),
+                                hintText: context
+                                    .tr('auth.passwordPlaceholderSignUp'),
+                                hintStyle: TextStyle(
+                                  color: AppColors.neutral400,
                                   fontSize: 14,
                                 ),
                                 filled: true,
-                                fillColor: Colors.white,
+                                fillColor: AppColors.cardBackground,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFE5E7EB),
+                                  borderSide: BorderSide(
+                                    color: AppColors.neutral200,
                                     width: 1,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFE5E7EB),
+                                  borderSide: BorderSide(
+                                    color: AppColors.neutral200,
                                     width: 1,
                                   ),
                                 ),
@@ -301,7 +305,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     _obscurePassword
                                         ? Icons.visibility_off
                                         : Icons.visibility,
-                                    color: const Color(0xFF9CA3AF),
+                                    color: AppColors.neutral400,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -325,34 +329,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 value: _agreedToTerms,
                                 onChanged: state is AuthLoading
                                     ? null
-                                    : (val) => setState(() => _agreedToTerms = val ?? false),
+                                    : (val) => setState(
+                                        () => _agreedToTerms = val ?? false),
                                 activeColor: AppColors.primaryColor,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                side: const BorderSide(
-                                  color: Color(0xFFE5E7EB),
+                                side: BorderSide(
+                                  color: AppColors.neutral200,
                                   width: 1.5,
                                 ),
-                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
                               ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text.rich(
                                 TextSpan(
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
-                                    color: Color(0xFF6B7280),
+                                    color: AppColors.neutral500,
                                     height: 1.4,
                                   ),
                                   children: [
-                                    TextSpan(text: context.tr('auth.agreeToTermsPrefix')),
+                                    TextSpan(
+                                        text: context
+                                            .tr('auth.agreeToTermsPrefix')),
                                     WidgetSpan(
                                       baseline: TextBaseline.alphabetic,
                                       alignment: PlaceholderAlignment.baseline,
                                       child: GestureDetector(
-                                        onTap: () => Navigator.of(context).pushNamed(Routes.terms),
+                                        onTap: () => Navigator.of(context)
+                                            .pushNamed(Routes.terms),
                                         child: Text(
                                           context.tr('auth.termsOfService'),
                                           style: TextStyle(
@@ -369,7 +378,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       baseline: TextBaseline.alphabetic,
                                       alignment: PlaceholderAlignment.baseline,
                                       child: GestureDetector(
-                                        onTap: () => Navigator.of(context).pushNamed(Routes.privacyPolicy),
+                                        onTap: () => Navigator.of(context)
+                                            .pushNamed(Routes.privacyPolicy),
                                         child: Text(
                                           context.tr('auth.privacyPolicyLink'),
                                           style: TextStyle(
@@ -397,9 +407,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ? null
                                 : () {
                                     if (!_agreedToTerms) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         SnackBar(
-                                          content: Text(context.tr('auth.mustAgreeToTerms')),
+                                          content: Text(context
+                                              .tr('auth.mustAgreeToTerms')),
                                         ),
                                       );
                                       return;
@@ -414,7 +426,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryColor,
-                              foregroundColor: const Color(0xFF1D242B),
+                              foregroundColor: AppColors.brandCharcoal,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(25),
                               ),
@@ -424,11 +436,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             ),
                             child: state is AuthLoading
-                                ? const SizedBox(
+                                ? SizedBox(
                                     height: 20,
                                     width: 20,
                                     child: CircularProgressIndicator(
-                                      color: Color(0xFF1D242B),
+                                      color: AppColors.brandCharcoal,
                                       strokeWidth: 2,
                                     ),
                                   )
@@ -446,14 +458,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         // Already have an account
                         RichText(
                           text: TextSpan(
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w400,
                               fontSize: 13,
                               height: 1.23,
-                              color: Color(0xFF000000),
+                              color: AppColors.charcoal,
                             ),
                             children: [
-                              TextSpan(text: context.tr('auth.alreadyHaveAccount')),
+                              TextSpan(
+                                  text: context.tr('auth.alreadyHaveAccount')),
                               WidgetSpan(
                                 child: GestureDetector(
                                   onTap: () {

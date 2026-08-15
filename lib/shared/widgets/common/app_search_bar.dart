@@ -18,7 +18,7 @@ class AppSearchBar extends StatefulWidget {
   final bool autofocus;
   final TextEditingController? controller;
 
-  const AppSearchBar({
+  AppSearchBar({
     super.key,
     this.hintText,
     this.initialValue,
@@ -87,13 +87,14 @@ class _AppSearchBarState extends State<AppSearchBar>
           duration: const Duration(milliseconds: 200),
           height: 56,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.cardBackground,
             borderRadius: AppRadius.radiusXl,
             border: Border.all(
               color: _isFocused ? AppColors.primaryColor : AppColors.neutral200,
               width: _isFocused ? 2 : 1,
             ),
-            boxShadow: _isFocused ? AppShadows.searchBarShadow : AppShadows.cardShadow,
+            boxShadow:
+                _isFocused ? AppShadows.searchBarShadow : AppShadows.cardShadow,
           ),
           child: Row(
             children: [
@@ -107,7 +108,7 @@ class _AppSearchBarState extends State<AppSearchBar>
                     left: Radius.circular(20),
                   ),
                 ),
-                child: const Icon(
+                child: Icon(
                   AppIcons.search,
                   color: AppColors.charcoal,
                   size: 20,
@@ -126,14 +127,14 @@ class _AppSearchBarState extends State<AppSearchBar>
                     onChanged: widget.onChanged,
                     onSubmitted: widget.onSubmitted,
                     onTap: widget.onTap,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                       color: AppColors.charcoal,
                     ),
                     decoration: InputDecoration(
                       hintText: widget.hintText ?? 'Search...',
-                      hintStyle: const TextStyle(
+                      hintStyle: TextStyle(
                         color: AppColors.neutral400,
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
@@ -165,7 +166,7 @@ class _AppSearchBarState extends State<AppSearchBar>
                       color: AppColors.primaryColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       AppIcons.filter,
                       color: AppColors.charcoal,
                       size: 20,
@@ -192,7 +193,7 @@ class AdvancedSearchBar extends StatelessWidget {
   final VoidCallback? onGuestTap;
   final VoidCallback? onSearchTap;
 
-  const AdvancedSearchBar({
+  AdvancedSearchBar({
     super.key,
     this.locationHint,
     this.checkInHint,
@@ -209,7 +210,7 @@ class AdvancedSearchBar extends StatelessWidget {
     return Container(
       height: 68,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(AppRadius.searchBarRadius),
         boxShadow: AppShadows.searchBarShadow,
       ),
@@ -269,7 +270,7 @@ class AdvancedSearchBar extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 AppIcons.search,
                 color: AppColors.charcoal,
                 size: 22,
@@ -293,7 +294,7 @@ class AdvancedSearchBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         decoration: BoxDecoration(
           border: showDivider
-              ? const Border(
+              ? Border(
                   right: BorderSide(color: AppColors.neutral200, width: 1),
                 )
               : null,
@@ -304,7 +305,7 @@ class AdvancedSearchBar extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,

@@ -5,7 +5,7 @@ import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 class MessageSkeletonItem extends StatelessWidget {
   final bool isSentByMe;
 
-  const MessageSkeletonItem({super.key, this.isSentByMe = false});
+  MessageSkeletonItem({super.key, this.isSentByMe = false});
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +75,7 @@ class MessageSkeletonItem extends StatelessWidget {
 }
 
 class ConversationSkeletonItem extends StatelessWidget {
-  const ConversationSkeletonItem({super.key});
+  ConversationSkeletonItem({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -141,7 +141,7 @@ class ConversationSkeletonItem extends StatelessWidget {
 class ChatSkeletonLoader extends StatelessWidget {
   final int messageCount;
 
-  const ChatSkeletonLoader({super.key, this.messageCount = 8});
+  ChatSkeletonLoader({super.key, this.messageCount = 8});
 
   @override
   Widget build(BuildContext context) {
@@ -158,13 +158,13 @@ class ChatSkeletonLoader extends StatelessWidget {
 class ConversationsSkeletonLoader extends StatelessWidget {
   final int itemCount;
 
-  const ConversationsSkeletonLoader({super.key, this.itemCount = 6});
+  ConversationsSkeletonLoader({super.key, this.itemCount = 6});
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
       itemCount: itemCount,
-      itemBuilder: (context, index) => const ConversationSkeletonItem(),
+      itemBuilder: (context, index) => ConversationSkeletonItem(),
     );
   }
 }

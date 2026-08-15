@@ -8,7 +8,7 @@ class ListSkeletonLoader extends StatelessWidget {
   final bool showSearchBar;
   final bool showCategories;
 
-  const ListSkeletonLoader({
+  ListSkeletonLoader({
     super.key,
     this.itemCount = 5,
     this.showSearchBar = true,
@@ -137,7 +137,7 @@ class ListSkeletonLoader extends StatelessWidget {
             // Image area
             Container(
               height: 160,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.neutral200,
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(16),
@@ -200,7 +200,7 @@ class ListSkeletonLoader extends StatelessWidget {
 
 /// Profile skeleton loader
 class ProfileSkeletonLoader extends StatelessWidget {
-  const ProfileSkeletonLoader({super.key});
+  ProfileSkeletonLoader({super.key});
 
   @override
   Widget build(BuildContext context) {

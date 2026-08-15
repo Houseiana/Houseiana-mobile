@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:houseiana_mobile_app/core/services/clerk_service.dart';
+import 'package:houseiana_mobile_app/core/services/fcm_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 
@@ -110,6 +113,7 @@ class AuthInterceptor extends Interceptor {
   void _logout() {
     _clerkService.clearSession();
     _userSession.clear();
+    unawaited(FCMService.instance.onLogout());
     // Reset the whole stack to login. `removeUntil((r) => false)` is idempotent
     // here — repeated 401s each collapse to a single `[login]` stack rather
     // than piling up. Screens must dismiss their own dialogs defensively, since

@@ -3,22 +3,22 @@ import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class CookiePolicyScreen extends StatelessWidget {
-  const CookiePolicyScreen({super.key});
+  CookiePolicyScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('legal.cookieTitle'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -33,7 +33,7 @@ class CookiePolicyScreen extends StatelessWidget {
           children: [
             Text(
               context.tr('legal.cookieHeading'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -42,13 +42,12 @@ class CookiePolicyScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               context.tr('legal.lastUpdated'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.neutral600,
               ),
             ),
             const SizedBox(height: 24),
-
             _buildSection(
               title: context.tr('legal.cookieSection1Title'),
               content: context.tr('legal.cookieSection1Content'),
@@ -85,7 +84,7 @@ class CookiePolicyScreen extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -95,7 +94,7 @@ class CookiePolicyScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               content,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral600,
                 height: 1.6,
@@ -115,7 +114,7 @@ class CookiePolicyScreen extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal,
@@ -124,7 +123,7 @@ class CookiePolicyScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             content,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               color: AppColors.neutral600,
               height: 1.6,

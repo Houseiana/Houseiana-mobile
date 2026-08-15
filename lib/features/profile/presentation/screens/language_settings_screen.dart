@@ -5,24 +5,24 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/i18n/locale_cubit.dart';
 
 class LanguageSettingsScreen extends StatelessWidget {
-  const LanguageSettingsScreen({super.key});
+  LanguageSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<LocaleCubit, AppLocale>(
       builder: (context, currentLocale) {
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.cardBackground,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.cardBackground,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+              icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
               context.tr('profile.language'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,
@@ -44,12 +44,12 @@ class LanguageSettingsScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.language, color: AppColors.charcoal, size: 20),
+                    Icon(Icons.language, color: AppColors.charcoal, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         context.tr('profile.languagesInfo'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: AppColors.charcoal,
                         ),
@@ -80,7 +80,7 @@ class LanguageSettingsScreen extends StatelessWidget {
                       ),
                       subtitle: Text(
                         locale.code.toUpperCase(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: AppColors.neutral600,
                         ),
@@ -118,7 +118,8 @@ class LanguageSettingsScreen extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         content: Text(
-          context.tr('profile.changeLanguageConfirm', args: {'name': locale.name}),
+          context
+              .tr('profile.changeLanguageConfirm', args: {'name': locale.name}),
         ),
         actions: [
           TextButton(

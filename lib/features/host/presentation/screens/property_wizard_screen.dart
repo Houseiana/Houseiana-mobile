@@ -24,7 +24,7 @@ class PropertyWizardScreen extends StatelessWidget {
   /// existing property and saves through the same draft endpoint with this id.
   final String? editPropertyId;
 
-  const PropertyWizardScreen({super.key, this.editPropertyId});
+  PropertyWizardScreen({super.key, this.editPropertyId});
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +43,7 @@ class PropertyWizardScreen extends StatelessWidget {
 class _PropertyWizardView extends StatefulWidget {
   final bool isEditing;
 
-  const _PropertyWizardView({this.isEditing = false});
+  _PropertyWizardView({this.isEditing = false});
 
   @override
   State<_PropertyWizardView> createState() => _PropertyWizardViewState();
@@ -102,19 +102,19 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
         final cubit = context.read<ListingWizardCubit>();
 
         if (state.isHydrating) {
-          return const Scaffold(
-            backgroundColor: Colors.white,
+          return Scaffold(
+            backgroundColor: AppColors.cardBackground,
             body: FormSkeleton(fieldCount: 6, showButton: false),
           );
         }
 
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.cardBackground,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.cardBackground,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.close, color: AppColors.charcoal),
+              icon: Icon(Icons.close, color: AppColors.charcoal),
               // Block exiting mid-save/publish to avoid losing an in-flight write.
               onPressed: (state.isSavingDraft || state.isPublishing)
                   ? null
@@ -122,7 +122,7 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
             ),
             title: Text(
               _stepTitle(context, state.currentStep),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,
@@ -164,7 +164,7 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
                   controller: _pageController,
                   physics: const NeverScrollableScrollPhysics(),
                   onPageChanged: (index) => cubit.goToStep(index),
-                  children: const [
+                  children: [
                     Step01PropertyTypeScreen(),
                     Step03LocationScreen(),
                     Step04BasicsScreen(),
@@ -202,7 +202,7 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
                   'n': state.currentStep + 1,
                   'total': state.totalSteps,
                 }),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: AppColors.neutral700,
@@ -217,9 +217,12 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
               return Expanded(
                 child: Container(
                   height: 4,
-                  margin: EdgeInsets.only(right: index == state.totalSteps - 1 ? 0 : 8),
+                  margin: EdgeInsets.only(
+                      right: index == state.totalSteps - 1 ? 0 : 8),
                   decoration: BoxDecoration(
-                    color: isCompleted ? AppColors.primaryColor : AppColors.neutral200,
+                    color: isCompleted
+                        ? AppColors.primaryColor
+                        : AppColors.neutral200,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -240,7 +243,7 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -265,7 +268,7 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
                       },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.charcoal,
-                  side: const BorderSide(color: AppColors.neutral300),
+                  side: BorderSide(color: AppColors.neutral300),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -320,7 +323,7 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: Colors.white,
+                foregroundColor: AppColors.brandCharcoal,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -333,7 +336,7 @@ class _PropertyWizardViewState extends State<_PropertyWizardView> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: AppColors.brandCharcoal,
                       ),
                     )
                   : Text(

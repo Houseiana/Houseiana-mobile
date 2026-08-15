@@ -30,7 +30,7 @@ class PropertyCardV2 extends StatefulWidget {
   final bool isSuperhost;
   final String? ribbonText;
 
-  const PropertyCardV2({
+  PropertyCardV2({
     super.key,
     required this.id,
     required this.imageUrl,
@@ -120,7 +120,7 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
             errorWidget: (context, url, error) => Container(
               height: 180,
               color: AppColors.neutral200,
-              child: const Icon(
+              child: Icon(
                 Icons.image_not_supported_outlined,
                 color: AppColors.neutral400,
                 size: 48,
@@ -133,7 +133,8 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
         Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(16)),
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -155,7 +156,8 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.charcoal,
+                // dark-ok: ribbon sits on the photo, dark in both themes
+                color: AppColors.brandCharcoal,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -174,7 +176,6 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
           top: 12,
           right: 12,
           child: _buildFavoriteButton(),
-
         ),
 
         // Rating badge — hidden when there are no reviews yet (web parity)
@@ -210,7 +211,7 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.charcoal.withValues(alpha: 0.9),
+                      color: AppColors.brandCharcoal.withValues(alpha: 0.9),
                     ),
                   ),
                 ],
@@ -243,7 +244,7 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
                   isFavorite ? Icons.favorite : Icons.favorite_border,
                   key: ValueKey(isFavorite),
                   size: 22,
-                  color: isFavorite ? Colors.red : AppColors.charcoal,
+                  color: isFavorite ? AppColors.heartRed : AppColors.charcoal,
                 ),
               ),
             ),
@@ -271,7 +272,7 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
           const SizedBox(width: 4),
           Text(
             widget.rating.toStringAsFixed(2),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal,
@@ -280,7 +281,7 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
           if (widget.reviewCount > 0) ...[
             Text(
               ' (${widget.reviewCount})',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppColors.neutral600,
               ),
@@ -302,7 +303,7 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
             widget.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal,
@@ -315,7 +316,7 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
           // Location
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.location_on_outlined,
                 size: 14,
                 color: AppColors.neutral600,
@@ -326,7 +327,7 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
                   widget.location,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppColors.neutral600,
                   ),
@@ -356,11 +357,11 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
                       if (widget._hasDiscount) ...[
                         Text(
                           Money.format(widget.originalPrice!, widget.currency),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF979797),
+                            color: AppColors.neutral400,
                             decoration: TextDecoration.lineThrough,
-                            decorationColor: Color(0xFF979797),
+                            decorationColor: AppColors.neutral400,
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -368,7 +369,7 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
                       // Effective (discounted) price
                       Text(
                         Money.format(widget.price, widget.currency),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: AppColors.charcoal,
@@ -376,7 +377,7 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
                       ),
                       Text(
                         ' ${context.tr('home.perNight')}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: AppColors.neutral600,
                         ),
@@ -389,7 +390,7 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD00416),
+                            color: AppColors.discountRed,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -400,7 +401,8 @@ class _PropertyCardV2State extends State<PropertyCardV2> {
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color:
+                                  Colors.white, // dark-ok: label on red badge
                             ),
                           ),
                         ),
@@ -469,7 +471,7 @@ class CompactPropertyCard extends StatelessWidget {
   /// Leave null to hide the button entirely.
   final VoidCallback? onFavoriteToggle;
 
-  const CompactPropertyCard({
+  CompactPropertyCard({
     super.key,
     required this.imageUrl,
     required this.title,
@@ -556,12 +558,12 @@ class CompactPropertyCard extends StatelessWidget {
                               width: 30,
                               height: 30,
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                // white chip sitting over the photo
+                                color: Colors.white, // dark-ok
                                 borderRadius: BorderRadius.circular(15),
                                 boxShadow: [
                                   BoxShadow(
-                                    color:
-                                        Colors.black.withValues(alpha: 0.12),
+                                    color: Colors.black.withValues(alpha: 0.12),
                                     blurRadius: 4,
                                     offset: const Offset(0, 1),
                                   ),
@@ -573,8 +575,8 @@ class CompactPropertyCard extends StatelessWidget {
                                     : Icons.favorite_border,
                                 size: 16,
                                 color: isFavorite
-                                    ? const Color(0xFFEF4444)
-                                    : const Color(0xFF9CA3AF),
+                                    ? AppColors.heartRed
+                                    : AppColors.neutral400,
                               ),
                             ),
                           ),
@@ -587,7 +589,7 @@ class CompactPropertyCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD00416),
+                        color: AppColors.discountRed,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -595,7 +597,7 @@ class CompactPropertyCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: Colors.white, // dark-ok: label on red badge
                         ),
                       ),
                     ),
@@ -614,7 +616,7 @@ class CompactPropertyCard extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppColors.charcoal,
@@ -628,7 +630,7 @@ class CompactPropertyCard extends StatelessWidget {
                     location,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppColors.neutral600,
                     ),
@@ -646,7 +648,7 @@ class CompactPropertyCard extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 text: TextSpan(
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.charcoal,
@@ -655,12 +657,12 @@ class CompactPropertyCard extends StatelessWidget {
                                     TextSpan(
                                       text:
                                           '${Money.format(originalPrice!, currency)} ',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w400,
-                                        color: Color(0xFF979797),
+                                        color: AppColors.neutral400,
                                         decoration: TextDecoration.lineThrough,
-                                        decorationColor: Color(0xFF979797),
+                                        decorationColor: AppColors.neutral400,
                                       ),
                                     ),
                                     TextSpan(
@@ -671,15 +673,15 @@ class CompactPropertyCard extends StatelessWidget {
                                 ),
                               )
                             : Text(
-                          '${Money.format(price, currency)}${context.tr('home.perNight')}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.charcoal,
-                          ),
-                        ),
+                                '${Money.format(price, currency)}${context.tr('home.perNight')}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.charcoal,
+                                ),
+                              ),
                       ),
                       // Rating hidden when there are no reviews yet (web parity)
                       if (rating > 0)
@@ -693,7 +695,7 @@ class CompactPropertyCard extends StatelessWidget {
                             const SizedBox(width: 2),
                             Text(
                               rating.toStringAsFixed(1),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                                 color: AppColors.charcoal,
@@ -741,7 +743,7 @@ class CompactPropertyCard extends StatelessWidget {
           const SizedBox(width: 3),
           Text(
             '$value',
-            style: const TextStyle(fontSize: 11, color: AppColors.neutral600),
+            style: TextStyle(fontSize: 11, color: AppColors.neutral600),
           ),
         ],
       ),

@@ -5,11 +5,13 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 class HostPayoutScreen extends StatefulWidget {
-  const HostPayoutScreen({super.key});
+  HostPayoutScreen({super.key});
 
   @override
   State<HostPayoutScreen> createState() => _HostPayoutScreenState();
@@ -22,21 +24,30 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
   bool _isLoading = false;
   String? _error;
   List<Map<String, dynamic>> _payoutMethods = [];
+  List<Map<String, dynamic>> _payouts = [];
+  num _totalMoney = 0;
+  String _payoutsCurrency = '';
+  bool _payoutsFailed = false;
+  Map<int, String> _methodTypeNames = {};
 
   @override
   void initState() {
     super.initState();
     _userService = sl<UserService>();
     _session = sl<UserSession>();
-    _loadPayoutMethods();
+    _loadData();
   }
 
-  Future<void> _loadPayoutMethods() async {
+  Future<void> _loadData() async {
     final userId = _session.userId;
     if (userId == null || userId.isEmpty) {
       setState(() {
         _error = null;
         _payoutMethods = [];
+        _payouts = [];
+        _totalMoney = 0;
+        _payoutsCurrency = '';
+        _payoutsFailed = false;
         _isLoading = false;
       });
       return;
@@ -47,20 +58,49 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
       _error = null;
     });
 
-    try {
-      final methods = await _userService.getPayoutMethods(userId);
-      if (!mounted) return;
-      setState(() {
-        _payoutMethods = methods;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
-    }
+    List<Map<String, dynamic>> methods = [];
+    String? methodsError;
+    PayoutHistory? history;
+    var payoutsFailed = false;
+    Map<int, String> typeNames = {};
+
+    await Future.wait<void>([
+      () async {
+        try {
+          methods = await _userService.getPayoutMethods(userId);
+        } catch (e) {
+          methodsError = e.toString();
+        }
+      }(),
+      () async {
+        try {
+          history = await _userService.getPayouts(userId);
+        } catch (_) {
+          payoutsFailed = true;
+        }
+      }(),
+      () async {
+        // Resolves numeric `payoutMethodId`s to their localized lookup names.
+        final options = await _userService.getPayoutMethodOptions();
+        typeNames = {
+          for (final o in options)
+            if (int.tryParse(o['id'].toString()) != null)
+              int.parse(o['id'].toString()): o['name'].toString(),
+        };
+      }(),
+    ]);
+
+    if (!mounted) return;
+    setState(() {
+      _error = methodsError;
+      _payoutMethods = methods;
+      _payouts = history?.payouts ?? [];
+      _totalMoney = history?.totalMoney ?? 0;
+      _payoutsCurrency = history?.currency ?? '';
+      _payoutsFailed = payoutsFailed;
+      _methodTypeNames = typeNames;
+      _isLoading = false;
+    });
   }
 
   Future<void> _deletePayoutMethod(String payoutId) async {
@@ -69,7 +109,7 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
 
     try {
       await _userService.deletePayoutMethod(payoutId);
-      await _loadPayoutMethods();
+      await _loadData();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -108,7 +148,7 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
     );
 
     if (added == true) {
-      await _loadPayoutMethods();
+      await _loadData();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -124,17 +164,17 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
     final isLoggedIn = _session.isLoggedIn;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('host.payoutMethodsTitle'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -143,8 +183,8 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.charcoal),
-            onPressed: _isLoading ? null : _loadPayoutMethods,
+            icon: Icon(Icons.refresh, color: AppColors.charcoal),
+            onPressed: _isLoading ? null : _loadData,
           ),
           IconButton(
             icon: const Icon(Icons.add, color: AppColors.primaryColor),
@@ -168,7 +208,7 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const TileListSkeleton(
+      return TileListSkeleton(
         itemCount: 5,
         leadingSize: 48,
         showTrailing: true,
@@ -183,11 +223,11 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
         title: context.tr('host.unableToLoadPayouts'),
         message: _error!,
         primaryActionLabel: context.tr('common.tryAgain'),
-        onPrimaryAction: _loadPayoutMethods,
+        onPrimaryAction: _loadData,
       );
     }
 
-    if (_payoutMethods.isEmpty) {
+    if (_payoutMethods.isEmpty && _payouts.isEmpty && !_payoutsFailed) {
       return _ScreenMessageState(
         icon: Icons.account_balance_outlined,
         iconColor: AppColors.primaryColor,
@@ -199,10 +239,70 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: _loadPayoutMethods,
+      onRefresh: _loadData,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (_payoutMethods.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.ghostWhite,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline, color: AppColors.primaryColor),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      context.tr('host.defaultPayoutInfo'),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.neutral600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            ..._payoutMethods
+                .map((method) => _buildPayoutMethodCard(context, method)),
+          ],
+          const SizedBox(height: 12),
+          _buildTransactionHistory(context),
+        ],
+      ),
+    );
+  }
+
+  // ── Transaction history (web `Transaction History` section) ─────────────
+
+  Widget _buildTransactionHistory(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          context.tr('host.transactionHistory'),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.charcoal,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.neutral200),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: _buildTransactionsBody(context),
+        ),
+        // A failed fetch must not assert "0" as the host's balance.
+        if (!_payoutsFailed) ...[
+          const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -210,38 +310,215 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.tr('host.creditBalance'),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.neutral600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        Money.format(_totalMoney, _payoutsCurrency),
+                        textDirection: TextDirection.ltr,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.charcoal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.payments_outlined,
+                  color: AppColors.neutral600,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTransactionsBody(BuildContext context) {
+    if (_payoutsFailed) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                context.tr('host.transactionsLoadFailed'),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.neutral600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: _isLoading ? null : _loadData,
+              child: Text(context.tr('common.tryAgain')),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_payouts.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 28),
+        child: Center(
+          child: Text(
+            context.tr('host.noTransactions'),
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.neutral600,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        for (var i = 0; i < _payouts.length; i++) ...[
+          if (i > 0) Divider(height: 1, color: AppColors.neutral100),
+          _buildTransactionRow(context, _payouts[i]),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTransactionRow(BuildContext context, Map<String, dynamic> tx) {
+    // Backend decimals sometimes arrive as strings — never hard-cast money.
+    final rawAmount = tx['amount'];
+    final amount =
+        rawAmount is num ? rawAmount : num.tryParse('$rawAmount') ?? 0;
+    final currency = tx['currency']?.toString() ?? _payoutsCurrency;
+    final status = tx['status']?.toString() ?? '';
+
+    final notes = tx['notes']?.toString().trim();
+    final method = tx['paymentMethod']?.toString().trim();
+    final description = (notes != null && notes.isNotEmpty)
+        ? notes
+        : (method != null && method.isNotEmpty)
+            ? context.tr(
+                'host.payoutTo',
+                args: {'method': _typeDisplayLabel(context, method)},
+              )
+            : context.tr('host.payoutFallback');
+
+    final rawDate = tx['createdAt']?.toString() ?? tx['date']?.toString();
+    final parsedDate = rawDate == null ? null : DateTime.tryParse(rawDate);
+    final date = parsedDate == null
+        ? (rawDate ?? '')
+        : DateFormat(
+            'd MMM yyyy',
+            Localizations.localeOf(context).languageCode,
+          ).format(parsedDate.toLocal());
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.info_outline, color: AppColors.primaryColor),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    context.tr('host.defaultPayoutInfo'),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.neutral600,
-                    ),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.charcoal,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  date,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.neutral600,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          ..._payoutMethods.map((method) => _buildPayoutMethodCard(context, method)),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '- ${Money.format(amount, currency)}',
+                textDirection: TextDirection.ltr,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.charcoal,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _txStatusLabel(context, status),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: _txStatusColor(status),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPayoutMethodCard(BuildContext context, Map<String, dynamic> method) {
-    final type = method['type']?.toString() ?? 'bank';
+  String _txStatusLabel(BuildContext context, String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return context.tr('host.txCompleted');
+      case 'pending':
+      case 'processing':
+        return context.tr('host.txProcessing');
+      case 'refunded':
+        return context.tr('host.txRefunded');
+      case 'failed':
+        return context.tr('host.txFailed');
+      default:
+        return status;
+    }
+  }
+
+  Color _txStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return AppColors.success;
+      case 'pending':
+      case 'processing':
+        return const Color(0xFFF59E0B); // dark-ok: payout status
+      case 'failed':
+        return AppColors.error;
+      default:
+        return AppColors.neutral600;
+    }
+  }
+
+  Widget _buildPayoutMethodCard(
+      BuildContext context, Map<String, dynamic> method) {
+    final typeLabel = _payoutTypeLabel(context, method);
     final isDefault = method['isDefault'] == true;
     final payoutId = method['id']?.toString() ?? method['_id']?.toString();
 
-    final icon = switch (type) {
-      'paypal' => Icons.account_balance_wallet_outlined,
-      _ => Icons.account_balance,
-    };
+    final icon = _isPaypalMethod(method)
+        ? Icons.account_balance_wallet_outlined
+        : Icons.account_balance;
 
     // Mirrors the web `PayoutMethodItem`: title = accountName (or the account id
     // as a fallback), subtitle = the account id / IBAN.
@@ -265,7 +542,7 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border.all(
-          color: isDefault ? AppColors.primaryColor : const Color(0xFFE5E7EB),
+          color: isDefault ? AppColors.primaryColor : AppColors.neutral200,
           width: isDefault ? 2 : 1,
         ),
         borderRadius: BorderRadius.circular(16),
@@ -291,7 +568,7 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
                     Expanded(
                       child: Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: AppColors.charcoal,
@@ -310,7 +587,7 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
                         ),
                         child: Text(
                           context.tr('host.defaultLabel'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             color: AppColors.charcoal,
@@ -322,22 +599,75 @@ class _HostPayoutScreenState extends State<HostPayoutScreen> {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppColors.neutral600,
                   ),
                 ),
+                if (typeLabel != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    typeLabel,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.neutral600,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline, color: AppColors.error),
-            onPressed:
-                payoutId == null ? null : () => _confirmDelete(payoutId),
+            onPressed: payoutId == null ? null : () => _confirmDelete(payoutId),
           ),
         ],
       ),
     );
+  }
+
+  /// The backend states the type in `payoutMethodId` — as the enum string
+  /// (`PAYPAL` / `BANK_ACCOUNT`; the web card renders it verbatim) or,
+  /// possibly, as the numeric lookup id.
+  dynamic _payoutTypeValue(Map<String, dynamic> method) =>
+      method['payoutMethodId'] ?? method['payoutMethod'] ?? method['type'];
+
+  /// Icon branch keys ONLY off the locale-stable enum string — never off a
+  /// localized lookup name (the payment-method screen bug class). Numeric
+  /// ids therefore always take the bank icon, in every locale.
+  bool _isPaypalMethod(Map<String, dynamic> method) {
+    final raw = _payoutTypeValue(method);
+    if (raw == null || raw is num) return false;
+    final value = raw.toString();
+    return int.tryParse(value) == null &&
+        value.toUpperCase().contains('PAYPAL');
+  }
+
+  /// Display label under the account id. Numeric ids show the (already
+  /// localized) `/api/Lookups/PayoutMethod` name; enum strings map to the
+  /// localized labels.
+  String? _payoutTypeLabel(BuildContext context, Map<String, dynamic> method) {
+    final raw = _payoutTypeValue(method);
+    if (raw == null) return null;
+    final asInt = raw is num ? raw.toInt() : int.tryParse(raw.toString());
+    if (asInt != null) return _methodTypeNames[asInt];
+    final value = raw.toString().trim();
+    return value.isEmpty ? null : _typeDisplayLabel(context, value);
+  }
+
+  /// `PAYPAL` → PayPal, `BANK_ACCOUNT` → localized bank-account label, other
+  /// ALL_CAPS enums prettified. Human text (bank names, localized lookup
+  /// names) passes through untouched.
+  String _typeDisplayLabel(BuildContext context, String value) {
+    if (value.toUpperCase() != value) return value;
+    if (value.contains('PAYPAL')) return context.tr('host.payoutTypePaypal');
+    if (value.contains('BANK')) return context.tr('host.payoutTypeBankAccount');
+    return value
+        .split('_')
+        .where((w) => w.isNotEmpty)
+        .map((w) => w[0] + w.substring(1).toLowerCase())
+        .join(' ');
   }
 
   String _buildMaskedAccount(Map<String, dynamic> method) {
@@ -386,7 +716,7 @@ class _DialogTextField extends StatelessWidget {
   final String? hintText;
   final String? Function(String?)? validator;
 
-  const _DialogTextField({
+  _DialogTextField({
     required this.controller,
     required this.labelText,
     this.hintText,
@@ -417,7 +747,7 @@ class _AddPayoutDialog extends StatefulWidget {
   final UserService userService;
   final String userId;
 
-  const _AddPayoutDialog({
+  _AddPayoutDialog({
     required this.userService,
     required this.userId,
   });
@@ -571,7 +901,7 @@ class _AddPayoutDialogState extends State<_AddPayoutDialog> {
           onPressed: _submitting ? null : _submit,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryColor,
-            foregroundColor: AppColors.charcoal,
+            foregroundColor: AppColors.brandCharcoal,
           ),
           child: _submitting
               ? const SizedBox(
@@ -605,7 +935,7 @@ class _AddPayoutDialogState extends State<_AddPayoutDialog> {
           Expanded(
             child: Text(
               context.tr('host.noPayoutMethodsAvailable'),
-              style: const TextStyle(fontSize: 13, color: AppColors.neutral600),
+              style: TextStyle(fontSize: 13, color: AppColors.neutral600),
             ),
           ),
           TextButton(
@@ -649,7 +979,7 @@ class _ScreenMessageState extends StatelessWidget {
   final String primaryActionLabel;
   final VoidCallback onPrimaryAction;
 
-  const _ScreenMessageState({
+  _ScreenMessageState({
     required this.icon,
     required this.iconColor,
     required this.title,
@@ -671,7 +1001,7 @@ class _ScreenMessageState extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -681,7 +1011,7 @@ class _ScreenMessageState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.neutral600,
               ),
@@ -691,7 +1021,7 @@ class _ScreenMessageState extends StatelessWidget {
               onPressed: onPrimaryAction,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
               ),
               child: Text(primaryActionLabel),
             ),
@@ -705,7 +1035,7 @@ class _ScreenMessageState extends StatelessWidget {
 class _LoginRequiredState extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const _LoginRequiredState({required this.onPressed});
+  _LoginRequiredState({required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -715,12 +1045,12 @@ class _LoginRequiredState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.lock_outline, size: 56, color: Colors.grey.shade400),
+            Icon(Icons.lock_outline, size: 56, color: AppColors.divider),
             const SizedBox(height: 16),
             Text(
               context.tr('host.signInForPayouts'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -730,7 +1060,7 @@ class _LoginRequiredState extends StatelessWidget {
             Text(
               context.tr('host.signInForPayoutsDesc'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.neutral600,
               ),
@@ -740,7 +1070,7 @@ class _LoginRequiredState extends StatelessWidget {
               onPressed: onPressed,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
               ),
               child: Text(context.tr('auth.signIn')),
             ),

@@ -53,7 +53,8 @@ Features: `auth`, `booking`, `bottom_nav`, `chat`, `country`, `dashboard`, `favo
 - **Networking**: `DioConsumer` wraps Dio and implements `ApiConsumer`. All backend calls go through `EndPoints` which delegates the base URL to `AppConfig.backendApiUrl`.
 - **Auth**: `ClerkService` directly calls Clerk's Frontend API (`https://clerk.houseiana.com/v1`) using form-urlencoded requests and manual cookie management for multi-step flows. The backend API requires the Clerk user ID as path/query params — it does **not** use JWT bearer tokens from this app.
 - **Session**: `UserSession` persists `clerk_user_id`, `clerk_session_id`, and basic profile fields in `SharedPreferences`. Use `sl<UserSession>()` to read the current user. `isLoggedIn` is the auth gate.
-- **Theme**: `AppColors` for colors (primary = `#FCC519` yellow). `AppTheme`/`light_theme`/`dark_theme` for themes. `AppSpacing`, `AppRadius`, `AppShadows` for design tokens.
+- **Theme**: `AppColors` for colors (primary = `#FCC519` yellow). `light_theme`/`dark_theme` build the two `ThemeData` objects; `ThemeCubit` (`lib/core/theme/theme_cubit.dart`) drives `MaterialApp.themeMode` and persists the choice. `AppSpacing`, `AppRadius`, `AppShadows` for design tokens.
+- **Dark mode**: surface/text/neutral tokens on `AppColors` are brightness-aware getters backed by `AppColorsLight`/`AppColorsDark`; a static flag is set from `MaterialApp.builder`. Brand/status colors (`primaryColor`, `brandCharcoal`, `success`, `error`, …) stay `const` and never flip. Never reference `AppColors.<getter>` inside a `const` expression, and never use `const` when instantiating an app widget (it would skip the rebuild on theme switch).
 
 ### Environment Configuration
 

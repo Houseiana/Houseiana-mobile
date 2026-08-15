@@ -9,22 +9,22 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class NotificationsScreen extends StatelessWidget {
-  const NotificationsScreen({super.key});
+  NotificationsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('notifications.title'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -55,7 +55,7 @@ class NotificationsScreen extends StatelessWidget {
       body: BlocBuilder<NotificationsCubit, NotificationsState>(
         builder: (context, state) {
           if (state is NotificationsLoading) {
-            return const TileListSkeleton(
+            return TileListSkeleton(
               itemCount: 8,
               leadingSize: 48,
               leadingCircle: true,
@@ -65,7 +65,7 @@ class NotificationsScreen extends StatelessWidget {
           }
 
           if (state is NotificationsSignInRequired) {
-            return const _SignInRequiredState();
+            return _SignInRequiredState();
           }
 
           if (state is NotificationsError) {
@@ -73,7 +73,7 @@ class NotificationsScreen extends StatelessWidget {
           }
 
           if (state is NotificationsLoaded) {
-            if (state.notifications.isEmpty) return const _EmptyState();
+            if (state.notifications.isEmpty) return _EmptyState();
 
             return RefreshIndicator(
               onRefresh: () =>
@@ -103,7 +103,7 @@ class NotificationsScreen extends StatelessWidget {
 class _NotificationTile extends StatelessWidget {
   final NotificationModel notification;
 
-  const _NotificationTile({required this.notification});
+  _NotificationTile({required this.notification});
 
   @override
   Widget build(BuildContext context) {
@@ -113,9 +113,10 @@ class _NotificationTile extends StatelessWidget {
       key: Key(notification.id),
       direction: DismissDirection.endToStart,
       background: Container(
-        color: Colors.red,
+        color: AppColors.error,
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 24),
+        // dark-ok: icon sits on the saturated destructive red
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       onDismissed: (_) {
@@ -165,7 +166,7 @@ class _NotificationTile extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 _formatTime(context, notification.createdAt!),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   color: AppColors.neutral600,
                 ),
@@ -203,7 +204,8 @@ class _NotificationTile extends StatelessWidget {
     final now = DateTime.now();
     final diff = now.difference(dt);
     if (diff.inMinutes < 60) {
-      return context.tr('notifications.minutesShort', args: {'n': diff.inMinutes});
+      return context
+          .tr('notifications.minutesShort', args: {'n': diff.inMinutes});
     }
     if (diff.inHours < 24) {
       return context.tr('notifications.hoursShort', args: {'n': diff.inHours});
@@ -217,7 +219,7 @@ class _NotificationTile extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  _EmptyState();
 
   @override
   Widget build(BuildContext context) {
@@ -241,7 +243,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             context.tr('notifications.noNotifications'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal,
@@ -250,7 +252,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             context.tr('notifications.noNotificationsDescription'),
-            style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+            style: TextStyle(fontSize: 14, color: AppColors.neutral600),
             textAlign: TextAlign.center,
           ),
         ],
@@ -260,7 +262,7 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _SignInRequiredState extends StatelessWidget {
-  const _SignInRequiredState();
+  _SignInRequiredState();
 
   @override
   Widget build(BuildContext context) {
@@ -287,7 +289,7 @@ class _SignInRequiredState extends StatelessWidget {
             Text(
               context.tr('notifications.signInRequired'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -297,7 +299,7 @@ class _SignInRequiredState extends StatelessWidget {
             Text(
               context.tr('notifications.signInRequiredDescription'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral600,
                 height: 1.5,
@@ -312,7 +314,7 @@ class _SignInRequiredState extends StatelessWidget {
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
                 elevation: 0,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
@@ -338,7 +340,7 @@ class _SignInRequiredState extends StatelessWidget {
 class _ErrorState extends StatelessWidget {
   final String message;
 
-  const _ErrorState({required this.message});
+  _ErrorState({required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -346,7 +348,7 @@ class _ErrorState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline,
             size: 60,
             color: AppColors.neutral400,
@@ -354,7 +356,7 @@ class _ErrorState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             context.tr(message),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal,
@@ -367,7 +369,7 @@ class _ErrorState extends StatelessWidget {
                 context.read<NotificationsCubit>().loadNotifications(),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryColor,
-              foregroundColor: AppColors.charcoal,
+              foregroundColor: AppColors.brandCharcoal,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

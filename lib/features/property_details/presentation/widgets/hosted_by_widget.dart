@@ -11,7 +11,7 @@ class HostedByWidget extends StatelessWidget {
   final bool isSuperhost;
   final VoidCallback? onTap;
 
-  const HostedByWidget({
+  HostedByWidget({
     super.key,
     required this.hostName,
     this.hostAvatar,
@@ -49,13 +49,12 @@ class HostedByWidget extends StatelessWidget {
                     ? CachedNetworkImage(
                         imageUrl: hostAvatar!,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) => const Icon(Icons.person,
+                        placeholder: (_, __) => Icon(Icons.person,
                             size: 28, color: AppColors.charcoal),
-                        errorWidget: (_, __, ___) => const Icon(Icons.person,
+                        errorWidget: (_, __, ___) => Icon(Icons.person,
                             size: 28, color: AppColors.charcoal),
                       )
-                    : const Icon(Icons.person,
-                        size: 28, color: AppColors.charcoal),
+                    : Icon(Icons.person, size: 28, color: AppColors.charcoal),
               ),
             ),
             const SizedBox(width: 14),
@@ -65,7 +64,7 @@ class HostedByWidget extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
@@ -76,7 +75,7 @@ class HostedByWidget extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       color: AppColors.neutral500,
                     ),
@@ -87,8 +86,7 @@ class HostedByWidget extends StatelessWidget {
               ),
             ),
             if (onTap != null)
-              const Icon(Icons.chevron_right,
-                  size: 22, color: AppColors.neutral400),
+              Icon(Icons.chevron_right, size: 22, color: AppColors.neutral400),
           ],
         ),
       ),

@@ -15,7 +15,7 @@ import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dar
 /// Host Calendar — manage availability, pricing & reservations for a property.
 /// Mirrors the web `host-dashboard/calendar` screen.
 class HostCalendarScreen extends StatefulWidget {
-  const HostCalendarScreen({super.key});
+  HostCalendarScreen({super.key});
 
   @override
   State<HostCalendarScreen> createState() => _HostCalendarScreenState();
@@ -30,15 +30,15 @@ class _HostCalendarScreenState extends State<HostCalendarScreen> {
     return Scaffold(
       backgroundColor: AppColors.ghostWhite,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('hostCalendar.title'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -55,7 +55,7 @@ class _HostCalendarScreenState extends State<HostCalendarScreen> {
               }
               return IconButton(
                 tooltip: context.tr('hostCalendar.minNightsTitle'),
-                icon: const Icon(Icons.tune, color: AppColors.charcoal),
+                icon: Icon(Icons.tune, color: AppColors.charcoal),
                 onPressed: () => _showMinNightsSheet(
                     context, context.read<HostCalendarManagementCubit>()),
               );
@@ -69,7 +69,7 @@ class _HostCalendarScreenState extends State<HostCalendarScreen> {
         builder: (context, state) {
           if (state is HostCalendarManagementLoading ||
               state is HostCalendarManagementInitial) {
-            return const CalendarSkeleton();
+            return CalendarSkeleton();
           }
           if (state is HostCalendarManagementError) {
             return state.isNotLoggedIn
@@ -77,7 +77,7 @@ class _HostCalendarScreenState extends State<HostCalendarScreen> {
                 : _ErrorState(message: state.message);
           }
           final loaded = state as HostCalendarManagementLoaded;
-          if (!loaded.hasProperties) return const _EmptyProperties();
+          if (!loaded.hasProperties) return _EmptyProperties();
           return _buildBody(context, loaded);
         },
       ),
@@ -123,13 +123,13 @@ class _HostCalendarScreenState extends State<HostCalendarScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => BlocProvider.value(
         value: cubit,
-        child: const _CalendarActionSheet(),
+        child: _CalendarActionSheet(),
       ),
     ).whenComplete(() {
       _sheetOpen = false;
@@ -145,13 +145,13 @@ class _HostCalendarScreenState extends State<HostCalendarScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => BlocProvider.value(
         value: cubit,
-        child: const _MinNightsSheet(),
+        child: _MinNightsSheet(),
       ),
     );
   }
@@ -168,7 +168,7 @@ class _HostCalendarScreenState extends State<HostCalendarScreen> {
         children: [
           Text(
             context.tr('hostCalendar.subtitle'),
-            style: const TextStyle(fontSize: 13, color: AppColors.neutral600),
+            style: TextStyle(fontSize: 13, color: AppColors.neutral600),
           ),
           const SizedBox(height: 12),
           _PropertyDropdown(state: state, cubit: cubit),
@@ -213,14 +213,14 @@ class _HostCalendarScreenState extends State<HostCalendarScreen> {
 class _PropertyDropdown extends StatelessWidget {
   final HostCalendarManagementLoaded state;
   final HostCalendarManagementCubit cubit;
-  const _PropertyDropdown({required this.state, required this.cubit});
+  _PropertyDropdown({required this.state, required this.cubit});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.neutral200),
       ),
@@ -228,7 +228,7 @@ class _PropertyDropdown extends StatelessWidget {
         child: DropdownButton<String>(
           isExpanded: true,
           value: state.selectedProperty?.id,
-          icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.charcoal),
+          icon: Icon(Icons.keyboard_arrow_down, color: AppColors.charcoal),
           items: state.properties
               .map(
                 (p) => DropdownMenuItem<String>(
@@ -237,7 +237,7 @@ class _PropertyDropdown extends StatelessWidget {
                     p.displayTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppColors.charcoal,
@@ -263,7 +263,7 @@ class _PropertyDropdown extends StatelessWidget {
 // ═════════════════════════════════ Stats ═══════════════════════════════════
 class _StatsGrid extends StatelessWidget {
   final HostCalendarManagementLoaded state;
-  const _StatsGrid({required this.state});
+  _StatsGrid({required this.state});
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +285,7 @@ class _StatsGrid extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
@@ -313,7 +313,7 @@ class _StatsGrid extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     value,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
@@ -322,8 +322,7 @@ class _StatsGrid extends StatelessWidget {
                 ),
                 Text(
                   label,
-                  style: const TextStyle(
-                      fontSize: 11, color: AppColors.neutral600),
+                  style: TextStyle(fontSize: 11, color: AppColors.neutral600),
                 ),
               ],
             ),
@@ -334,19 +333,24 @@ class _StatsGrid extends StatelessWidget {
       children: [
         Row(
           children: [
-            card(Icons.calendar_today_rounded, '$booked / $daysInMonth',
-                context.tr('hostCalendar.nightsBooked'), AppColors.primaryColor),
+            card(
+                Icons.calendar_today_rounded,
+                '$booked / $daysInMonth',
+                context.tr('hostCalendar.nightsBooked'),
+                AppColors.primaryColor),
             const SizedBox(width: 12),
             card(Icons.percent_rounded, '$occupancy%',
-                context.tr('hostCalendar.occupancy'), Colors.blue),
+                context.tr('hostCalendar.occupancy'), AppColors.info),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            card(Icons.attach_money_rounded,
+            card(
+                Icons.attach_money_rounded,
                 '${state.currency}${est.toStringAsFixed(0)}',
-                context.tr('hostCalendar.estEarnings'), AppColors.success),
+                context.tr('hostCalendar.estEarnings'),
+                AppColors.success),
             const SizedBox(width: 12),
             card(Icons.block_rounded, '$blocked',
                 context.tr('hostCalendar.blockedNights'), AppColors.neutral500),
@@ -361,7 +365,7 @@ class _StatsGrid extends StatelessWidget {
 class _MonthHeader extends StatelessWidget {
   final HostCalendarManagementLoaded state;
   final HostCalendarManagementCubit cubit;
-  const _MonthHeader({required this.state, required this.cubit});
+  _MonthHeader({required this.state, required this.cubit});
 
   @override
   Widget build(BuildContext context) {
@@ -373,7 +377,7 @@ class _MonthHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         IconButton(
-          icon: const Icon(Icons.chevron_left, color: AppColors.charcoal),
+          icon: Icon(Icons.chevron_left, color: AppColors.charcoal),
           onPressed: cubit.prevMonth,
         ),
         Row(
@@ -381,7 +385,7 @@ class _MonthHeader extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -399,7 +403,7 @@ class _MonthHeader extends StatelessWidget {
           ],
         ),
         IconButton(
-          icon: const Icon(Icons.chevron_right, color: AppColors.charcoal),
+          icon: Icon(Icons.chevron_right, color: AppColors.charcoal),
           onPressed: cubit.nextMonth,
         ),
       ],
@@ -418,7 +422,7 @@ class _WeekdayRow extends StatelessWidget {
               child: Center(
                 child: Text(
                   d,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.neutral500,
@@ -436,7 +440,7 @@ class _WeekdayRow extends StatelessWidget {
 class _CalendarGrid extends StatelessWidget {
   final HostCalendarManagementLoaded state;
   final HostCalendarManagementCubit cubit;
-  const _CalendarGrid({required this.state, required this.cubit});
+  _CalendarGrid({required this.state, required this.cubit});
 
   @override
   Widget build(BuildContext context) {
@@ -493,6 +497,13 @@ String dayKeyOf(DateTime d) =>
 
 // ═══════════════════════════════ Legend ════════════════════════════════════
 class _Legend extends StatelessWidget {
+  // The swatches mirror the pinned CalendarDayCell status colors, so they read
+  // the same in both themes.
+  static const Color _confirmed = Color(0xFF1D242B); // dark-ok
+  static const Color _pending = Color(0xFFFCC519); // dark-ok
+  static const Color _blocked = Color(0xFFE5E7EB); // dark-ok
+  static const Color _checkout = Color(0xFF86EFAC); // dark-ok
+
   @override
   Widget build(BuildContext context) {
     Widget item(Color c, String label) => Row(
@@ -501,13 +512,12 @@ class _Legend extends StatelessWidget {
             Container(
               width: 12,
               height: 12,
-              decoration:
-                  BoxDecoration(color: c, borderRadius: BorderRadius.circular(3)),
+              decoration: BoxDecoration(
+                  color: c, borderRadius: BorderRadius.circular(3)),
             ),
             const SizedBox(width: 6),
             Text(label,
-                style:
-                    const TextStyle(fontSize: 12, color: AppColors.neutral600)),
+                style: TextStyle(fontSize: 12, color: AppColors.neutral600)),
           ],
         );
 
@@ -515,10 +525,10 @@ class _Legend extends StatelessWidget {
       spacing: 16,
       runSpacing: 8,
       children: [
-        item(const Color(0xFF1D242B), context.tr('hostCalendar.legendConfirmed')),
-        item(const Color(0xFFFCC519), context.tr('hostCalendar.legendPending')),
-        item(const Color(0xFFE5E7EB), context.tr('hostCalendar.legendBlocked')),
-        item(const Color(0xFF86EFAC), context.tr('hostCalendar.legendCheckout')),
+        item(_confirmed, context.tr('hostCalendar.legendConfirmed')),
+        item(_pending, context.tr('hostCalendar.legendPending')),
+        item(_blocked, context.tr('hostCalendar.legendBlocked')),
+        item(_checkout, context.tr('hostCalendar.legendCheckout')),
       ],
     );
   }
@@ -526,7 +536,7 @@ class _Legend extends StatelessWidget {
 
 // ═══════════════════════════ Action bottom sheet ═══════════════════════════
 class _CalendarActionSheet extends StatefulWidget {
-  const _CalendarActionSheet();
+  _CalendarActionSheet();
 
   @override
   State<_CalendarActionSheet> createState() => _CalendarActionSheetState();
@@ -570,9 +580,8 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
             '${d.month >= 1 && d.month <= months.length ? months[d.month - 1] : ''} ${d.day}';
 
         if (_price == null) {
-          _price = state.selectedPrice ??
-              state.selectedProperty?.displayPrice ??
-              0;
+          _price =
+              state.selectedPrice ?? state.selectedProperty?.displayPrice ?? 0;
           _priceController.text = (_price ?? 0).toStringAsFixed(0);
         }
         final allBlocked = state.selectionAllBlocked;
@@ -602,7 +611,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
                     Expanded(
                       child: Text(
                         context.tr('hostCalendar.manageDates'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: AppColors.charcoal,
@@ -611,7 +620,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
                     ),
                     GestureDetector(
                       onTap: () => Navigator.of(context).pop(),
-                      child: const Icon(Icons.close, color: AppColors.neutral500),
+                      child: Icon(Icons.close, color: AppColors.neutral500),
                     ),
                   ],
                 ),
@@ -648,18 +657,18 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.neutral200),
             ),
             child: Column(
               children: [
                 Text(label,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.neutral500)),
+                    style:
+                        TextStyle(fontSize: 12, color: AppColors.neutral500)),
                 const SizedBox(height: 2),
                 Text(value,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: AppColors.charcoal)),
@@ -695,18 +704,17 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
               children: [
                 Text(
                   '${context.tr('hostCalendar.duration')} · ${_nightsLabel(context, nights)}',
-                  style: const TextStyle(
-                      fontSize: 13, color: AppColors.neutral600),
+                  style: TextStyle(fontSize: 13, color: AppColors.neutral600),
                 ),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.edit_calendar_outlined,
+                    Icon(Icons.edit_calendar_outlined,
                         size: 16, color: AppColors.charcoal),
                     const SizedBox(width: 6),
                     Text(
                       context.tr('hostCalendar.changeDates'),
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: AppColors.charcoal),
@@ -744,17 +752,6 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
       lastDate: lastDate,
       initialDateRange: DateTimeRange(start: initStart, end: initEnd),
       helpText: context.tr('hostCalendar.selectDatesHelp'),
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: AppColors.primaryColor,
-            onPrimary: AppColors.charcoal,
-            surface: Colors.white,
-            onSurface: AppColors.charcoal,
-          ),
-        ),
-        child: child!,
-      ),
     );
 
     if (picked != null) {
@@ -771,7 +768,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(
-              color: selected ? Colors.white : Colors.transparent,
+              color: selected ? AppColors.cardBackground : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
               boxShadow: selected
                   ? [
@@ -824,7 +821,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(context.tr('hostCalendar.reason'),
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal)),
@@ -833,8 +830,8 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
           spacing: 8,
           runSpacing: 8,
           children: state.reasons
-              .map((r) => _reasonChip(r, _reason?.id == r.id,
-                  () => setState(() => _reason = r)))
+              .map((r) => _reasonChip(
+                  r, _reason?.id == r.id, () => setState(() => _reason = r)))
               .toList(),
         ),
         const SizedBox(height: 14),
@@ -843,27 +840,26 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
           maxLines: 2,
           decoration: InputDecoration(
             hintText: context.tr('hostCalendar.notesHint'),
-            hintStyle:
-                const TextStyle(fontSize: 13, color: AppColors.neutral400),
+            hintStyle: TextStyle(fontSize: 13, color: AppColors.neutral400),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.neutral200),
+              borderSide: BorderSide(color: AppColors.neutral200),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.neutral200),
+              borderSide: BorderSide(color: AppColors.neutral200),
             ),
           ),
         ),
         const SizedBox(height: 16),
         PrimaryButton(
-          text: context.tr('hostCalendar.blockThisDate',
-              args: {'n': nights}),
+          text: context.tr('hostCalendar.blockThisDate', args: {'n': nights}),
           icon: Icons.lock_outline,
           isLoading: state.busyBlock,
-          backgroundColor: AppColors.charcoal,
+          backgroundColor: AppColors.brandCharcoal,
+          // dark-ok: label on the always-dark brand button
           textColor: Colors.white,
           onPressed: _reason == null
               ? null
@@ -893,13 +889,12 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.info_outline,
-                  size: 18, color: AppColors.neutral600),
+              Icon(Icons.info_outline, size: 18, color: AppColors.neutral600),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(context.tr('hostCalendar.datesAreBlocked'),
-                    style: const TextStyle(
-                        fontSize: 13, color: AppColors.neutral600)),
+                    style:
+                        TextStyle(fontSize: 13, color: AppColors.neutral600)),
               ),
             ],
           ),
@@ -924,15 +919,17 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(context.tr('hostCalendar.pricePerNight'),
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal)),
         const SizedBox(height: 14),
         Row(
           children: [
-            _stepBtn(Icons.remove,
-                () => _setPrice(((_price ?? 0) - 10).clamp(0, 1000000).toDouble())),
+            _stepBtn(
+                Icons.remove,
+                () => _setPrice(
+                    ((_price ?? 0) - 10).clamp(0, 1000000).toDouble())),
             const SizedBox(width: 12),
             Expanded(
               child: TextField(
@@ -940,13 +937,13 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
                     color: AppColors.charcoal),
                 decoration: InputDecoration(
                   prefixText: '${state.currency} ',
-                  prefixStyle: const TextStyle(
+                  prefixStyle: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppColors.neutral500),
@@ -954,11 +951,11 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
                       const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.neutral200),
+                    borderSide: BorderSide(color: AppColors.neutral200),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.neutral200),
+                    borderSide: BorderSide(color: AppColors.neutral200),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -971,8 +968,10 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
               ),
             ),
             const SizedBox(width: 12),
-            _stepBtn(Icons.add,
-                () => _setPrice(((_price ?? 0) + 10).clamp(0, 1000000).toDouble())),
+            _stepBtn(
+                Icons.add,
+                () => _setPrice(
+                    ((_price ?? 0) + 10).clamp(0, 1000000).toDouble())),
           ],
         ),
         const SizedBox(height: 18),
@@ -1015,7 +1014,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(context.tr('hostCalendar.priceBeforeDiscount'),
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal)),
@@ -1023,13 +1022,13 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
         TextField(
           controller: _discountBaseController,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
               color: AppColors.charcoal),
           decoration: InputDecoration(
             prefixText: '${state.currency} ',
-            prefixStyle: const TextStyle(
+            prefixStyle: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.neutral500),
@@ -1037,11 +1036,11 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
                 const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.neutral200),
+              borderSide: BorderSide(color: AppColors.neutral200),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.neutral200),
+              borderSide: BorderSide(color: AppColors.neutral200),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -1054,7 +1053,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
         ),
         const SizedBox(height: 16),
         Text(context.tr('hostCalendar.discount'),
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal)),
@@ -1066,7 +1065,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
               child: TextField(
                 controller: _discountController,
                 keyboardType: TextInputType.number,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                     color: AppColors.charcoal),
@@ -1077,11 +1076,11 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
                       const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.neutral200),
+                    borderSide: BorderSide(color: AppColors.neutral200),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.neutral200),
+                    borderSide: BorderSide(color: AppColors.neutral200),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -1114,7 +1113,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(context.tr('hostCalendar.afterDiscount'),
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 11, color: AppColors.neutral500)),
                     const SizedBox(height: 2),
                     Text('${state.currency}$after',
@@ -1130,11 +1129,12 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
         ),
         const SizedBox(height: 18),
         PrimaryButton(
-          text: context.tr('hostCalendar.applyDiscount',
-              args: {'p': _discountPercent}),
+          text: context
+              .tr('hostCalendar.applyDiscount', args: {'p': _discountPercent}),
           icon: Icons.percent,
           isLoading: state.busyDiscount,
-          backgroundColor: AppColors.charcoal,
+          backgroundColor: AppColors.brandCharcoal,
+          // dark-ok: label on the always-dark brand button
           textColor: Colors.white,
           onPressed: canApply
               ? () => cubit.applyDiscount(_discountPercent,
@@ -1153,6 +1153,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
               label: Text(context.tr('hostCalendar.removeDiscount')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.error,
+                // dark-ok: destructive outline tint
                 side: const BorderSide(color: Color(0xFFFCA5A5)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
@@ -1198,7 +1199,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? AppColors.charcoal : Colors.white,
+          color: selected ? AppColors.charcoal : AppColors.cardBackground,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
             color: selected ? AppColors.charcoal : AppColors.neutral200,
@@ -1210,7 +1211,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : AppColors.neutral700,
+            color: selected ? AppColors.cardBackground : AppColors.neutral700,
           ),
         ),
       ),
@@ -1223,7 +1224,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.cardBackground,
             shape: BoxShape.circle,
             border: Border.all(color: AppColors.neutral200),
           ),
@@ -1248,7 +1249,7 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
 
 // ═════════════════════════ Minimum-nights sheet ════════════════════════════
 class _MinNightsSheet extends StatefulWidget {
-  const _MinNightsSheet();
+  _MinNightsSheet();
 
   @override
   State<_MinNightsSheet> createState() => _MinNightsSheetState();
@@ -1278,7 +1279,7 @@ class _MinNightsSheetState extends State<_MinNightsSheet> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.cardBackground,
                     shape: BoxShape.circle,
                     border: Border.all(color: AppColors.neutral200),
                   ),
@@ -1305,14 +1306,13 @@ class _MinNightsSheetState extends State<_MinNightsSheet> {
               ),
               const SizedBox(height: 16),
               Text(context.tr('hostCalendar.minNightsTitle'),
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal)),
               const SizedBox(height: 6),
               Text(context.tr('hostCalendar.minNightsDesc'),
-                  style: const TextStyle(
-                      fontSize: 13, color: AppColors.neutral600)),
+                  style: TextStyle(fontSize: 13, color: AppColors.neutral600)),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1322,7 +1322,7 @@ class _MinNightsSheetState extends State<_MinNightsSheet> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Text('$value',
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.w800,
                             color: AppColors.charcoal)),
@@ -1333,8 +1333,8 @@ class _MinNightsSheetState extends State<_MinNightsSheet> {
               ),
               const SizedBox(height: 22),
               PrimaryButton(
-                text: context.tr('hostCalendar.saveMinNights',
-                    args: {'n': value}),
+                text: context
+                    .tr('hostCalendar.saveMinNights', args: {'n': value}),
                 isLoading: state.busyMinNights,
                 onPressed: () async {
                   await cubit.saveMinNights(value);
@@ -1351,7 +1351,7 @@ class _MinNightsSheetState extends State<_MinNightsSheet> {
 
 // ═══════════════════════════ Empty / error states ══════════════════════════
 class _EmptyProperties extends StatelessWidget {
-  const _EmptyProperties();
+  _EmptyProperties();
 
   @override
   Widget build(BuildContext context) {
@@ -1361,19 +1361,19 @@ class _EmptyProperties extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.home_work_outlined,
+            Icon(Icons.home_work_outlined,
                 size: 52, color: AppColors.neutral400),
             const SizedBox(height: 16),
             Text(context.tr('hostCalendar.noProperties'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal)),
             const SizedBox(height: 8),
             Text(context.tr('hostCalendar.noPropertiesDesc'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 14, color: AppColors.neutral600, height: 1.5)),
             const SizedBox(height: 20),
             SizedBox(
@@ -1383,7 +1383,7 @@ class _EmptyProperties extends StatelessWidget {
                     Navigator.pushNamed(context, Routes.listProperty),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                 ),
                 child: Text(context.tr('host.listPropertyAction')),
               ),
@@ -1404,18 +1404,18 @@ class _LoginRequired extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.lock_outline, size: 52, color: AppColors.neutral500),
+            Icon(Icons.lock_outline, size: 52, color: AppColors.neutral500),
             const SizedBox(height: 16),
             Text(context.tr('host.signInToManageHosting'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal)),
             const SizedBox(height: 8),
             Text(context.tr('host.signInToManageHostingDesc'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 14, color: AppColors.neutral600, height: 1.5)),
             const SizedBox(height: 20),
             SizedBox(
@@ -1428,7 +1428,7 @@ class _LoginRequired extends StatelessWidget {
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                 ),
                 child: Text(context.tr('auth.signIn')),
               ),
@@ -1442,7 +1442,7 @@ class _LoginRequired extends StatelessWidget {
 
 class _ErrorState extends StatelessWidget {
   final String message;
-  const _ErrorState({required this.message});
+  _ErrorState({required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -1456,14 +1456,14 @@ class _ErrorState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(context.tr('hostCalendar.loadErrorTitle'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal)),
             const SizedBox(height: 8),
             Text(message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 14, color: AppColors.neutral600, height: 1.5)),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -1471,7 +1471,7 @@ class _ErrorState extends StatelessWidget {
                   context.read<HostCalendarManagementCubit>().init(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
               ),
               child: Text(context.tr('common.retry')),
             ),

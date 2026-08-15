@@ -5,7 +5,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 class AmenitiesScreen extends StatelessWidget {
   final List<AmenityCategory> categories;
 
-  const AmenitiesScreen({
+  AmenitiesScreen({
     super.key,
     required this.categories,
   });
@@ -13,17 +13,17 @@ class AmenitiesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.charcoal),
+          icon: Icon(Icons.close, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('propertyDetails.amenitiesTitle'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -49,7 +49,7 @@ class AmenitiesScreen extends StatelessWidget {
         // Category Title
         Text(
           category.title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: AppColors.charcoal,
@@ -58,7 +58,8 @@ class AmenitiesScreen extends StatelessWidget {
         const SizedBox(height: 16),
 
         // Amenities List
-        ...category.amenities.map((amenity) => _buildAmenityItem(context, amenity)),
+        ...category.amenities
+            .map((amenity) => _buildAmenityItem(context, amenity)),
       ],
     );
   }
@@ -91,7 +92,7 @@ class AmenitiesScreen extends StatelessWidget {
               children: [
                 Text(
                   amenity.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: AppColors.charcoal,
@@ -101,7 +102,7 @@ class AmenitiesScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     amenity.description!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       color: AppColors.neutral600,
                     ),

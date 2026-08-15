@@ -3,7 +3,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 
 class TripSkeletonCard extends StatelessWidget {
-  const TripSkeletonCard({super.key});
+  TripSkeletonCard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -11,7 +11,7 @@ class TripSkeletonCard extends StatelessWidget {
       containersColor: AppColors.skeletonBaseColor,
       child: Container(
         decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.neutral200),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -19,7 +19,7 @@ class TripSkeletonCard extends StatelessWidget {
           children: [
             Container(
               height: 180,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.neutral200,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               ),
@@ -101,7 +101,7 @@ class TripSkeletonCard extends StatelessWidget {
 class TripSkeletonList extends StatelessWidget {
   final int itemCount;
 
-  const TripSkeletonList({super.key, this.itemCount = 3});
+  TripSkeletonList({super.key, this.itemCount = 3});
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +109,7 @@ class TripSkeletonList extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       itemCount: itemCount,
       separatorBuilder: (_, __) => const SizedBox(height: 16),
-      itemBuilder: (_, __) => const TripSkeletonCard(),
+      itemBuilder: (_, __) => TripSkeletonCard(),
     );
   }
 }

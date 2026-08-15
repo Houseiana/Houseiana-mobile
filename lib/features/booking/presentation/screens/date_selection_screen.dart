@@ -4,7 +4,7 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class DateSelectionScreen extends StatefulWidget {
-  const DateSelectionScreen({super.key});
+  DateSelectionScreen({super.key});
 
   @override
   State<DateSelectionScreen> createState() => _DateSelectionScreenState();
@@ -20,17 +20,6 @@ class _DateSelectionScreenState extends State<DateSelectionScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primaryColor,
-              onPrimary: AppColors.charcoal,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {
@@ -53,17 +42,17 @@ class _DateSelectionScreenState extends State<DateSelectionScreen> {
         ? _checkOut!.difference(_checkIn!).inDays
         : 0;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('booking.selectDates'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -84,15 +73,12 @@ class _DateSelectionScreenState extends State<DateSelectionScreen> {
                     date: _checkIn,
                     onTap: () => _selectDate(context, true),
                   ),
-
                   const SizedBox(height: 16),
-
                   _buildDateCard(
                     title: context.tr('booking.checkOutDate'),
                     date: _checkOut,
                     onTap: () => _selectDate(context, false),
                   ),
-
                   if (_checkIn != null && _checkOut != null) ...[
                     const SizedBox(height: 24),
                     Container(
@@ -110,9 +96,11 @@ class _DateSelectionScreenState extends State<DateSelectionScreen> {
                           const SizedBox(width: 12),
                           Text(
                             nights == 1
-                                ? context.tr('booking.nightSingular', args: {'n': nights})
-                                : context.tr('booking.nightsCount', args: {'n': nights}),
-                            style: const TextStyle(
+                                ? context.tr('booking.nightSingular',
+                                    args: {'n': nights})
+                                : context.tr('booking.nightsCount',
+                                    args: {'n': nights}),
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: AppColors.charcoal,
@@ -126,11 +114,10 @@ class _DateSelectionScreenState extends State<DateSelectionScreen> {
               ),
             ),
           ),
-
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.08),
@@ -150,7 +137,7 @@ class _DateSelectionScreenState extends State<DateSelectionScreen> {
                     : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                   disabledBackgroundColor: AppColors.neutral400,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -183,9 +170,7 @@ class _DateSelectionScreenState extends State<DateSelectionScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           border: Border.all(
-            color: date != null
-                ? AppColors.primaryColor
-                : const Color(0xFFE5E7EB),
+            color: date != null ? AppColors.primaryColor : AppColors.neutral200,
             width: 2,
           ),
           borderRadius: BorderRadius.circular(12),
@@ -203,7 +188,9 @@ class _DateSelectionScreenState extends State<DateSelectionScreen> {
               ),
               child: Icon(
                 Icons.calendar_today,
-                color: date != null ? AppColors.primaryColor : AppColors.neutral400,
+                color: date != null
+                    ? AppColors.primaryColor
+                    : AppColors.neutral400,
               ),
             ),
             const SizedBox(width: 16),
@@ -213,7 +200,7 @@ class _DateSelectionScreenState extends State<DateSelectionScreen> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       color: AppColors.neutral600,
                     ),
@@ -237,7 +224,8 @@ class _DateSelectionScreenState extends State<DateSelectionScreen> {
             Icon(
               Icons.arrow_forward_ios,
               size: 16,
-              color: date != null ? AppColors.primaryColor : AppColors.neutral400,
+              color:
+                  date != null ? AppColors.primaryColor : AppColors.neutral400,
             ),
           ],
         ),

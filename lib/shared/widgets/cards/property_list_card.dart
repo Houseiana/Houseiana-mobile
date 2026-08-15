@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/favorite_heart_button.dart';
 
@@ -52,7 +53,7 @@ class PropertyListCard extends StatelessWidget {
   /// null to hide it entirely.
   final VoidCallback? onFavoriteToggle;
 
-  const PropertyListCard({
+  PropertyListCard({
     super.key,
     required this.imageUrl,
     required this.title,
@@ -79,9 +80,9 @@ class PropertyListCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.neutral200),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -110,7 +111,7 @@ class PropertyListCard extends StatelessWidget {
                           placeholder: (context, url) => Container(
                             height: 180,
                             width: double.infinity,
-                            color: const Color(0xFFF0F0F0),
+                            color: AppColors.neutral100,
                           ),
                           errorWidget: (context, url, error) =>
                               _imagePlaceholder(),
@@ -124,7 +125,9 @@ class PropertyListCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1D242B),
+                          // dark-ok: chip sits on the photo, stays dark in both
+                          // themes so its white label keeps contrast.
+                          color: AppColors.brandCharcoal,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -132,7 +135,7 @@ class PropertyListCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: Colors.white, // dark-ok: label on dark chip
                           ),
                         ),
                       ),
@@ -145,7 +148,7 @@ class PropertyListCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFD00416),
+                          color: AppColors.discountRed,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -153,7 +156,7 @@ class PropertyListCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: Colors.white, // dark-ok: label on red badge
                           ),
                         ),
                       ),
@@ -173,16 +176,18 @@ class PropertyListCard extends StatelessWidget {
                                 width: 32,
                                 height: 32,
                                 decoration: const BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle),
+                                  // white chip sitting over the photo
+                                  color: Colors.white, // dark-ok
+                                  shape: BoxShape.circle,
+                                ),
                                 child: Icon(
                                   isFavorite
                                       ? Icons.favorite
                                       : Icons.favorite_border,
                                   size: 16,
                                   color: isFavorite
-                                      ? const Color(0xFFEF4444)
-                                      : const Color(0xFF9CA3AF),
+                                      ? AppColors.heartRed
+                                      : AppColors.neutral400,
                                 ),
                               ),
                             ),
@@ -199,22 +204,22 @@ class PropertyListCard extends StatelessWidget {
                     Row(
                       children: [
                         const Icon(Icons.star,
-                            size: 13, color: Color(0xFFFCC519)),
+                            size: 13, color: AppColors.primaryColor),
                         const SizedBox(width: 3),
                         Text(
                           rating.toStringAsFixed(2),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF1D242B),
+                            color: AppColors.charcoal,
                           ),
                         ),
                         if (reviewCount > 0) ...[
                           const SizedBox(width: 4),
                           Text(
                             '($reviewCount)',
-                            style: const TextStyle(
-                                fontSize: 11, color: Color(0xFF6B7280)),
+                            style: TextStyle(
+                                fontSize: 11, color: AppColors.neutral500),
                           ),
                         ],
                       ],
@@ -223,10 +228,10 @@ class PropertyListCard extends StatelessWidget {
                   ],
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1D242B),
+                      color: AppColors.charcoal,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -235,8 +240,8 @@ class PropertyListCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       location,
-                      style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF6B7280)),
+                      style:
+                          TextStyle(fontSize: 12, color: AppColors.neutral500),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -250,22 +255,22 @@ class PropertyListCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   RichText(
                     text: TextSpan(
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF1D242B)),
+                          color: AppColors.charcoal),
                       children: [
                         if (discountPercent > 0 && originalPriceText != null)
                           TextSpan(
                             text: currency.isNotEmpty
                                 ? '$originalPriceText $currency '
                                 : '$originalPriceText ',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w400,
-                              color: Color(0xFF979797),
+                              color: AppColors.neutral400,
                               decoration: TextDecoration.lineThrough,
-                              decorationColor: Color(0xFF979797),
+                              decorationColor: AppColors.neutral400,
                             ),
                           ),
                         TextSpan(
@@ -275,10 +280,10 @@ class PropertyListCard extends StatelessWidget {
                         ),
                         TextSpan(
                           text: context.tr('home.perNight'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
-                            color: Color(0xFF6B7280),
+                            color: AppColors.neutral500,
                           ),
                         ),
                       ],
@@ -310,11 +315,11 @@ class PropertyListCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: const Color(0xFF1D242B)),
+          Icon(icon, size: 14, color: AppColors.charcoal),
           const SizedBox(width: 3),
           Text(
             '$value',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF1D242B)),
+            style: TextStyle(fontSize: 12, color: AppColors.charcoal),
           ),
         ],
       ),
@@ -324,10 +329,10 @@ class PropertyListCard extends StatelessWidget {
   Widget _imagePlaceholder() {
     return Container(
       height: 180,
-      color: const Color(0xFFF3F4F6),
-      child: const Center(
-        child:
-            Icon(Icons.home_work_outlined, size: 40, color: Color(0xFFD1D5DB)),
+      color: AppColors.neutral100,
+      child: Center(
+        child: Icon(Icons.home_work_outlined,
+            size: 40, color: AppColors.neutral300),
       ),
     );
   }

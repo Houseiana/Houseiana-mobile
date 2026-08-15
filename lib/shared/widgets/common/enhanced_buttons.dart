@@ -17,7 +17,7 @@ class PrimaryButton extends StatefulWidget {
   final Color? backgroundColor;
   final Color? textColor;
 
-  const PrimaryButton({
+  PrimaryButton({
     super.key,
     required this.text,
     this.onPressed,
@@ -60,9 +60,7 @@ class _PrimaryButtonState extends State<PrimaryButton> {
           width: widget.fullWidth ? double.infinity : null,
           height: widget.height,
           decoration: BoxDecoration(
-            color: widget.isLoading
-                ? bgColor.withValues(alpha: 0.7)
-                : bgColor,
+            color: widget.isLoading ? bgColor.withValues(alpha: 0.7) : bgColor,
             borderRadius: AppRadius.buttonRadiusAll,
             boxShadow: isEnabled && !_isPressed
                 ? [
@@ -120,7 +118,7 @@ class SecondaryButton extends StatefulWidget {
   final Color? borderColor;
   final Color? textColor;
 
-  const SecondaryButton({
+  SecondaryButton({
     super.key,
     required this.text,
     this.onPressed,
@@ -163,7 +161,7 @@ class _SecondaryButtonState extends State<SecondaryButton> {
           width: widget.fullWidth ? double.infinity : null,
           height: widget.height,
           decoration: BoxDecoration(
-            color: _isPressed ? AppColors.neutral100 : Colors.white,
+            color: _isPressed ? AppColors.neutral100 : AppColors.cardBackground,
             borderRadius: AppRadius.buttonRadiusAll,
             border: Border.all(color: borderClr, width: 1.5),
           ),
@@ -212,7 +210,7 @@ class AppIconButton extends StatefulWidget {
   final double size;
   final bool showShadow;
 
-  const AppIconButton({
+  AppIconButton({
     super.key,
     required this.icon,
     this.onPressed,
@@ -289,7 +287,7 @@ class CircleButton extends StatefulWidget {
   final double size;
   final String? tooltip;
 
-  const CircleButton({
+  CircleButton({
     super.key,
     required this.icon,
     this.onPressed,
@@ -309,7 +307,8 @@ class _CircleButtonState extends State<CircleButton> {
   @override
   Widget build(BuildContext context) {
     final isEnabled = widget.onPressed != null;
-    final bgColor = widget.backgroundColor ?? Colors.white.withValues(alpha: 0.9);
+    final bgColor = widget.backgroundColor ??
+        AppColors.cardBackground.withValues(alpha: 0.9);
     final icColor = widget.iconColor ?? AppColors.charcoal;
 
     Widget button = GestureDetector(
@@ -360,7 +359,7 @@ class FilterChip extends StatefulWidget {
   final VoidCallback? onTap;
   final IconData? icon;
 
-  const FilterChip({
+  FilterChip({
     super.key,
     required this.label,
     this.isSelected = false,
@@ -400,9 +399,8 @@ class _FilterChipState extends State<FilterChip> {
                 : AppColors.cardBackground,
             borderRadius: AppRadius.chipRadiusAll,
             border: Border.all(
-              color: widget.isSelected
-                  ? AppColors.charcoal
-                  : AppColors.neutral200,
+              color:
+                  widget.isSelected ? AppColors.charcoal : AppColors.neutral200,
               width: 1.5,
             ),
             boxShadow: widget.isSelected ? AppShadows.chipShadow : null,

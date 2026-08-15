@@ -12,7 +12,7 @@ class ExternalPaymentWebViewScreen extends StatefulWidget {
   final String provider;
   final String? intentionId;
 
-  const ExternalPaymentWebViewScreen({
+  ExternalPaymentWebViewScreen({
     super.key,
     required this.title,
     required this.paymentUrl,
@@ -81,7 +81,8 @@ class _ExternalPaymentWebViewScreenState
       result = await _paymentService.verifyNoqoodyPayment(widget.bookingId);
     } else if (widget.provider == 'paymob' &&
         widget.intentionId?.isNotEmpty == true) {
-      result = await _paymentService.getPaymobPaymentStatus(widget.intentionId!);
+      result =
+          await _paymentService.getPaymobPaymentStatus(widget.intentionId!);
     }
     if (!mounted) return;
 
@@ -107,17 +108,17 @@ class _ExternalPaymentWebViewScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.charcoal),
+          icon: Icon(Icons.close, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context, 'cancel'),
         ),
         title: Text(
           widget.title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -130,7 +131,7 @@ class _ExternalPaymentWebViewScreenState
           WebViewWidget(controller: _controller),
           if (_isLoading || _isProcessing)
             Container(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: AppColors.cardBackground.withValues(alpha: 0.9),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -143,7 +144,7 @@ class _ExternalPaymentWebViewScreenState
                       _isProcessing
                           ? context.tr('booking.verifyingPayment')
                           : context.tr('common.loading'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         color: AppColors.neutral600,
                       ),

@@ -11,7 +11,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/property_skeleton.dart';
 
 class FavoritesScreen extends StatefulWidget {
-  const FavoritesScreen({super.key});
+  FavoritesScreen({super.key});
 
   @override
   State<FavoritesScreen> createState() => _FavoritesScreenState();
@@ -72,7 +72,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   String _extractTitle(Map<String, dynamic> p) {
     final prop = p['property'] as Map<String, dynamic>? ?? p;
-    return (prop['title'] ?? prop['name'] ?? context.tr('favorites.propertyFallback')).toString();
+    return (prop['title'] ??
+            prop['name'] ??
+            context.tr('favorites.propertyFallback'))
+        .toString();
   }
 
   String _extractLocation(Map<String, dynamic> p) {
@@ -107,19 +110,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: Navigator.canPop(context)
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+                icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
         title: Text(
           context.tr('favorites.title'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -140,7 +143,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         padding: const EdgeInsets.all(20),
         itemCount: 4,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, __) => const PropertySkeletonCard(),
+        itemBuilder: (_, __) => PropertySkeletonCard(),
       );
     }
     if (_favorites.isEmpty) {
@@ -179,16 +182,18 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         context,
         Routes.propertyDetails,
         arguments: {
-          'propertyId':
-              (property['id'] ?? property['_id'] ?? property['propertyId'] ?? '')
-                  .toString(),
+          'propertyId': (property['id'] ??
+                  property['_id'] ??
+                  property['propertyId'] ??
+                  '')
+              .toString(),
           'property': property,
         },
       ).then((_) => _loadFavorites()),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          color: AppColors.cardBackground,
+          border: Border.all(color: AppColors.neutral200),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -209,7 +214,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           placeholder: (context, url) => Container(
                             width: double.infinity,
                             height: 180,
-                            color: const Color(0xFFF0F0F0),
+                            color: AppColors.neutral100,
                           ),
                           errorWidget: (context, url, error) =>
                               _imagePlaceholder(),
@@ -225,12 +230,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
+                        // dark-ok: white heart chip sits on the property photo
                         color: Colors.white.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.favorite_rounded,
-                        color: Colors.red,
+                        color: AppColors.heartRed,
                         size: 20,
                       ),
                     ),
@@ -244,7 +250,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD00416),
+                        color: AppColors.discountRed,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -252,6 +258,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
+                          // dark-ok: badge text sits on the red discount fill
                           color: Colors.white,
                         ),
                       ),
@@ -266,7 +273,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: AppColors.charcoal,
@@ -279,7 +286,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         location,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: AppColors.neutral600,
                         ),
@@ -297,7 +304,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                 const SizedBox(width: 4),
                                 Text(
                                   rating.toStringAsFixed(2),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
                                     color: AppColors.charcoal,
@@ -311,7 +318,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           text: TextSpan(
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: AppColors.charcoal,
@@ -319,21 +326,20 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                             children: [
                               if (showOriginal)
                                 TextSpan(
-                                  text:
-                                      '${Money.format(original, currency)} ',
-                                  style: const TextStyle(
+                                  text: '${Money.format(original, currency)} ',
+                                  style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w400,
-                                    color: Color(0xFF979797),
+                                    color: AppColors.neutral400,
                                     decoration: TextDecoration.lineThrough,
-                                    decorationColor: Color(0xFF979797),
+                                    decorationColor: AppColors.neutral400,
                                   ),
                                 ),
                               TextSpan(
                                   text: '${Money.format(price, currency)} '),
                               TextSpan(
                                 text: context.tr('favorites.perNight'),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w400,
                                   color: AppColors.neutral600,
@@ -358,7 +364,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     return Container(
       height: 180,
       color: AppColors.ghostWhite,
-      child: const Center(
+      child: Center(
         child: Icon(Icons.home_work_outlined,
             size: 50, color: AppColors.neutral400),
       ),
@@ -388,7 +394,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             const SizedBox(height: 24),
             Text(
               context.tr('favorites.noFavorites'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,
@@ -397,7 +403,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             const SizedBox(height: 8),
             Text(
               context.tr('favorites.noFavoritesDescription'),
-              style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+              style: TextStyle(fontSize: 14, color: AppColors.neutral600),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -406,7 +412,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   context, Routes.bottomNav, (r) => false),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
                 elevation: 0,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -442,7 +448,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             const SizedBox(height: 24),
             Text(
               context.tr('favorites.signInToView'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,
@@ -451,7 +457,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             const SizedBox(height: 8),
             Text(
               context.tr('favorites.signInToViewDescription'),
-              style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+              style: TextStyle(fontSize: 14, color: AppColors.neutral600),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -463,7 +469,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     .then((_) => _loadFavorites()),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),

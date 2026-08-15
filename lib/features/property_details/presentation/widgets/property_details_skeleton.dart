@@ -3,7 +3,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 
 class PropertyDetailsSkeleton extends StatelessWidget {
-  const PropertyDetailsSkeleton({super.key});
+  PropertyDetailsSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -22,20 +22,22 @@ class PropertyDetailsSkeleton extends StatelessWidget {
                     width: double.infinity,
                     color: AppColors.neutral200,
                   ),
-                  
+
                   // Thumbnails
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
-                      children: List.generate(4, (i) => Container(
-                        width: 52,
-                        height: 52,
-                        margin: const EdgeInsets.only(right: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.neutral200,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      )),
+                      children: List.generate(
+                          4,
+                          (i) => Container(
+                                width: 52,
+                                height: 52,
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.neutral200,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              )),
                     ),
                   ),
 
@@ -64,7 +66,7 @@ class PropertyDetailsSkeleton extends StatelessWidget {
                     ),
                   ),
 
-                  const _SkeletonDivider(),
+                  _SkeletonDivider(),
 
                   // Booking card — dates box + price hint, matching where the
                   // real section now sits (right under the header info).
@@ -89,7 +91,7 @@ class PropertyDetailsSkeleton extends StatelessWidget {
                     ),
                   ),
 
-                  const _SkeletonDivider(),
+                  _SkeletonDivider(),
 
                   // Host
                   const Padding(
@@ -109,8 +111,8 @@ class PropertyDetailsSkeleton extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
-                  const _SkeletonDivider(),
+
+                  _SkeletonDivider(),
 
                   // About
                   const Padding(
@@ -128,11 +130,11 @@ class PropertyDetailsSkeleton extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Bottom Bar
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(top: BorderSide(color: AppColors.neutral200)),
             ),
             child: const Row(
@@ -146,7 +148,10 @@ class PropertyDetailsSkeleton extends StatelessWidget {
                   ],
                 ),
                 Spacer(),
-                Bone.button(width: 140, height: 50, ),
+                Bone.button(
+                  width: 140,
+                  height: 50,
+                ),
               ],
             ),
           ),
@@ -157,10 +162,10 @@ class PropertyDetailsSkeleton extends StatelessWidget {
 }
 
 class _SkeletonDivider extends StatelessWidget {
-  const _SkeletonDivider();
+  _SkeletonDivider();
   @override
   Widget build(BuildContext context) {
-    return const Padding(
+    return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       child: Divider(color: AppColors.neutral200, height: 1),
     );

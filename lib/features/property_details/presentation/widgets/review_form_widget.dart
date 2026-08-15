@@ -12,7 +12,7 @@ class ReviewFormWidget extends StatefulWidget {
   final String userId;
   final Function(String reviewId)? onSuccess;
 
-  const ReviewFormWidget({
+  ReviewFormWidget({
     super.key,
     required this.bookingId,
     required this.propertyId,
@@ -43,14 +43,14 @@ class _ReviewFormWidgetState extends State<ReviewFormWidget> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(context.tr('review.reviewSubmittedSuccess')),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
             ),
           );
         } else if (state is ReviewSubmissionError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -63,14 +63,13 @@ class _ReviewFormWidgetState extends State<ReviewFormWidget> {
             children: [
               Text(
                 context.tr('review.writeReview'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
                 ),
               ),
               const SizedBox(height: 16),
-
               Row(
                 children: List.generate(5, (index) {
                   final starValue = index + 1;
@@ -95,24 +94,25 @@ class _ReviewFormWidgetState extends State<ReviewFormWidget> {
               Text(
                 _rating > 0
                     ? (_rating == 1
-                        ? context.tr('review.starsSingular', args: {'n': _rating})
-                        : context.tr('review.starsPlural', args: {'n': _rating}))
+                        ? context
+                            .tr('review.starsSingular', args: {'n': _rating})
+                        : context
+                            .tr('review.starsPlural', args: {'n': _rating}))
                     : context.tr('review.tapToRate'),
                 style: TextStyle(
                   fontSize: 14,
-                  color: _rating > 0 ? AppColors.charcoal : AppColors.neutral600,
+                  color:
+                      _rating > 0 ? AppColors.charcoal : AppColors.neutral600,
                 ),
               ),
-
               const SizedBox(height: 20),
-
               TextFormField(
                 controller: _commentController,
                 maxLines: 4,
                 maxLength: 500,
                 decoration: InputDecoration(
                   hintText: context.tr('review.shareExperience'),
-                  hintStyle: const TextStyle(color: AppColors.neutral400),
+                  hintStyle: TextStyle(color: AppColors.neutral400),
                   filled: true,
                   fillColor: AppColors.ghostWhite,
                   border: OutlineInputBorder(
@@ -128,9 +128,7 @@ class _ReviewFormWidgetState extends State<ReviewFormWidget> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -148,7 +146,7 @@ class _ReviewFormWidgetState extends State<ReviewFormWidget> {
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
-                    foregroundColor: AppColors.charcoal,
+                    foregroundColor: AppColors.brandCharcoal,
                     disabledBackgroundColor: AppColors.neutral400,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

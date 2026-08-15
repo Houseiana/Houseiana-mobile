@@ -11,7 +11,7 @@ class PaypalWebViewScreen extends StatefulWidget {
   final String orderId;
   final String userId;
 
-  const PaypalWebViewScreen({
+  PaypalWebViewScreen({
     super.key,
     required this.approvalUrl,
     required this.bookingId,
@@ -79,8 +79,7 @@ class _PaypalWebViewScreenState extends State<PaypalWebViewScreen> {
     if (result['success'] == true || result['status'] == 'COMPLETED') {
       Navigator.pop(context, 'success');
     } else {
-      Navigator.pop(
-          context, 'failed:${result['message'] ?? fallbackMessage}');
+      Navigator.pop(context, 'failed:${result['message'] ?? fallbackMessage}');
     }
   }
 
@@ -91,15 +90,15 @@ class _PaypalWebViewScreenState extends State<PaypalWebViewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.charcoal),
+          icon: Icon(Icons.close, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'PayPal',
           style: TextStyle(
             fontSize: 18,
@@ -114,7 +113,7 @@ class _PaypalWebViewScreenState extends State<PaypalWebViewScreen> {
           WebViewWidget(controller: _controller),
           if (_isLoading || _isProcessing)
             Container(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: AppColors.cardBackground.withValues(alpha: 0.9),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -126,7 +125,7 @@ class _PaypalWebViewScreenState extends State<PaypalWebViewScreen> {
                       _isProcessing
                           ? context.tr('booking.processingPayment')
                           : context.tr('common.loading'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         color: AppColors.neutral600,
                       ),

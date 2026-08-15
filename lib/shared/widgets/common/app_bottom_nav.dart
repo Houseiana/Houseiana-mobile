@@ -12,7 +12,7 @@ class AppBottomNav extends StatelessWidget {
   final List<AppBottomNavItem>? items;
   final bool showBadge;
 
-  const AppBottomNav({
+  AppBottomNav({
     super.key,
     required this.currentIndex,
     required this.onTap,
@@ -26,7 +26,7 @@ class AppBottomNav extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.95),
+        color: AppColors.cardBackground.withValues(alpha: 0.95),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadow.withValues(alpha: 0.06),
@@ -44,8 +44,8 @@ class AppBottomNav extends StatelessWidget {
               bottom: MediaQuery.of(context).padding.bottom,
             ),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.9),
-              border: const Border(
+              color: AppColors.cardBackground.withValues(alpha: 0.9),
+              border: Border(
                 top: BorderSide(color: AppColors.neutral200, width: 0.5),
               ),
             ),
@@ -130,7 +130,7 @@ class _BottomNavItemWidget extends StatelessWidget {
   final int? badge;
   final VoidCallback onTap;
 
-  const _BottomNavItemWidget({
+  _BottomNavItemWidget({
     required this.icon,
     required this.label,
     required this.isSelected,
@@ -163,9 +163,8 @@ class _BottomNavItemWidget extends StatelessWidget {
                   child: Icon(
                     icon,
                     size: 24,
-                    color: isSelected
-                        ? AppColors.charcoal
-                        : AppColors.neutral400,
+                    color:
+                        isSelected ? AppColors.charcoal : AppColors.neutral400,
                   ),
                 ),
                 // Badge
@@ -189,7 +188,7 @@ class _BottomNavItemWidget extends StatelessWidget {
                       child: Text(
                         badge! > 99 ? '99+' : badge.toString(),
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Colors.white, // dark-ok: label on error badge
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
                         ),
@@ -206,9 +205,7 @@ class _BottomNavItemWidget extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected
-                    ? AppColors.charcoal
-                    : AppColors.neutral400,
+                color: isSelected ? AppColors.charcoal : AppColors.neutral400,
               ),
               child: Text(label),
             ),

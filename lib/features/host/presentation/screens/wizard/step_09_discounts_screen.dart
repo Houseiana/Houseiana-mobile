@@ -5,15 +5,16 @@ import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.da
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class Step09DiscountsScreen extends StatelessWidget {
-  const Step09DiscountsScreen({super.key});
+  Step09DiscountsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final cubit = context.watch<ListingWizardCubit>();
     final data = cubit.state.data;
-    
+
     // Explicit selection logic - checking for presence and value
-    final isNewListingDiscountSelected = (data.newListingDiscountPercent ?? 0) >= 1;
+    final isNewListingDiscountSelected =
+        (data.newListingDiscountPercent ?? 0) >= 1;
     final isWeeklyDiscountSelected = (data.weeklyDiscountPercent ?? 0) >= 1;
 
     return SingleChildScrollView(
@@ -23,15 +24,14 @@ class Step09DiscountsScreen extends StatelessWidget {
         children: [
           Text(
             context.tr('wizard.discountsInfo'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF1D242B),
+              color: AppColors.charcoal,
               height: 1.5,
             ),
           ),
           const SizedBox(height: 32),
-
           _buildDiscountCard(
             title: context.tr('wizard.newListingPromotion'),
             description: context.tr('wizard.newListingDesc'),
@@ -45,9 +45,7 @@ class Step09DiscountsScreen extends StatelessWidget {
               });
             },
           ),
-
           const SizedBox(height: 20),
-
           _buildDiscountCard(
             title: context.tr('wizard.weeklyDiscount'),
             description: context.tr('wizard.weeklyDesc'),
@@ -61,7 +59,6 @@ class Step09DiscountsScreen extends StatelessWidget {
               });
             },
           ),
-          
           const SizedBox(height: 40),
         ],
       ),
@@ -78,10 +75,10 @@ class Step09DiscountsScreen extends StatelessWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isSelected ? AppColors.primaryColor : const Color(0xFFF0F2F5),
+          color: isSelected ? AppColors.primaryColor : AppColors.neutral100,
           width: 2,
         ),
         boxShadow: [
@@ -104,12 +101,16 @@ class Step09DiscountsScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primaryColor.withValues(alpha: 0.1) : const Color(0xFFF9FAFB),
+                    color: isSelected
+                        ? AppColors.primaryColor.withValues(alpha: 0.1)
+                        : AppColors.ghostWhite,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     icon,
-                    color: isSelected ? AppColors.primaryColor : const Color(0xFF4B5563),
+                    color: isSelected
+                        ? AppColors.primaryColor
+                        : AppColors.neutral600,
                     size: 24,
                   ),
                 ),
@@ -120,18 +121,18 @@ class Step09DiscountsScreen extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF1D242B),
+                          color: AppColors.charcoal,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         description,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF6B7280),
+                          color: AppColors.neutral500,
                         ),
                       ),
                     ],
@@ -139,9 +140,12 @@ class Step09DiscountsScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 16),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primaryColor.withValues(alpha: 0.1) : const Color(0xFFF3F4F6),
+                    color: isSelected
+                        ? AppColors.primaryColor.withValues(alpha: 0.1)
+                        : AppColors.neutral100,
                     borderRadius: BorderRadius.circular(100),
                   ),
                   child: Text(
@@ -149,7 +153,9 @@ class Step09DiscountsScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: isSelected ? AppColors.primaryColor : const Color(0xFF1D242B),
+                      color: isSelected
+                          ? AppColors.primaryColor
+                          : AppColors.charcoal,
                     ),
                   ),
                 ),
@@ -159,17 +165,21 @@ class Step09DiscountsScreen extends StatelessWidget {
                   height: 24,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isSelected ? AppColors.primaryColor : Colors.white,
+                    color: isSelected
+                        ? AppColors.primaryColor
+                        : AppColors.cardBackground,
                     border: Border.all(
-                      color: isSelected ? AppColors.primaryColor : const Color(0xFFD1D5DB),
+                      color: isSelected
+                          ? AppColors.primaryColor
+                          : AppColors.neutral300,
                       width: 2,
                     ),
                   ),
                   child: isSelected
-                      ? const Icon(
+                      ? Icon(
                           Icons.check,
                           size: 16,
-                          color: Colors.white,
+                          color: AppColors.brandCharcoal,
                         )
                       : null,
                 ),

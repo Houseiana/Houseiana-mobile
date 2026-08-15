@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
-import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.dart' hide sl;
+import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.dart'
+    hide sl;
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/end_points.dart';
@@ -13,7 +14,7 @@ import 'package:houseiana_mobile_app/core/services/places_service.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class Step03LocationScreen extends StatefulWidget {
-  const Step03LocationScreen({super.key});
+  Step03LocationScreen({super.key});
 
   @override
   State<Step03LocationScreen> createState() => _Step03LocationScreenState();
@@ -120,7 +121,8 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
   Future<void> _loadStates(String countryId) async {
     try {
       final api = sl<ApiConsumer>();
-      final response = await api.get(EndPoints.statesLookup(int.parse(countryId)));
+      final response =
+          await api.get(EndPoints.statesLookup(int.parse(countryId)));
       dynamic raw = response;
       if (raw is Map && raw['states'] != null) {
         raw = raw['states'];
@@ -137,7 +139,8 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
   Future<void> _loadCities(String stateId) async {
     try {
       final api = sl<ApiConsumer>();
-      final response = await api.get(EndPoints.citiesLookup(int.parse(stateId)));
+      final response =
+          await api.get(EndPoints.citiesLookup(int.parse(stateId)));
       dynamic raw = response;
       if (raw is Map && raw['cities'] != null) {
         raw = raw['cities'];
@@ -154,7 +157,8 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
   Future<void> _loadVillages(String cityId) async {
     try {
       final api = sl<ApiConsumer>();
-      final response = await api.get(EndPoints.villagesLookup(int.parse(cityId)));
+      final response =
+          await api.get(EndPoints.villagesLookup(int.parse(cityId)));
       dynamic raw = response;
       if (raw is Map && raw['villages'] != null) {
         raw = raw['villages'];
@@ -172,10 +176,13 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
     dynamic raw = response;
     if (raw is Map) raw = raw['data'] ?? raw['items'] ?? raw['result'] ?? raw;
     if (raw is Map) {
-      raw = raw['items'] ?? raw['data'] ?? raw.values.firstWhere((v) => v is List, orElse: () => []);
+      raw = raw['items'] ??
+          raw['data'] ??
+          raw.values.firstWhere((v) => v is List, orElse: () => []);
     }
     if (raw is List) {
-      final unknownLabel = mounted ? context.tr('wizard.wizardLocationUnknown') : 'Unknown';
+      final unknownLabel =
+          mounted ? context.tr('wizard.wizardLocationUnknown') : 'Unknown';
       return raw.map((item) {
         return {
           'id': item['id']?.toString() ?? '',
@@ -251,7 +258,8 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
       if (!mounted) return;
       if (details == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.tr('wizard.wizardLocationGeocodingError'))),
+          SnackBar(
+              content: Text(context.tr('wizard.wizardLocationGeocodingError'))),
         );
         return;
       }
@@ -259,7 +267,8 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.tr('wizard.wizardLocationGeocodingError'))),
+          SnackBar(
+              content: Text(context.tr('wizard.wizardLocationGeocodingError'))),
         );
       }
     } finally {
@@ -415,17 +424,19 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
     // A fixed-height map inside a scroll view (instead of Expanded) so the
     // open keyboard pushes content into the scroll area rather than collapsing
     // the map and clipping the suggestions overlay.
-    final double mapHeight =
-        (MediaQuery.of(context).size.height * 0.62).clamp(380.0, 560.0).toDouble();
+    final double mapHeight = (MediaQuery.of(context).size.height * 0.62)
+        .clamp(380.0, 560.0)
+        .toDouble();
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
             child: Text(
               context.tr('wizard.wizardLocationStepTitle'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -447,15 +458,18 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
                     child: GoogleMap(
                       initialCameraPosition: CameraPosition(
                         target: LatLng(
-                          cubit.state.data.latitude ?? _currentLocation.latitude,
-                          cubit.state.data.longitude ?? _currentLocation.longitude,
+                          cubit.state.data.latitude ??
+                              _currentLocation.latitude,
+                          cubit.state.data.longitude ??
+                              _currentLocation.longitude,
                         ),
                         zoom: 12,
                       ),
                       onMapCreated: (controller) => _mapController = controller,
                       myLocationButtonEnabled: false,
                       zoomControlsEnabled: false,
-                      gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+                      gestureRecognizers: <Factory<
+                          OneSequenceGestureRecognizer>>{
                         Factory<OneSequenceGestureRecognizer>(
                           () => EagerGestureRecognizer(),
                         ),
@@ -487,7 +501,7 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
                   right: 24,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.cardBackground,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
@@ -506,16 +520,19 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
                             controller: _searchController,
                             onChanged: _onSearchChanged,
                             decoration: InputDecoration(
-                              hintText: context.tr('wizard.wizardLocationSearchHint'),
+                              hintText:
+                                  context.tr('wizard.wizardLocationSearchHint'),
                               border: InputBorder.none,
-                              prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.neutral600),
+                              prefixIcon: Icon(Icons.location_on_outlined,
+                                  color: AppColors.neutral600),
                               suffixIcon: _isSearching
                                   ? const Padding(
                                       padding: EdgeInsets.all(12.0),
                                       child: SizedBox(
                                         width: 16,
                                         height: 16,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
                                       ),
                                     )
                                   : null,
@@ -526,20 +543,41 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
                         _buildResolvingRow(),
                         // Hide the action shortcuts while suggestions are showing
                         // so the card stays compact and the list stays reachable.
-                        if (_predictions.isEmpty) ...[
-                          const Divider(height: 1),
-                          ListTile(
-                            leading: const Icon(Icons.near_me_outlined, color: AppColors.charcoal),
-                            title: Text(context.tr('wizard.wizardLocationUseCurrent'), style: const TextStyle(fontWeight: FontWeight.w500)),
-                            onTap: _useCurrentLocation,
+                        // The tiles need their own Material: ink splashes land
+                        // on the nearest Material ancestor, which sits under
+                        // this card's background and would hide them.
+                        if (_predictions.isEmpty)
+                          Material(
+                            type: MaterialType.transparency,
+                            borderRadius: const BorderRadius.vertical(
+                              bottom: Radius.circular(12),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Divider(height: 1),
+                                ListTile(
+                                  leading: Icon(Icons.near_me_outlined,
+                                      color: AppColors.charcoal),
+                                  title: Text(
+                                      context
+                                          .tr('wizard.wizardLocationUseCurrent'),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w500)),
+                                  onTap: _useCurrentLocation,
+                                ),
+                                const Divider(height: 1),
+                                ListTile(
+                                  leading: Icon(Icons.edit_outlined,
+                                      color: AppColors.neutral600),
+                                  title: Text(context
+                                      .tr('wizard.wizardLocationEnterManually')),
+                                  onTap: _enterManually,
+                                ),
+                              ],
+                            ),
                           ),
-                          const Divider(height: 1),
-                          ListTile(
-                            leading: const Icon(Icons.edit_outlined, color: AppColors.neutral600),
-                            title: Text(context.tr('wizard.wizardLocationEnterManually')),
-                            onTap: _enterManually,
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -572,7 +610,7 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
               Expanded(
                 child: Text(
                   context.tr('wizard.wizardLocationStepTitle'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal,
@@ -584,7 +622,7 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
           const SizedBox(height: 24),
           Text(
             context.tr('wizard.wizardLocationSearchDescription'),
-            style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+            style: TextStyle(fontSize: 14, color: AppColors.neutral600),
           ),
           const SizedBox(height: 8),
           TextField(
@@ -594,9 +632,10 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
               hintText: context.tr('wizard.wizardLocationSearchTypingHint'),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.neutral300),
+                borderSide: BorderSide(color: AppColors.neutral300),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               suffixIcon: _isSearching
                   ? const Padding(
                       padding: EdgeInsets.all(12.0),
@@ -614,12 +653,17 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
           const SizedBox(height: 24),
           Text(
             context.tr('wizard.wizardLocationOrEnterManually'),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.charcoal),
+            style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.charcoal),
           ),
           const SizedBox(height: 16),
-
           _buildLabel(context.tr('wizard.wizardLocationCountryLabel')),
-          _buildDropdown(_selectedCountryId, context.tr('wizard.wizardLocationSelectCountry'), _countries, (v) {
+          _buildDropdown(
+              _selectedCountryId,
+              context.tr('wizard.wizardLocationSelectCountry'),
+              _countries, (v) {
             setState(() {
               _selectedCountryId = v;
               _selectedStateId = null;
@@ -639,10 +683,10 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
             });
             if (v != null) _loadStates(v);
           }),
-          
           if (_states.isNotEmpty) ...[
             _buildLabel(context.tr('wizard.wizardLocationStateLabel')),
-            _buildDropdown(_selectedStateId, context.tr('wizard.wizardLocationSelectState'), _states, (v) {
+            _buildDropdown(_selectedStateId,
+                context.tr('wizard.wizardLocationSelectState'), _states, (v) {
               setState(() {
                 _selectedStateId = v;
                 _selectedCityId = null;
@@ -658,10 +702,12 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
               if (v != null) _loadCities(v);
             }),
           ],
-
           if (_cities.isNotEmpty) ...[
             _buildLabel(context.tr('wizard.wizardLocationDistrictLabel')),
-            _buildDropdown(_selectedCityId, context.tr('wizard.wizardLocationSelectDistrict'), _cities, (v) {
+            _buildDropdown(
+                _selectedCityId,
+                context.tr('wizard.wizardLocationSelectDistrict'),
+                _cities, (v) {
               setState(() {
                 _selectedCityId = v;
                 _selectedVillageId = null;
@@ -671,31 +717,32 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
               if (v != null) _loadVillages(v);
             }),
           ],
-
           if (_villages.isNotEmpty) ...[
             _buildLabel(context.tr('wizard.wizardLocationNeighborhoodLabel')),
-            _buildDropdown(_selectedVillageId, context.tr('wizard.wizardLocationSelectNeighborhood'), _villages, (v) {
+            _buildDropdown(
+                _selectedVillageId,
+                context.tr('wizard.wizardLocationSelectNeighborhood'),
+                _villages, (v) {
               setState(() => _selectedVillageId = v);
               cubit.updateStepData({'village': v});
             }),
           ],
-
           _buildLabel(context.tr('wizard.wizardLocationAreaLabel')),
           TextField(
             controller: _areaController,
-            decoration: _inputDecoration(context.tr('wizard.wizardLocationAreaHint')),
+            decoration:
+                _inputDecoration(context.tr('wizard.wizardLocationAreaHint')),
             onChanged: (v) => cubit.updateStepData({'district': v}),
           ),
           const SizedBox(height: 16),
-
           _buildLabel(context.tr('wizard.wizardLocationStreetLabel')),
           TextField(
             controller: _addressController,
-            decoration: _inputDecoration(context.tr('wizard.wizardLocationStreetHint')),
+            decoration:
+                _inputDecoration(context.tr('wizard.wizardLocationStreetHint')),
             onChanged: (v) => cubit.updateStepData({'address': v}),
           ),
           const SizedBox(height: 16),
-
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -703,11 +750,14 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel(context.tr('wizard.wizardLocationBuildingLabel')),
+                    _buildLabel(
+                        context.tr('wizard.wizardLocationBuildingLabel')),
                     TextField(
                       controller: _buildingController,
-                      decoration: _inputDecoration(context.tr('wizard.wizardLocationBuildingHint')),
-                      onChanged: (v) => cubit.updateStepData({'buildingNumber': v}),
+                      decoration: _inputDecoration(
+                          context.tr('wizard.wizardLocationBuildingHint')),
+                      onChanged: (v) =>
+                          cubit.updateStepData({'buildingNumber': v}),
                     ),
                   ],
                 ),
@@ -720,8 +770,10 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
                     _buildLabel(context.tr('wizard.wizardLocationFloorLabel')),
                     TextField(
                       controller: _floorController,
-                      decoration: _inputDecoration(context.tr('wizard.wizardLocationFloorHint')),
-                      onChanged: (v) => cubit.updateStepData({'floorNumber': v}),
+                      decoration: _inputDecoration(
+                          context.tr('wizard.wizardLocationFloorHint')),
+                      onChanged: (v) =>
+                          cubit.updateStepData({'floorNumber': v}),
                     ),
                   ],
                 ),
@@ -734,7 +786,8 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
                     _buildLabel(context.tr('wizard.wizardLocationUnitLabel')),
                     TextField(
                       controller: _unitController,
-                      decoration: _inputDecoration(context.tr('wizard.wizardLocationUnitHint')),
+                      decoration: _inputDecoration(
+                          context.tr('wizard.wizardLocationUnitHint')),
                       onChanged: (v) => cubit.updateStepData({'unitNumber': v}),
                     ),
                   ],
@@ -743,29 +796,32 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
             ],
           ),
           const SizedBox(height: 16),
-
           _buildLabel(context.tr('wizard.wizardLocationPostalLabel')),
           TextField(
             controller: _postalController,
-            decoration: _inputDecoration(context.tr('wizard.wizardLocationPostalHint')),
+            decoration:
+                _inputDecoration(context.tr('wizard.wizardLocationPostalHint')),
             onChanged: (v) => cubit.updateStepData({'postalCode': v}),
           ),
           const SizedBox(height: 24),
-          
           Row(
             children: [
-              const Icon(Icons.location_on_outlined, size: 18, color: AppColors.neutral600),
+              Icon(Icons.location_on_outlined,
+                  size: 18, color: AppColors.neutral600),
               const SizedBox(width: 8),
               Text(
                 context.tr('wizard.wizardLocationConfirmOnMap'),
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.charcoal),
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.charcoal),
               ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
             context.tr('wizard.wizardLocationMapHelper'),
-            style: const TextStyle(fontSize: 12, color: AppColors.neutral500),
+            style: TextStyle(fontSize: 12, color: AppColors.neutral500),
           ),
           const SizedBox(height: 12),
           Container(
@@ -815,7 +871,8 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
                         'longitude': newPosition.longitude,
                       });
                     },
-                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(
+                        BitmapDescriptor.hueRed),
                   ),
                 },
               ),
@@ -835,7 +892,7 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
       margin: const EdgeInsets.only(top: 4),
       constraints: const BoxConstraints(maxHeight: 260),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.neutral200),
         boxShadow: [
@@ -846,40 +903,49 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
           ),
         ],
       ),
-      child: ListView.separated(
-        shrinkWrap: true,
-        padding: EdgeInsets.zero,
-        itemCount: _predictions.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final p = _predictions[index];
-          return ListTile(
-            dense: true,
-            visualDensity: VisualDensity.compact,
-            leading: const Icon(Icons.location_on_outlined,
-                size: 20, color: AppColors.neutral600),
-            title: Text(
-              p.mainText,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.charcoal,
+      // Own Material so the suggestion ripples paint above this dropdown's
+      // background rather than on the map card's Material underneath it.
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: BorderRadius.circular(8),
+        clipBehavior: Clip.antiAlias,
+        child: ListView.separated(
+          shrinkWrap: true,
+          padding: EdgeInsets.zero,
+          itemCount: _predictions.length,
+          separatorBuilder: (_, __) => const Divider(height: 1),
+          itemBuilder: (context, index) {
+            final p = _predictions[index];
+            return ListTile(
+              dense: true,
+              visualDensity: VisualDensity.compact,
+              leading: Icon(Icons.location_on_outlined,
+                  size: 20, color: AppColors.neutral600),
+              title: Text(
+                p.mainText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.charcoal,
+                ),
               ),
-            ),
-            subtitle: p.secondaryText.isNotEmpty
-                ? Text(
-                    p.secondaryText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.neutral500),
-                  )
-                : null,
-            onTap: () => _onPredictionSelected(p),
-          );
-        },
+              subtitle: p.secondaryText.isNotEmpty
+                  ? Text(
+                      p.secondaryText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.neutral500,
+                      ),
+                    )
+                  : null,
+              onTap: () => _onPredictionSelected(p),
+            );
+          },
+        ),
       ),
     );
   }
@@ -900,7 +966,7 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
           const SizedBox(width: 8),
           Text(
             context.tr('wizard.wizardLocationResolving'),
-            style: const TextStyle(fontSize: 13, color: AppColors.neutral600),
+            style: TextStyle(fontSize: 13, color: AppColors.neutral600),
           ),
         ],
       ),
@@ -912,35 +978,44 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.charcoal),
+        style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.charcoal),
       ),
     );
   }
 
-  Widget _buildDropdown(String? value, String hint, List<Map<String, dynamic>> items, ValueChanged<String?> onChanged) {
+  Widget _buildDropdown(String? value, String hint,
+      List<Map<String, dynamic>> items, ValueChanged<String?> onChanged) {
     // If the list changed and doesn't contain the previously selected value, it should be null.
     // The state resetting logic handles this mostly, but to be absolutely safe:
-    final bool valueExists = value == null || items.any((item) => item['id'] == value);
+    final bool valueExists =
+        value == null || items.any((item) => item['id'] == value);
     final safeValue = valueExists ? value : null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: DropdownButtonFormField<String>(
         initialValue: safeValue,
-        hint: Text(hint, style: const TextStyle(color: AppColors.neutral500)),
+        hint: Text(hint, style: TextStyle(color: AppColors.neutral500)),
         decoration: InputDecoration(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: AppColors.neutral300),
+            borderSide: BorderSide(color: AppColors.neutral300),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: AppColors.neutral300),
+            borderSide: BorderSide(color: AppColors.neutral300),
           ),
         ),
-        icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.neutral600),
-        items: items.map((e) => DropdownMenuItem<String>(value: e['id'] as String, child: Text(e['name'] as String))).toList(),
+        icon: Icon(Icons.keyboard_arrow_down, color: AppColors.neutral600),
+        items: items
+            .map((e) => DropdownMenuItem<String>(
+                value: e['id'] as String, child: Text(e['name'] as String)))
+            .toList(),
         onChanged: onChanged,
       ),
     );
@@ -949,15 +1024,15 @@ class _Step03LocationScreenState extends State<Step03LocationScreen> {
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: AppColors.neutral400, fontSize: 14),
+      hintStyle: TextStyle(color: AppColors.neutral400, fontSize: 14),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: AppColors.neutral300),
+        borderSide: BorderSide(color: AppColors.neutral300),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: AppColors.neutral300),
+        borderSide: BorderSide(color: AppColors.neutral300),
       ),
     );
   }

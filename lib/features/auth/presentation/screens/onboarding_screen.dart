@@ -4,7 +4,7 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  OnboardingScreen({super.key});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -62,7 +62,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -75,7 +75,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onPressed: _skip,
                   child: Text(
                     context.tr('common.skip'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       color: AppColors.textSecondary,
                       fontWeight: FontWeight.w500,
@@ -112,7 +112,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onPressed: _nextPage,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
-                    foregroundColor: AppColors.charcoal,
+                    foregroundColor: AppColors.brandCharcoal,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -169,7 +169,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           // Title
           Text(
             context.tr(data.titleKey),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -182,7 +182,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           // Description
           Text(
             context.tr(data.descriptionKey),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               color: AppColors.neutral600,
               height: 1.5,

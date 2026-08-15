@@ -9,7 +9,7 @@ import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class PaymentPendingScreen extends StatefulWidget {
-  const PaymentPendingScreen({super.key});
+  PaymentPendingScreen({super.key});
 
   @override
   State<PaymentPendingScreen> createState() => _PaymentPendingScreenState();
@@ -122,17 +122,17 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.charcoal),
+          icon: Icon(Icons.close, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('booking.paymentStatus'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -150,56 +150,51 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
+                  // dark-ok: payment-pending status orange, fixed in both themes
                   color: Colors.orange.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.schedule,
                   size: 60,
-                  color: Colors.orange,
+                  color: Colors.orange, // dark-ok: pending status orange
                 ),
               ),
-
               const SizedBox(height: 32),
-
               Text(
                 context.tr('booking.paymentPending'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
                   color: AppColors.charcoal,
                 ),
                 textAlign: TextAlign.center,
               ),
-
               const SizedBox(height: 16),
-
               Text(
                 context.tr('booking.paymentPendingDescription'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   color: AppColors.neutral600,
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,
               ),
-
               const SizedBox(height: 32),
-
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: AppColors.neutral100,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                  border: Border.all(color: AppColors.neutral200),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       context.tr('booking.paymentDetails'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: AppColors.charcoal,
@@ -207,10 +202,9 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
                     ),
                     const SizedBox(height: 16),
                     if (_isLoading)
-                      const _PaymentDetailsSkeleton()
+                      _PaymentDetailsSkeleton()
                     else ...[
-                      _buildDetailRow(
-                          '${context.tr('booking.transactionId')}:',
+                      _buildDetailRow('${context.tr('booking.transactionId')}:',
                           _displayReference),
                       const SizedBox(height: 12),
                       _buildDetailRow(
@@ -226,24 +220,27 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 32),
-
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
+                  // dark-ok: confirmation-email callout keeps the status
+                  // orange tint in both themes
                   color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                  border:
+                      Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, color: Colors.orange, size: 20),
+                    // dark-ok: pending status orange
+                    const Icon(Icons.info_outline,
+                        color: Colors.orange, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         context.tr('booking.confirmationEmail'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: AppColors.charcoal,
                         ),
@@ -252,9 +249,7 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
                   ],
                 ),
               ),
-
               const Spacer(),
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -262,7 +257,7 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
                       (_bookingId.isEmpty || _isChecking) ? null : _checkStatus,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
-                    foregroundColor: AppColors.charcoal,
+                    foregroundColor: AppColors.brandCharcoal,
                     disabledBackgroundColor: AppColors.neutral400,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -271,7 +266,7 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
                     ),
                   ),
                   child: _isChecking
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
@@ -285,9 +280,7 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
                         ),
                 ),
               ),
-
               const SizedBox(height: 12),
-
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
@@ -296,7 +289,7 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.charcoal,
-                    side: const BorderSide(color: Color(0xFFE5E7EB)),
+                    side: BorderSide(color: AppColors.neutral200),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -305,9 +298,7 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
                   child: Text(context.tr('booking.contactSupport')),
                 ),
               ),
-
               const SizedBox(height: 12),
-
               TextButton(
                 onPressed: () {
                   Navigator.pushNamedAndRemoveUntil(
@@ -318,7 +309,7 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
                 },
                 child: Text(
                   context.tr('booking.goToDashboard'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.neutral600,
                     fontWeight: FontWeight.w500,
                   ),
@@ -337,7 +328,7 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             color: AppColors.neutral600,
           ),
@@ -349,6 +340,7 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
+              // dark-ok: "Pending" status value keeps the status orange
               color: isStatus ? Colors.orange : AppColors.charcoal,
             ),
           ),
@@ -361,7 +353,7 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
 /// Skeleton for the payment-details rows (label + value bars), matching
 /// the four detail rows shown once the booking loads.
 class _PaymentDetailsSkeleton extends StatelessWidget {
-  const _PaymentDetailsSkeleton();
+  _PaymentDetailsSkeleton();
 
   Widget _bar(double width) {
     return Container(

@@ -11,7 +11,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 
 class TripDetailsScreen extends StatefulWidget {
-  const TripDetailsScreen({super.key});
+  TripDetailsScreen({super.key});
 
   @override
   State<TripDetailsScreen> createState() => _TripDetailsScreenState();
@@ -171,17 +171,17 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
   Widget build(BuildContext context) {
     if (_booking == null) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.cardBackground,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+            icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             context.tr('trips.tripDetailsTitle'),
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal),
@@ -194,7 +194,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
             child: Text(
               context.tr('trips.tripUnavailable'),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 15, color: AppColors.neutral600),
+              style: TextStyle(fontSize: 15, color: AppColors.neutral600),
             ),
           ),
         ),
@@ -213,17 +213,17 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
     final localizedStatus = _localizedStatus(context, _status);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('trips.tripDetailsTitle'),
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal),
@@ -247,7 +247,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                       placeholder: (context, url) => Container(
                         width: double.infinity,
                         height: 200,
-                        color: const Color(0xFFF0F0F0),
+                        color: AppColors.neutral100,
                       ),
                       errorWidget: (context, url, error) => _imagePlaceholder(),
                     )
@@ -263,7 +263,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: AppColors.charcoal),
@@ -276,8 +276,8 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                     decoration: BoxDecoration(
                       color: _statusColor().withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
-                      border:
-                          Border.all(color: _statusColor().withValues(alpha: 0.3)),
+                      border: Border.all(
+                          color: _statusColor().withValues(alpha: 0.3)),
                     ),
                     child: Text(
                       localizedStatus,
@@ -295,11 +295,10 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.location_on,
+                  Icon(Icons.location_on,
                       size: 16, color: AppColors.neutral600),
                   const SizedBox(width: 4),
-                  Text(location,
-                      style: const TextStyle(color: AppColors.neutral600)),
+                  Text(location, style: TextStyle(color: AppColors.neutral600)),
                 ],
               ),
             ],
@@ -317,7 +316,9 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
             _infoCard(
                 context.tr('trips.guests'),
                 context.tr(
-                    guestsCount == 1 ? 'trips.guestSingular' : 'trips.guestPlural',
+                    guestsCount == 1
+                        ? 'trips.guestSingular'
+                        : 'trips.guestPlural',
                     args: {'n': guestsCount})),
             _infoCard(context.tr('trips.totalPaid'), totalStr),
 
@@ -339,7 +340,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
-                    foregroundColor: AppColors.charcoal,
+                    foregroundColor: AppColors.brandCharcoal,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -361,7 +362,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                 onPressed: _shareReceipt,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.charcoal,
-                  side: const BorderSide(color: Color(0xFFE5E7EB)),
+                  side: BorderSide(color: AppColors.neutral200),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
@@ -411,11 +412,11 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
       height: 200,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
+        color: AppColors.neutral100,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Icon(Icons.home_work_outlined,
-          size: 64, color: Color(0xFFD1D5DB)),
+      child:
+          Icon(Icons.home_work_outlined, size: 64, color: AppColors.neutral300),
     );
   }
 
@@ -424,15 +425,15 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.neutral200),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.neutral600)),
+          Text(label, style: TextStyle(color: AppColors.neutral600)),
           Text(value,
-              style: const TextStyle(
+              style: TextStyle(
                   fontWeight: FontWeight.w600, color: AppColors.charcoal)),
         ],
       ),

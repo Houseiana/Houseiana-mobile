@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/services/fcm_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
+import 'package:houseiana_mobile_app/core/theme/theme_cubit.dart';
+import 'package:houseiana_mobile_app/features/profile/presentation/screens/appearance_settings_screen.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class AccountSettingsScreen extends StatefulWidget {
-  const AccountSettingsScreen({super.key});
+  AccountSettingsScreen({super.key});
 
   @override
   State<AccountSettingsScreen> createState() => _AccountSettingsScreenState();
@@ -25,17 +29,17 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('profile.accountSettings'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -48,7 +52,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         children: [
           Text(
             context.tr('profile.account'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal,
@@ -82,12 +86,10 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             onTap: () =>
                 Navigator.pushNamed(context, Routes.personalInformation),
           ),
-
           const SizedBox(height: 32),
-
           Text(
             context.tr('profile.preferences'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal,
@@ -100,12 +102,19 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             subtitle: context.tr('profile.english'),
             onTap: () => Navigator.pushNamed(context, Routes.languageSettings),
           ),
-
+          _buildSettingTile(
+            icon: Icons.brightness_6_outlined,
+            title: context.tr('profile.appearance'),
+            subtitle: context.tr(
+              themeModeLabelKey(context.watch<ThemeCubit>().state),
+            ),
+            onTap: () =>
+                Navigator.pushNamed(context, Routes.appearanceSettings),
+          ),
           const SizedBox(height: 32),
-
           Text(
             context.tr('notifications.title'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal,
@@ -148,12 +157,10 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
               setState(() => _marketingEmails = value);
             },
           ),
-
           const SizedBox(height: 32),
-
           Text(
             context.tr('profile.privacySecurity'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal,
@@ -172,9 +179,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             subtitle: context.tr('profile.twoFactorManaged'),
             onTap: _showTwoFactorInfoDialog,
           ),
-
           const SizedBox(height: 32),
-
           Text(
             context.tr('profile.dangerZone'),
             style: const TextStyle(
@@ -231,7 +236,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           color: AppColors.neutral600,
         ),
@@ -239,7 +244,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       // `chevron_right` carries `matchTextDirection`, so Flutter mirrors it
       // automatically under an RTL Directionality — swapping it by hand here
       // would flip it twice and point it the wrong way in Arabic.
-      trailing: const Icon(
+      trailing: Icon(
         Icons.chevron_right,
         color: AppColors.neutral400,
       ),
@@ -267,7 +272,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       ),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,
           color: AppColors.charcoal,
@@ -275,7 +280,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           color: AppColors.neutral600,
         ),
@@ -306,6 +311,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
+              await FCMService.instance.onLogout();
               await _session.clear();
               if (!mounted) return;
               Navigator.pushNamedAndRemoveUntil(
@@ -383,6 +389,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                           if (mounted) setState(() {});
                           try {
                             await _userService.deleteAccount(userId);
+                            await FCMService.instance.onLogout();
                             await _session.clear();
                             if (!mounted) return;
                             rootNavigator.pop();

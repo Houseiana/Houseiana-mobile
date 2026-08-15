@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/end_points.dart';
 import 'package:houseiana_mobile_app/core/services/clerk_service.dart';
+import 'package:houseiana_mobile_app/core/services/fcm_service.dart';
 import 'package:houseiana_mobile_app/core/services/google_auth_service.dart';
 import 'package:houseiana_mobile_app/core/services/apple_auth_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
@@ -38,6 +41,13 @@ class AuthCubit extends Cubit<AuthState> {
         debugPrint('[AuthCubit] /api/auth/login sync failed (ignored): $e');
       }
     }
+  }
+
+  /// Registers this device's FCM token with the backend
+  /// (POST /api/auth/device-token) for the freshly signed-in user.
+  /// Fire-and-forget: push registration must never block or fail the flow.
+  void _registerDeviceToken() {
+    unawaited(FCMService.instance.syncDeviceToken());
   }
 
   // ── Login ─────────────────────────────────────────────────────────────────
@@ -84,6 +94,7 @@ class AuthCubit extends Cubit<AuthState> {
             await sl<UserSession>().saveAuthToken(sessionId);
           }
         }
+        _registerDeviceToken();
         emit(AuthSuccess(message: result['message'] ?? 'Login successful'));
       } else if (result['requiresSecondFactor'] == true) {
         emit(AuthSecondFactorRequired(
@@ -148,6 +159,7 @@ class AuthCubit extends Cubit<AuthState> {
             }
           }
           await _syncBackendSession();
+          _registerDeviceToken();
           emit(AuthSuccess(message: result['message'] ?? 'Sign up successful'));
         }
       } else {
@@ -189,6 +201,7 @@ class AuthCubit extends Cubit<AuthState> {
           }
         }
         await _syncBackendSession();
+        _registerDeviceToken();
         // Translation key; UI resolves via context.tr (which falls back to the
         // key itself for plain/server messages).
         emit(const AuthSuccess(message: 'auth.accountVerifiedWelcome'));
@@ -289,6 +302,7 @@ class AuthCubit extends Cubit<AuthState> {
             await sl<UserSession>().saveAuthToken(sessionId);
           }
         }
+        _registerDeviceToken();
         emit(AuthSuccess(message: '2FA verified. Welcome back!'));
       } else {
         emit(
@@ -371,6 +385,7 @@ class AuthCubit extends Cubit<AuthState> {
             await sl<UserSession>().saveAuthToken(sessionId);
           }
         }
+        _registerDeviceToken();
         emit(AuthSuccess(
             message: result['message'] ?? 'Google sign-in successful'));
       } else {
@@ -404,6 +419,7 @@ class AuthCubit extends Cubit<AuthState> {
             await sl<UserSession>().saveAuthToken(sessionId);
           }
         }
+        _registerDeviceToken();
         emit(AuthSuccess(
             message: result['message'] ?? 'Apple sign-in successful'));
       } else {
@@ -425,12 +441,13 @@ class AuthCubit extends Cubit<AuthState> {
         // Revoke the current session
         await _clerkService.revokeSession(sessionId);
       }
-      await sl<UserSession>().clear();
-      emit(AuthInitial());
-    } catch (e) {
-      // Even if session revocation fails, clear local state
-      await sl<UserSession>().clear();
-      emit(AuthInitial());
+    } catch (_) {
+      // Session revocation is best-effort; local state is cleared regardless.
     }
+    // Stop pushes for the signed-out user and forget the synced-token marker
+    // so the next sign-in re-registers. Never blocks logout on failure.
+    await FCMService.instance.onLogout();
+    await sl<UserSession>().clear();
+    emit(AuthInitial());
   }
 }

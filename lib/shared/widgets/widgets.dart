@@ -6,7 +6,6 @@
 // ============================================
 
 // Theme exports (use these in your screens)
-export 'package:houseiana_mobile_app/core/theme/app_theme.dart';
 export 'package:houseiana_mobile_app/core/theme/app_spacing.dart';
 export 'package:houseiana_mobile_app/core/theme/app_radius.dart';
 export 'package:houseiana_mobile_app/core/theme/app_shadows.dart';

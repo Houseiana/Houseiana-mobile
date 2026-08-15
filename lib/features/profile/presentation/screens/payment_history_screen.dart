@@ -8,7 +8,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class PaymentHistoryScreen extends StatefulWidget {
-  const PaymentHistoryScreen({super.key});
+  PaymentHistoryScreen({super.key});
 
   @override
   State<PaymentHistoryScreen> createState() => _PaymentHistoryScreenState();
@@ -61,17 +61,17 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('profile.paymentHistory'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -89,7 +89,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const TileListSkeleton(
+      return TileListSkeleton(
         itemCount: 6,
         showTrailing: true,
         tileHeight: 108,
@@ -102,13 +102,13 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
         padding: const EdgeInsets.all(32),
         children: [
           const SizedBox(height: 120),
-          const Icon(Icons.receipt_long_outlined,
+          Icon(Icons.receipt_long_outlined,
               size: 64, color: AppColors.neutral400),
           const SizedBox(height: 16),
           Text(
             context.tr('profile.couldNotLoadPayments'),
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -118,14 +118,14 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
           Text(
             context.tr('profile.pullToRefresh'),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+            style: TextStyle(fontSize: 14, color: AppColors.neutral600),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: _loadPayments,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryColor,
-              foregroundColor: AppColors.charcoal,
+              foregroundColor: AppColors.brandCharcoal,
               elevation: 0,
             ),
             child: Text(context.tr('common.retry')),
@@ -139,13 +139,13 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
         padding: const EdgeInsets.all(32),
         children: [
           const SizedBox(height: 120),
-          const Icon(Icons.receipt_long_outlined,
+          Icon(Icons.receipt_long_outlined,
               size: 64, color: AppColors.neutral400),
           const SizedBox(height: 16),
           Text(
             context.tr('profile.noPaymentsYet'),
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -155,7 +155,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
           Text(
             context.tr('profile.noPaymentsDescription'),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+            style: TextStyle(fontSize: 14, color: AppColors.neutral600),
           ),
         ],
       );
@@ -173,7 +173,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
 class _PaymentTile extends StatelessWidget {
   final Map<String, dynamic> payment;
 
-  const _PaymentTile({required this.payment});
+  _PaymentTile({required this.payment});
 
   @override
   Widget build(BuildContext context) {
@@ -189,16 +189,15 @@ class _PaymentTile extends StatelessWidget {
         0;
     final amount = amountValue is num
         ? Money.format(amountValue, currency)
-        : Money.format(
-            double.tryParse(amountValue.toString()) ?? 0, currency);
+        : Money.format(double.tryParse(amountValue.toString()) ?? 0, currency);
     final date = _formatDate(_text(['date', 'createdAt', 'paidAt'], ''));
     final statusColor = _statusColor(status);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        color: AppColors.cardBackground,
+        border: Border.all(color: AppColors.neutral200),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -213,7 +212,7 @@ class _PaymentTile extends StatelessWidget {
                   color: AppColors.primaryColor.withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.receipt_long,
+                child: Icon(Icons.receipt_long,
                     size: 20, color: AppColors.charcoal),
               ),
               const SizedBox(width: 12),
@@ -225,7 +224,7 @@ class _PaymentTile extends StatelessWidget {
                       property,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: AppColors.charcoal,
@@ -234,7 +233,7 @@ class _PaymentTile extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       method,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         color: AppColors.neutral600,
                       ),
@@ -244,7 +243,7 @@ class _PaymentTile extends StatelessWidget {
               ),
               Text(
                 amount,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: AppColors.charcoal,
@@ -258,12 +257,11 @@ class _PaymentTile extends StatelessWidget {
               if (date.isNotEmpty)
                 Text(
                   date,
-                  style: const TextStyle(
-                      fontSize: 12, color: AppColors.neutral600),
+                  style: TextStyle(fontSize: 12, color: AppColors.neutral600),
                 ),
               if (bookingId.isNotEmpty) ...[
                 const SizedBox(width: 8),
-                const Text('•',
+                Text('•',
                     style:
                         TextStyle(fontSize: 12, color: AppColors.neutral400)),
                 const SizedBox(width: 8),
@@ -271,15 +269,13 @@ class _PaymentTile extends StatelessWidget {
                   child: Text(
                     '#${bookingId.length > 8 ? bookingId.substring(0, 8) : bookingId}',
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.neutral600),
+                    style: TextStyle(fontSize: 12, color: AppColors.neutral600),
                   ),
                 ),
               ] else
                 const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),

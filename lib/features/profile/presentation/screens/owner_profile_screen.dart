@@ -11,12 +11,25 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart';
 
 const _months = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
-const Color _pageBg = Color(0xFFF5F6FA);
-const Color _cardBorder = Color(0xFFF0F2F5);
+// The hero panel is [AppColors.brandCharcoal] in both themes, so everything
+// drawn on it stays light regardless of the active brightness.
+final Color _onHeroChip = Colors.white.withValues(alpha: 0.1); // dark-ok
+final Color _onHeroMuted = Colors.white.withValues(alpha: 0.5); // dark-ok
+final Color _onHeroFaint = Colors.white.withValues(alpha: 0.4); // dark-ok
 
 String _monthYear(DateTime? d) =>
     d == null ? '' : '${_months[d.month - 1]} ${d.year}';
@@ -27,7 +40,7 @@ String _monthYear(DateTime? d) =>
 class OwnerProfileScreen extends StatefulWidget {
   final String userId;
 
-  const OwnerProfileScreen({super.key, required this.userId});
+  OwnerProfileScreen({super.key, required this.userId});
 
   @override
   State<OwnerProfileScreen> createState() => _OwnerProfileScreenState();
@@ -56,14 +69,14 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: AppColors.neutral100,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
-        leading: const BackButton(color: AppColors.charcoal),
+        leading: BackButton(color: AppColors.charcoal),
         title: Text(
           context.tr('ownerProfile.backToPropertyDetails'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
             color: AppColors.neutral600,
@@ -74,7 +87,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen>
       body: BlocBuilder<OwnerProfileCubit, OwnerProfileState>(
         builder: (context, state) {
           if (state is OwnerProfileLoading || state is OwnerProfileInitial) {
-            return const ProfileSkeletonLoader();
+            return ProfileSkeletonLoader();
           }
           if (state is OwnerProfileError) {
             return _ErrorView(messageKey: state.messageKey);
@@ -99,9 +112,9 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen>
           const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: _cardBorder),
+              border: Border.all(color: AppColors.neutral200),
             ),
             child: Column(
               children: [
@@ -158,7 +171,7 @@ class _HeaderCard extends StatelessWidget {
   final String userId;
   final VoidCallback onCopyId;
 
-  const _HeaderCard({
+  _HeaderCard({
     required this.profile,
     required this.userId,
     required this.onCopyId,
@@ -187,7 +200,8 @@ class _HeaderCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.charcoal,
+        // dark-ok: intentionally dark hero panel with light content on it
+        color: AppColors.brandCharcoal,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -225,8 +239,9 @@ class _HeaderCard extends StatelessWidget {
                           Flexible(
                             child: Text(
                               user.fullName,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                // The hero panel is dark in both themes.
+                                color: AppColors.textLight,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -239,13 +254,13 @@ class _HeaderCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.1),
+                                color: _onHeroChip,
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 roleLabel,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: AppColors.textLight,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -264,7 +279,7 @@ class _HeaderCard extends StatelessWidget {
                               child: Text(
                                 '"$userId"',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.5),
+                                  color: _onHeroMuted,
                                   fontSize: 11,
                                   fontFamily: 'monospace',
                                 ),
@@ -272,9 +287,7 @@ class _HeaderCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 4),
-                            Icon(Icons.copy,
-                                size: 11,
-                                color: Colors.white.withValues(alpha: 0.5)),
+                            Icon(Icons.copy, size: 11, color: _onHeroMuted),
                           ],
                         ),
                       ),
@@ -300,7 +313,7 @@ class _HeaderCard extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: Colors.white24),
+          const Divider(height: 1, color: Colors.white24), // dark-ok
           _StatsBar(profile: profile),
         ],
       ),
@@ -310,7 +323,7 @@ class _HeaderCard extends StatelessWidget {
   Widget _initials(String initials) => Center(
         child: Text(
           initials,
-          style: const TextStyle(
+          style: TextStyle(
             color: AppColors.charcoal,
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -323,18 +336,17 @@ class _MetaChip extends StatelessWidget {
   final IconData icon;
   final String text;
 
-  const _MetaChip({required this.icon, required this.text});
+  _MetaChip({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 11, color: Colors.white.withValues(alpha: 0.5)),
+          Icon(icon, size: 11, color: _onHeroMuted),
           const SizedBox(width: 4),
           Text(
             text,
-            style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
+            style: TextStyle(color: _onHeroMuted, fontSize: 11),
           ),
         ],
       );
@@ -345,7 +357,7 @@ class _MetaChip extends StatelessWidget {
 class _StatsBar extends StatelessWidget {
   final PublicProfileModel profile;
 
-  const _StatsBar({required this.profile});
+  _StatsBar({required this.profile});
 
   @override
   Widget build(BuildContext context) {
@@ -361,7 +373,9 @@ class _StatsBar extends StatelessWidget {
           Colors.purple),
       _StatData(
           Icons.star_outline,
-          r?.averageRating != null ? r!.averageRating!.toStringAsFixed(1) : 'N/A',
+          r?.averageRating != null
+              ? r!.averageRating!.toStringAsFixed(1)
+              : 'N/A',
           context.tr('ownerProfile.statsRating'),
           Colors.amber),
       _StatData(Icons.star, '${r?.totalRatings ?? 0}',
@@ -385,8 +399,8 @@ class _StatsBar extends StatelessWidget {
           .map((c) => Container(
                 decoration: const BoxDecoration(
                   border: Border(
-                    right: BorderSide(color: Colors.white12),
-                    bottom: BorderSide(color: Colors.white12),
+                    right: BorderSide(color: Colors.white12), // dark-ok
+                    bottom: BorderSide(color: Colors.white12), // dark-ok
                   ),
                 ),
                 child: Column(
@@ -400,17 +414,15 @@ class _StatsBar extends StatelessWidget {
                         c.value,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: Colors.white,
+                        style: TextStyle(
+                            color: AppColors.textLight,
                             fontWeight: FontWeight.bold,
                             fontSize: 13),
                       ),
                     ),
                     Text(
                       c.label,
-                      style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.4),
-                          fontSize: 11),
+                      style: TextStyle(color: _onHeroFaint, fontSize: 11),
                     ),
                   ],
                 ),
@@ -434,7 +446,7 @@ class _StatData {
 class _OverviewTab extends StatelessWidget {
   final PublicUserModel user;
 
-  const _OverviewTab({required this.user});
+  _OverviewTab({required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -447,7 +459,7 @@ class _OverviewTab extends StatelessWidget {
       children: [
         Text(
           context.tr('ownerProfile.contactInformation'),
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: AppColors.charcoal),
@@ -472,8 +484,7 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _InfoRow(
-      {required this.icon, required this.label, required this.value});
+  _InfoRow({required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -486,7 +497,7 @@ class _InfoRow extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               label.toUpperCase(),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 letterSpacing: 0.5,
                 color: AppColors.neutral400,
@@ -498,7 +509,7 @@ class _InfoRow extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
             color: AppColors.charcoal,
@@ -514,7 +525,7 @@ class _InfoRow extends StatelessWidget {
 class _PropertiesTab extends StatelessWidget {
   final List<PublicPropertyModel> properties;
 
-  const _PropertiesTab({required this.properties});
+  _PropertiesTab({required this.properties});
 
   @override
   Widget build(BuildContext context) {
@@ -529,7 +540,7 @@ class _PropertiesTab extends StatelessWidget {
       children: [
         Text(
           context.tr('ownerProfile.propertiesHeading'),
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: AppColors.charcoal),
@@ -549,7 +560,7 @@ class _PropertiesTab extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    border: Border.all(color: _cardBorder),
+                    border: Border.all(color: AppColors.neutral200),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -557,7 +568,7 @@ class _PropertiesTab extends StatelessWidget {
                     children: [
                       Text(
                         p.displayTitle,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: AppColors.charcoal,
                             fontSize: 14),
@@ -569,7 +580,7 @@ class _PropertiesTab extends StatelessWidget {
                           p.description!,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 12, color: AppColors.neutral400),
                         ),
                       ],
@@ -577,7 +588,7 @@ class _PropertiesTab extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           '${p.pricePerNight!.toStringAsFixed(0)} ${context.tr('ownerProfile.perNight')}',
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: AppColors.charcoal),
@@ -598,7 +609,7 @@ class _PropertiesTab extends StatelessWidget {
 class _ReviewsTab extends StatelessWidget {
   final List<PublicHostRating> ratings;
 
-  const _ReviewsTab({required this.ratings});
+  _ReviewsTab({required this.ratings});
 
   @override
   Widget build(BuildContext context) {
@@ -618,7 +629,7 @@ class _ReviewsTab extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               summary.averageRating.toStringAsFixed(1),
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: AppColors.charcoal),
@@ -631,7 +642,7 @@ class _ReviewsTab extends StatelessWidget {
                     : 'ownerProfile.reviewPlural',
                 args: {'n': summary.totalReviews},
               ),
-              style: const TextStyle(color: AppColors.neutral400),
+              style: TextStyle(color: AppColors.neutral400),
             ),
           ],
         ),
@@ -645,7 +656,7 @@ class _ReviewsTab extends StatelessWidget {
 class _ReviewCard extends StatelessWidget {
   final PublicHostRating rating;
 
-  const _ReviewCard({required this.rating});
+  _ReviewCard({required this.rating});
 
   @override
   Widget build(BuildContext context) {
@@ -655,7 +666,7 @@ class _ReviewCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: _cardBorder),
+        border: Border.all(color: AppColors.neutral200),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -674,7 +685,7 @@ class _ReviewCard extends StatelessWidget {
                         rating.reviewerName.isNotEmpty
                             ? rating.reviewerName[0].toUpperCase()
                             : '?',
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: AppColors.charcoal,
                             fontWeight: FontWeight.bold),
                       )
@@ -687,7 +698,7 @@ class _ReviewCard extends StatelessWidget {
                   children: [
                     Text(
                       rating.reviewerName,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
                           color: AppColors.charcoal),
@@ -695,7 +706,7 @@ class _ReviewCard extends StatelessWidget {
                     if (rating.createdAt != null)
                       Text(
                         _monthYear(rating.createdAt),
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 12, color: AppColors.neutral400),
                       ),
                   ],
@@ -718,7 +729,7 @@ class _ReviewCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               rating.comment!,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 13, color: AppColors.neutral600, height: 1.5),
             ),
           ],
@@ -733,7 +744,7 @@ class _ReviewCard extends StatelessWidget {
 class _TripsTab extends StatelessWidget {
   final List<PublicBooking> trips;
 
-  const _TripsTab({required this.trips});
+  _TripsTab({required this.trips});
 
   @override
   Widget build(BuildContext context) {
@@ -748,7 +759,7 @@ class _TripsTab extends StatelessWidget {
       children: [
         Text(
           context.tr('ownerProfile.tripsHeading'),
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: AppColors.charcoal),
@@ -758,7 +769,7 @@ class _TripsTab extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: _cardBorder),
+                border: Border.all(color: AppColors.neutral200),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -769,7 +780,7 @@ class _TripsTab extends StatelessWidget {
                       children: [
                         Text(
                           b.propertyName ?? 'Booking',
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                               color: AppColors.charcoal),
@@ -777,7 +788,7 @@ class _TripsTab extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           '${b.checkIn ?? '—'} → ${b.checkOut ?? '—'}',
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 12, color: AppColors.neutral400),
                         ),
                       ],
@@ -788,12 +799,12 @@ class _TripsTab extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _cardBorder,
+                        color: AppColors.neutral200,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         b.status!,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: AppColors.neutral600),
@@ -813,7 +824,7 @@ class _EmptyState extends StatelessWidget {
   final IconData icon;
   final String text;
 
-  const _EmptyState({required this.icon, required this.text});
+  _EmptyState({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -825,7 +836,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             text,
-            style: const TextStyle(fontSize: 14, color: AppColors.neutral400),
+            style: TextStyle(fontSize: 14, color: AppColors.neutral400),
           ),
         ],
       ),
@@ -836,7 +847,7 @@ class _EmptyState extends StatelessWidget {
 class _ErrorView extends StatelessWidget {
   final String messageKey;
 
-  const _ErrorView({required this.messageKey});
+  _ErrorView({required this.messageKey});
 
   @override
   Widget build(BuildContext context) {
@@ -860,7 +871,7 @@ class _ErrorView extends StatelessWidget {
             Text(
               context.tr(messageKey),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: AppColors.charcoal),
@@ -871,8 +882,8 @@ class _ErrorView extends StatelessWidget {
               icon: const Icon(Icons.arrow_back, size: 16),
               label: Text(context.tr('ownerProfile.goBack')),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.charcoal,
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.brandCharcoal,
+                foregroundColor: AppColors.textLight,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

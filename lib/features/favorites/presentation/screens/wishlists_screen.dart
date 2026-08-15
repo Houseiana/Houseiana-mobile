@@ -11,7 +11,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/property_skeleton.dart';
 
 class WishlistsScreen extends StatefulWidget {
-  const WishlistsScreen({super.key});
+  WishlistsScreen({super.key});
 
   @override
   State<WishlistsScreen> createState() => _WishlistsScreenState();
@@ -106,11 +106,14 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
 
   String _extractImage(Map<String, dynamic> item) {
     final property = _propertyOf(item);
-    final photos = property['images'] ?? property['photos'] ?? property['coverPhoto'];
+    final photos =
+        property['images'] ?? property['photos'] ?? property['coverPhoto'];
     if (photos is List && photos.isNotEmpty) {
       final first = photos.first;
       if (first is String) return first;
-      if (first is Map) return (first['url'] ?? first['photoUrl'] ?? '').toString();
+      if (first is Map) {
+        return (first['url'] ?? first['photoUrl'] ?? '').toString();
+      }
     }
     if (photos is String) return photos;
     return '';
@@ -127,8 +130,9 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
   String _extractLocation(Map<String, dynamic> item) {
     final property = _propertyOf(item);
     if (property['city'] is Map) {
-      final city = (property['city']['name'] ?? property['city']['cityName'] ?? '')
-          .toString();
+      final city =
+          (property['city']['name'] ?? property['city']['cityName'] ?? '')
+              .toString();
       final country = property['country'] is Map
           ? (property['country']['name'] ?? '').toString()
           : '';
@@ -136,20 +140,24 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
       if (city.isNotEmpty) return city;
     }
     final city = (property['city'] ?? '').toString();
-    final location = (property['location'] ?? property['address'] ?? '').toString();
+    final location =
+        (property['location'] ?? property['address'] ?? '').toString();
     return city.isNotEmpty ? city : location;
   }
 
   double _extractPrice(Map<String, dynamic> item) {
     final property = _propertyOf(item);
-    final raw = property['pricePerNight'] ?? property['price'] ?? property['basePrice'];
+    final raw =
+        property['pricePerNight'] ?? property['price'] ?? property['basePrice'];
     if (raw is num) return raw.toDouble();
     return double.tryParse(raw?.toString() ?? '') ?? 0;
   }
 
   double _extractRating(Map<String, dynamic> item) {
     final property = _propertyOf(item);
-    final raw = property['averageRating'] ?? property['rating'] ?? property['avgRating'];
+    final raw = property['averageRating'] ??
+        property['rating'] ??
+        property['avgRating'];
     if (raw is num) return raw.toDouble();
     return double.tryParse(raw?.toString() ?? '') ?? 0;
   }
@@ -157,17 +165,17 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('favorites.wishlists'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -197,7 +205,7 @@ class _WishlistsScreenState extends State<WishlistsScreen> {
     if (_isLoading) {
       return ListView.separated(
         padding: const EdgeInsets.all(20),
-        itemBuilder: (_, __) => const PropertySkeletonCard(),
+        itemBuilder: (_, __) => PropertySkeletonCard(),
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemCount: 4,
       );
@@ -259,7 +267,7 @@ class _SavedHomeCard extends StatelessWidget {
   final double rating;
   final ValueChanged<String> onRemove;
 
-  const _SavedHomeCard({
+  _SavedHomeCard({
     required this.favorite,
     required this.propertyId,
     required this.title,
@@ -295,7 +303,7 @@ class _SavedHomeCard extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           border: Border.all(color: AppColors.neutral200),
           borderRadius: BorderRadius.circular(16),
         ),
@@ -317,9 +325,10 @@ class _SavedHomeCard extends StatelessWidget {
                           placeholder: (context, url) => Container(
                             height: 190,
                             width: double.infinity,
-                            color: const Color(0xFFF0F0F0),
+                            color: AppColors.neutral100,
                           ),
-                          errorWidget: (context, url, error) => _imageFallback(),
+                          errorWidget: (context, url, error) =>
+                              _imageFallback(),
                         )
                       : _imageFallback(),
                 ),
@@ -332,12 +341,13 @@ class _SavedHomeCard extends StatelessWidget {
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
+                        // dark-ok: white heart chip sits on the property photo
                         color: Colors.white.withValues(alpha: 0.92),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.favorite_rounded,
-                        color: Colors.red,
+                        color: AppColors.heartRed,
                         size: 21,
                       ),
                     ),
@@ -351,7 +361,7 @@ class _SavedHomeCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD00416),
+                        color: AppColors.discountRed,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -359,6 +369,7 @@ class _SavedHomeCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
+                          // dark-ok: badge text sits on the red discount fill
                           color: Colors.white,
                         ),
                       ),
@@ -373,7 +384,7 @@ class _SavedHomeCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
@@ -385,7 +396,7 @@ class _SavedHomeCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       location,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         color: AppColors.neutral600,
                       ),
@@ -408,7 +419,7 @@ class _SavedHomeCard extends StatelessWidget {
                                 const SizedBox(width: 4),
                                 Text(
                                   rating.toStringAsFixed(2),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
                                     color: AppColors.charcoal,
@@ -423,7 +434,7 @@ class _SavedHomeCard extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 text: TextSpan(
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.charcoal,
@@ -433,12 +444,13 @@ class _SavedHomeCard extends StatelessWidget {
                                       TextSpan(
                                         text:
                                             '${Money.format(original, currency)} ',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w400,
-                                          color: Color(0xFF979797),
-                                          decoration: TextDecoration.lineThrough,
-                                          decorationColor: Color(0xFF979797),
+                                          color: AppColors.neutral400,
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                          decorationColor: AppColors.neutral400,
                                         ),
                                       ),
                                     TextSpan(
@@ -446,7 +458,7 @@ class _SavedHomeCard extends StatelessWidget {
                                             '${Money.format(price, currency)} '),
                                     TextSpan(
                                       text: context.tr('favorites.perNight'),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w400,
                                         color: AppColors.neutral600,
@@ -458,7 +470,7 @@ class _SavedHomeCard extends StatelessWidget {
                             )
                           : Text(
                               context.tr('favorites.viewDetailsShort'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.charcoal,
@@ -480,7 +492,7 @@ class _SavedHomeCard extends StatelessWidget {
       height: 190,
       width: double.infinity,
       color: AppColors.ghostWhite,
-      child: const Icon(
+      child: Icon(
         Icons.home_work_outlined,
         size: 46,
         color: AppColors.neutral400,
@@ -496,7 +508,7 @@ class _MessageState extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
 
-  const _MessageState({
+  _MessageState({
     required this.icon,
     required this.title,
     required this.message,
@@ -517,7 +529,7 @@ class _MessageState extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -527,7 +539,7 @@ class _MessageState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral600,
                 height: 1.45,
@@ -541,7 +553,7 @@ class _MessageState extends StatelessWidget {
                   onPressed: onAction,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
-                    foregroundColor: AppColors.charcoal,
+                    foregroundColor: AppColors.brandCharcoal,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(

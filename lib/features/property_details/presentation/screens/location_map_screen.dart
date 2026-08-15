@@ -10,7 +10,7 @@ class LocationMapScreen extends StatefulWidget {
   final double lat;
   final double lng;
 
-  const LocationMapScreen({
+  LocationMapScreen({
     super.key,
     String? propertyName,
     String? title,
@@ -37,17 +37,17 @@ class _LocationMapScreenState extends State<LocationMapScreen> {
     final target = LatLng(widget.lat, widget.lng);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('propertyDetails.locationSection'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -93,8 +93,9 @@ class _LocationMapScreenState extends State<LocationMapScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              color: AppColors.cardBackground,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.08),
@@ -109,7 +110,7 @@ class _LocationMapScreenState extends State<LocationMapScreen> {
               children: [
                 Text(
                   widget.propertyName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal,
@@ -118,13 +119,13 @@ class _LocationMapScreenState extends State<LocationMapScreen> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_outlined,
+                    Icon(Icons.location_on_outlined,
                         size: 18, color: AppColors.neutral600),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         widget.address,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           color: AppColors.neutral600,
                         ),
@@ -142,7 +143,7 @@ class _LocationMapScreenState extends State<LocationMapScreen> {
                     label: Text(context.tr('propertyDetails.getDirections')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
-                      foregroundColor: AppColors.charcoal,
+                      foregroundColor: AppColors.brandCharcoal,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

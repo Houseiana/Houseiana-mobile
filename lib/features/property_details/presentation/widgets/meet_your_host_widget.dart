@@ -13,7 +13,7 @@ class MeetYourHostWidget extends StatelessWidget {
   final VoidCallback? onContactHost;
   final VoidCallback? onViewProfile;
 
-  const MeetYourHostWidget({
+  MeetYourHostWidget({
     super.key,
     required this.hostName,
     this.hostAvatar,
@@ -33,18 +33,22 @@ class MeetYourHostWidget extends StatelessWidget {
     try {
       final startDate = DateTime.parse(hostingSince!);
       final now = DateTime.now();
-      final totalMonths = (now.year - startDate.year) * 12 + (now.month - startDate.month);
+      final totalMonths =
+          (now.year - startDate.year) * 12 + (now.month - startDate.month);
 
       if (totalMonths < 1) return context.tr('propertyDetails.newHost');
       if (totalMonths < 12) {
         return totalMonths == 1
-            ? context.tr('propertyDetails.hostingMonthSingular', args: {'n': totalMonths})
-            : context.tr('propertyDetails.hostingMonths', args: {'n': totalMonths});
+            ? context.tr('propertyDetails.hostingMonthSingular',
+                args: {'n': totalMonths})
+            : context
+                .tr('propertyDetails.hostingMonths', args: {'n': totalMonths});
       }
 
       final years = (totalMonths / 12).floor();
       return years == 1
-          ? context.tr('propertyDetails.hostingYearSingular', args: {'n': years})
+          ? context
+              .tr('propertyDetails.hostingYearSingular', args: {'n': years})
           : context.tr('propertyDetails.hostingYears', args: {'n': years});
     } catch (_) {
       return context.tr('propertyDetails.newHost');
@@ -60,18 +64,17 @@ class MeetYourHostWidget extends StatelessWidget {
         children: [
           Text(
             context.tr('propertyDetails.meetYourHost'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
             ),
           ),
           const SizedBox(height: 16),
-
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFFAFAFA),
+              color: AppColors.ghostWhite,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.neutral200),
             ),
@@ -94,18 +97,18 @@ class MeetYourHostWidget extends StatelessWidget {
                               ? CachedNetworkImage(
                                   imageUrl: hostAvatar!,
                                   fit: BoxFit.cover,
-                                  placeholder: (_, __) => const Icon(
+                                  placeholder: (_, __) => Icon(
                                     Icons.person,
                                     size: 32,
                                     color: AppColors.charcoal,
                                   ),
-                                  errorWidget: (_, __, ___) => const Icon(
+                                  errorWidget: (_, __, ___) => Icon(
                                     Icons.person,
                                     size: 32,
                                     color: AppColors.charcoal,
                                   ),
                                 )
-                              : const Icon(
+                              : Icon(
                                   Icons.person,
                                   size: 32,
                                   color: AppColors.charcoal,
@@ -114,7 +117,6 @@ class MeetYourHostWidget extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 16),
-
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,7 +126,7 @@ class MeetYourHostWidget extends StatelessWidget {
                               Flexible(
                                 child: Text(
                                   hostName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.charcoal,
@@ -144,11 +146,12 @@ class MeetYourHostWidget extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
-                                    context.tr('propertyDetails.superhostBadge'),
+                                    context
+                                        .tr('propertyDetails.superhostBadge'),
                                     style: const TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
-                                      color: Colors.white,
+                                      color: AppColors.brandCharcoal,
                                     ),
                                   ),
                                 ),
@@ -156,7 +159,6 @@ class MeetYourHostWidget extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 8),
-
                           Row(
                             children: [
                               if (hostRating > 0) ...[
@@ -168,7 +170,7 @@ class MeetYourHostWidget extends StatelessWidget {
                                 const SizedBox(width: 4),
                                 Text(
                                   hostRating.toStringAsFixed(1),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.charcoal,
@@ -176,11 +178,11 @@ class MeetYourHostWidget extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 12),
                               ],
-
                               Icon(
                                 Icons.calendar_today_outlined,
                                 size: 14,
-                                color: AppColors.charcoal.withValues(alpha: 0.6),
+                                color:
+                                    AppColors.charcoal.withValues(alpha: 0.6),
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -188,7 +190,8 @@ class MeetYourHostWidget extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
-                                  color: AppColors.charcoal.withValues(alpha: 0.6),
+                                  color:
+                                      AppColors.charcoal.withValues(alpha: 0.6),
                                 ),
                               ),
                             ],
@@ -198,15 +201,13 @@ class MeetYourHostWidget extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 16),
-
                 if (hostBio != null && hostBio!.isNotEmpty) ...[
                   Text(
                     hostBio!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF6B7280),
+                      color: AppColors.neutral500,
                       height: 1.5,
                     ),
                     maxLines: 3,
@@ -214,13 +215,13 @@ class MeetYourHostWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                 ],
-
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: onContactHost,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.charcoal,
+                      backgroundColor: AppColors.brandCharcoal,
+                      // dark-ok: on the fixed-dark brandCharcoal button
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(

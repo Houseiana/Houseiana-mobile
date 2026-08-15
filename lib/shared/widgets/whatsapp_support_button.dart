@@ -7,13 +7,13 @@ import 'package:url_launcher/url_launcher.dart';
 /// the persistent support widget on the Houseiana web app. Tapping it opens a
 /// WhatsApp conversation with the Houseiana support number.
 class WhatsAppSupportButton extends StatelessWidget {
-  const WhatsAppSupportButton({super.key});
+  WhatsAppSupportButton({super.key});
 
   /// Houseiana support WhatsApp number in international format (no leading '+').
   static const String whatsAppNumber = '201036425474';
 
   /// Official WhatsApp brand green.
-  static const Color _whatsAppGreen = Color(0xFF25D366);
+  static const Color _whatsAppGreen = Color(0xFF25D366); // dark-ok: brand color
 
   Future<void> _openWhatsApp(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
@@ -52,7 +52,7 @@ class WhatsAppSupportButton extends StatelessWidget {
                 width: 30,
                 height: 30,
                 colorFilter: const ColorFilter.mode(
-                  Colors.white,
+                  Colors.white, // dark-ok: glyph on the WhatsApp green
                   BlendMode.srcIn,
                 ),
               ),

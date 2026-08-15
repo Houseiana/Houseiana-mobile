@@ -4,7 +4,7 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class GuestSelectionScreen extends StatefulWidget {
-  const GuestSelectionScreen({super.key});
+  GuestSelectionScreen({super.key});
 
   @override
   State<GuestSelectionScreen> createState() => _GuestSelectionScreenState();
@@ -19,17 +19,17 @@ class _GuestSelectionScreenState extends State<GuestSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('booking.guestsTitle'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -92,7 +92,7 @@ class _GuestSelectionScreenState extends State<GuestSelectionScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.08),
@@ -115,7 +115,7 @@ class _GuestSelectionScreenState extends State<GuestSelectionScreen> {
                       const SizedBox(width: 12),
                       Text(
                         _buildGuestSummary(context),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: AppColors.charcoal,
@@ -134,7 +134,7 @@ class _GuestSelectionScreenState extends State<GuestSelectionScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
-                      foregroundColor: AppColors.charcoal,
+                      foregroundColor: AppColors.brandCharcoal,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -173,7 +173,7 @@ class _GuestSelectionScreenState extends State<GuestSelectionScreen> {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
@@ -182,7 +182,7 @@ class _GuestSelectionScreenState extends State<GuestSelectionScreen> {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   color: AppColors.neutral600,
                 ),
@@ -203,7 +203,7 @@ class _GuestSelectionScreenState extends State<GuestSelectionScreen> {
               alignment: Alignment.center,
               child: Text(
                 count.toString(),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,

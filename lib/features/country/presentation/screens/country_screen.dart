@@ -15,7 +15,7 @@ import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dar
 /// turn drill into villages (region-villages) and finally the stays list
 /// filtered by `villageId`.
 class CountryScreen extends StatefulWidget {
-  const CountryScreen({super.key});
+  CountryScreen({super.key});
 
   @override
   State<CountryScreen> createState() => _CountryScreenState();
@@ -111,7 +111,7 @@ class _CountryScreenState extends State<CountryScreen>
             _buildHeader(filtered.length),
             Expanded(
               child: _isLoading
-                  ? const TileListSkeleton(
+                  ? TileListSkeleton(
                       itemCount: 4,
                       leadingCircle: true,
                       leadingSize: 52,
@@ -120,8 +120,7 @@ class _CountryScreenState extends State<CountryScreen>
                   : _error != null
                       ? DestinationMessageState(
                           icon: Icons.error_outline,
-                          title:
-                              context.tr('country.unableToLoadDestinations'),
+                          title: context.tr('country.unableToLoadDestinations'),
                           message: _error!,
                           actionLabel: context.tr('common.retry'),
                           onAction: _loadCountries,
@@ -129,11 +128,9 @@ class _CountryScreenState extends State<CountryScreen>
                       : filtered.isEmpty
                           ? DestinationMessageState(
                               icon: Icons.search_off_outlined,
-                              title:
-                                  context.tr('country.noDestinationsFound'),
+                              title: context.tr('country.noDestinationsFound'),
                               message: _searchQuery.isEmpty
-                                  ? context
-                                      .tr('country.noCountriesDescription')
+                                  ? context.tr('country.noCountriesDescription')
                                   : context.tr(
                                       'country.noCountriesSearchDescription'),
                             )
@@ -141,8 +138,7 @@ class _CountryScreenState extends State<CountryScreen>
                               color: AppColors.primaryColor,
                               onRefresh: () => _loadCountries(force: true),
                               child: ListView.separated(
-                                physics:
-                                    const AlwaysScrollableScrollPhysics(),
+                                physics: const AlwaysScrollableScrollPhysics(),
                                 padding: const EdgeInsets.all(16),
                                 itemCount: filtered.length,
                                 separatorBuilder: (_, __) =>
@@ -161,13 +157,13 @@ class _CountryScreenState extends State<CountryScreen>
   Widget _buildHeader(int visibleCount) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-      color: Colors.white,
+      color: AppColors.cardBackground,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             context.tr('country.title'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -183,7 +179,7 @@ class _CountryScreenState extends State<CountryScreen>
                       args: {'count': visibleCount})
                   : context.tr('country.countriesCount',
                       args: {'count': visibleCount}),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.neutral600,
               ),
@@ -196,11 +192,11 @@ class _CountryScreenState extends State<CountryScreen>
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
               hintText: context.tr('country.searchCountry'),
-              hintStyle: const TextStyle(
+              hintStyle: TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral400,
               ),
-              prefixIcon: const Icon(
+              prefixIcon: Icon(
                 Icons.search,
                 color: AppColors.neutral400,
                 size: 20,
@@ -211,7 +207,7 @@ class _CountryScreenState extends State<CountryScreen>
                         _searchController.clear();
                         setState(() => _searchQuery = '');
                       },
-                      child: const Icon(
+                      child: Icon(
                         Icons.close,
                         color: AppColors.neutral400,
                         size: 18,
@@ -244,7 +240,7 @@ class _CountryScreenState extends State<CountryScreen>
 class _CountryCard extends StatelessWidget {
   final CountryOption country;
 
-  const _CountryCard({required this.country});
+  _CountryCard({required this.country});
 
   @override
   Widget build(BuildContext context) {
@@ -263,7 +259,7 @@ class _CountryCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -278,7 +274,7 @@ class _CountryCard extends StatelessWidget {
             Container(
               width: 52,
               height: 52,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.neutral100,
                 shape: BoxShape.circle,
               ),
@@ -295,7 +291,7 @@ class _CountryCard extends StatelessWidget {
                 children: [
                   Text(
                     country.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
@@ -306,7 +302,7 @@ class _CountryCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     context.tr('country.exploreDestinations'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppColors.neutral600,
                     ),
@@ -316,7 +312,7 @@ class _CountryCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right,
               size: 20,
               color: AppColors.neutral400,

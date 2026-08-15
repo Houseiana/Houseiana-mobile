@@ -12,7 +12,7 @@ class ModernButton extends StatefulWidget {
   final double? width;
   final double height;
 
-  const ModernButton({
+  ModernButton({
     super.key,
     required this.text,
     this.onPressed,
@@ -75,7 +75,7 @@ class _ModernButtonState extends State<ModernButton> {
 
   BorderSide? get _borderSide {
     if (widget.style == ModernButtonStyle.outline) {
-      return const BorderSide(color: AppColors.neutral200, width: 1.5);
+      return BorderSide(color: AppColors.neutral200, width: 1.5);
     }
     return null;
   }
@@ -166,7 +166,7 @@ class ModernIconButton extends StatelessWidget {
   final Color? iconColor;
   final double size;
 
-  const ModernIconButton({
+  ModernIconButton({
     super.key,
     required this.icon,
     this.onPressed,
@@ -227,7 +227,7 @@ class ModernChip extends StatelessWidget {
   final VoidCallback? onTap;
   final IconData? icon;
 
-  const ModernChip({
+  ModernChip({
     super.key,
     required this.label,
     this.isSelected = false,
@@ -252,7 +252,7 @@ class ModernChip extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.charcoal.withValues(alpha: 0.2),
+                    color: AppColors.brandCharcoal.withValues(alpha: 0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),

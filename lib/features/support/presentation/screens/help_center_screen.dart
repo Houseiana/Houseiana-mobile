@@ -4,7 +4,7 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class HelpCenterScreen extends StatelessWidget {
-  const HelpCenterScreen({super.key});
+  HelpCenterScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -17,17 +17,17 @@ class HelpCenterScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('support.helpCenterTitle'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -46,13 +46,12 @@ class HelpCenterScreen extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.help_outline, color: AppColors.charcoal),
+                Icon(Icons.help_outline, color: AppColors.charcoal),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     context.tr('support.helpInfo'),
-                    style: const TextStyle(
-                        fontSize: 13, color: AppColors.charcoal),
+                    style: TextStyle(fontSize: 13, color: AppColors.charcoal),
                   ),
                 ),
               ],
@@ -61,7 +60,7 @@ class HelpCenterScreen extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             context.tr('support.frequentlyAskedQuestions'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -77,7 +76,7 @@ class HelpCenterScreen extends StatelessWidget {
             label: Text(context.tr('support.contactSupportButton')),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.charcoal,
-              side: const BorderSide(color: AppColors.charcoal),
+              side: BorderSide(color: AppColors.charcoal),
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -98,7 +97,7 @@ class _Faq {
 
 class _FaqTile extends StatefulWidget {
   final _Faq faq;
-  const _FaqTile({required this.faq});
+  _FaqTile({required this.faq});
 
   @override
   State<_FaqTile> createState() => _FaqTileState();
@@ -112,13 +111,13 @@ class _FaqTileState extends State<_FaqTile> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.neutral200),
         borderRadius: BorderRadius.circular(12),
       ),
       child: ExpansionTile(
         title: Text(
           widget.faq.question,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -135,7 +134,7 @@ class _FaqTileState extends State<_FaqTile> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Text(
               widget.faq.answer,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.neutral600,
                 height: 1.5,

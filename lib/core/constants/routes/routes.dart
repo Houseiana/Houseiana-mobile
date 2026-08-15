@@ -65,6 +65,7 @@ import 'package:houseiana_mobile_app/features/profile/presentation/screens/accou
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/notification_settings_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/privacy_settings_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/language_settings_screen.dart';
+import 'package:houseiana_mobile_app/features/profile/presentation/screens/appearance_settings_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/payment_methods_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/payment_history_screen.dart';
 import 'package:houseiana_mobile_app/features/profile/presentation/screens/saved_addresses_screen.dart';
@@ -190,6 +191,7 @@ class Routes {
   static const String notificationSettings = '/notification-settings';
   static const String privacySettings = '/privacy-settings';
   static const String languageSettings = '/language-settings';
+  static const String appearanceSettings = '/appearance-settings';
   static const String paymentMethods = '/payment-methods';
   static const String savedAddresses = '/saved-addresses';
   static const String changePassword = '/change-password';

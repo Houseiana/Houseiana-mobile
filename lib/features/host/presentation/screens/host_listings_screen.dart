@@ -13,19 +13,19 @@ import 'package:houseiana_mobile_app/core/models/property_model.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart';
 
 class HostListingsScreen extends StatelessWidget {
-  const HostListingsScreen({super.key});
+  HostListingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => HostListingsCubit()..loadInitialData(),
-      child: const _HostListingsView(),
+      child: _HostListingsView(),
     );
   }
 }
 
 class _HostListingsView extends StatefulWidget {
-  const _HostListingsView();
+  _HostListingsView();
 
   @override
   State<_HostListingsView> createState() => _HostListingsViewState();
@@ -238,19 +238,19 @@ class _HostListingsViewState extends State<_HostListingsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FA),
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: Navigator.canPop(context)
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+                icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
         title: Text(
           context.tr('host.hostPanel'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: AppColors.neutral600,
@@ -262,17 +262,19 @@ class _HostListingsViewState extends State<_HostListingsView> {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: ElevatedButton.icon(
-              onPressed: () => Navigator.pushNamed(context, Routes.listProperty),
+              onPressed: () =>
+                  Navigator.pushNamed(context, Routes.listProperty),
               icon: const Icon(Icons.add, size: 18),
               label: Text(context.tr('host.addNewProperty')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
             ),
           ),
@@ -302,7 +304,7 @@ class _HostListingsViewState extends State<_HostListingsView> {
           }
 
           if (state is HostListingsLoading && state is! HostListingsLoaded) {
-            return const ListSkeletonLoader();
+            return ListSkeletonLoader();
           }
 
           if (state is HostListingsLoaded) {
@@ -310,7 +312,8 @@ class _HostListingsViewState extends State<_HostListingsView> {
             final activeCount = state.statusCounts.activeCount;
 
             return RefreshIndicator(
-              onRefresh: () => context.read<HostListingsCubit>().loadInitialData(),
+              onRefresh: () =>
+                  context.read<HostListingsCubit>().loadInitialData(),
               color: AppColors.primaryColor,
               child: CustomScrollView(
                 controller: _scrollController,
@@ -323,7 +326,7 @@ class _HostListingsViewState extends State<_HostListingsView> {
                         children: [
                           Text(
                             context.tr('host.myListings'),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
                               color: AppColors.charcoal,
@@ -331,8 +334,11 @@ class _HostListingsViewState extends State<_HostListingsView> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            context.tr('host.propertiesAndActive', args: {'total': allCount, 'active': activeCount}),
-                            style: const TextStyle(
+                            context.tr('host.propertiesAndActive', args: {
+                              'total': allCount,
+                              'active': activeCount
+                            }),
+                            style: TextStyle(
                               fontSize: 14,
                               color: AppColors.neutral600,
                             ),
@@ -402,8 +408,8 @@ class _HostListingsViewState extends State<_HostListingsView> {
             context.tr('host.statAverageRating'),
             averageRating,
             Icons.star_border,
-            Colors.blue,
-            Colors.blue.withValues(alpha: 0.1),
+            AppColors.info,
+            AppColors.info.withValues(alpha: 0.1),
           ),
           const SizedBox(width: 12),
           _buildStatCard(
@@ -437,7 +443,7 @@ class _HostListingsViewState extends State<_HostListingsView> {
       width: 220,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -455,7 +461,7 @@ class _HostListingsViewState extends State<_HostListingsView> {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: AppColors.neutral600,
@@ -474,7 +480,7 @@ class _HostListingsViewState extends State<_HostListingsView> {
           const SizedBox(height: 12),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: AppColors.charcoal,
@@ -485,24 +491,53 @@ class _HostListingsViewState extends State<_HostListingsView> {
     );
   }
 
-  Widget _buildFiltersAndSearch(BuildContext context, HostListingsLoaded state) {
+  Widget _buildFiltersAndSearch(
+      BuildContext context, HostListingsLoaded state) {
     final statusCounts = state.statusCounts;
 
     // Ordered statuses to match design
     final chips = [
-      {'label': context.tr('host.statusAll'), 'count': statusCounts.allCount, 'value': ''},
-      {'label': context.tr('host.statusActive'), 'count': statusCounts.activeCount, 'value': 'Active'},
-      {'label': context.tr('host.statusPending'), 'count': statusCounts.pendingCount, 'value': 'Pending'},
-      {'label': context.tr('host.statusDraft'), 'count': statusCounts.draftCount, 'value': 'Draft'},
-      {'label': context.tr('host.statusInactive'), 'count': statusCounts.inactiveCount, 'value': 'Inactive'},
-      {'label': context.tr('host.statusActionRequired'), 'count': statusCounts.actionRequiredCount, 'value': 'Action Required'},
-      {'label': context.tr('host.statusRejected'), 'count': statusCounts.rejectedCount, 'value': 'Rejected'},
+      {
+        'label': context.tr('host.statusAll'),
+        'count': statusCounts.allCount,
+        'value': ''
+      },
+      {
+        'label': context.tr('host.statusActive'),
+        'count': statusCounts.activeCount,
+        'value': 'Active'
+      },
+      {
+        'label': context.tr('host.statusPending'),
+        'count': statusCounts.pendingCount,
+        'value': 'Pending'
+      },
+      {
+        'label': context.tr('host.statusDraft'),
+        'count': statusCounts.draftCount,
+        'value': 'Draft'
+      },
+      {
+        'label': context.tr('host.statusInactive'),
+        'count': statusCounts.inactiveCount,
+        'value': 'Inactive'
+      },
+      {
+        'label': context.tr('host.statusActionRequired'),
+        'count': statusCounts.actionRequiredCount,
+        'value': 'Action Required'
+      },
+      {
+        'label': context.tr('host.statusRejected'),
+        'count': statusCounts.rejectedCount,
+        'value': 'Rejected'
+      },
     ];
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
@@ -523,7 +558,10 @@ class _HostListingsViewState extends State<_HostListingsView> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: ChoiceChip(
-                    label: Text(context.tr('host.filterWithCount', args: {'label': chip['label']!, 'count': chip['count']!})),
+                    label: Text(context.tr('host.filterWithCount', args: {
+                      'label': chip['label']!,
+                      'count': chip['count']!
+                    })),
                     selected: isSelected,
                     onSelected: (selected) {
                       if (selected) {
@@ -534,15 +572,20 @@ class _HostListingsViewState extends State<_HostListingsView> {
                     },
                     selectedColor: AppColors.charcoal,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.charcoal,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected
+                          ? AppColors.cardBackground
+                          : AppColors.charcoal,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
                       fontSize: 13,
                     ),
                     backgroundColor: Colors.transparent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                       side: BorderSide(
-                        color: isSelected ? AppColors.charcoal : Colors.transparent,
+                        color: isSelected
+                            ? AppColors.charcoal
+                            : Colors.transparent,
                       ),
                     ),
                     showCheckmark: false,
@@ -562,7 +605,7 @@ class _HostListingsViewState extends State<_HostListingsView> {
                     hintText: context.tr('host.searchGuestOrListing'),
                     prefixIcon: const Icon(Icons.search, size: 20),
                     filled: true,
-                    fillColor: const Color(0xFFF9F9FA),
+                    fillColor: AppColors.ghostWhite,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide.none,
@@ -575,23 +618,28 @@ class _HostListingsViewState extends State<_HostListingsView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF9F9FA),
+                  color: AppColors.ghostWhite,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
-                    value: state.selectedSort ?? state.sortOptions.firstOrNull?['name'] as String?,
-                    hint: Text(context.tr('host.sortBy'), style: const TextStyle(fontSize: 14)),
+                    value: state.selectedSort ??
+                        state.sortOptions.firstOrNull?['name'] as String?,
+                    hint: Text(context.tr('host.sortBy'),
+                        style: const TextStyle(fontSize: 14)),
                     icon: const Icon(Icons.keyboard_arrow_down, size: 20),
                     items: state.sortOptions.map((opt) {
                       return DropdownMenuItem<String>(
                         value: opt['name'] as String,
-                        child: Text(opt['name'] as String, style: const TextStyle(fontSize: 14)),
+                        child: Text(opt['name'] as String,
+                            style: const TextStyle(fontSize: 14)),
                       );
                     }).toList(),
                     onChanged: (val) {
                       if (val != null) {
-                        context.read<HostListingsCubit>().applyFilters(sort: val);
+                        context
+                            .read<HostListingsCubit>()
+                            .applyFilters(sort: val);
                       }
                     },
                   ),
@@ -606,8 +654,16 @@ class _HostListingsViewState extends State<_HostListingsView> {
 
   Widget _buildListingsGrid(HostListingsLoaded state) {
     final bool showSkeleton = state.isReloadingList && state.properties.isEmpty;
-    final items = showSkeleton 
-        ? List.generate(3, (index) => const PropertyModel(id: 'dummy', title: 'Loading property title...', location: 'Loading location details...', pricePerNight: 0, viewCount: 0, status: 'Active'))
+    final items = showSkeleton
+        ? List.generate(
+            3,
+            (index) => const PropertyModel(
+                id: 'dummy',
+                title: 'Loading property title...',
+                location: 'Loading location details...',
+                pricePerNight: 0,
+                viewCount: 0,
+                status: 'Active'))
         : state.properties;
 
     if (items.isEmpty && !state.isReloadingList) {
@@ -623,7 +679,7 @@ class _HostListingsViewState extends State<_HostListingsView> {
                 const SizedBox(height: 16),
                 Text(
                   context.tr('host.noPropertiesFound'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -632,7 +688,7 @@ class _HostListingsViewState extends State<_HostListingsView> {
                 const SizedBox(height: 8),
                 Text(
                   context.tr('host.tryAdjustingFilters'),
-                  style: const TextStyle(color: AppColors.neutral600),
+                  style: TextStyle(color: AppColors.neutral600),
                 ),
               ],
             ),

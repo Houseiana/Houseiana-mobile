@@ -9,7 +9,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 
 class Step06PhotosScreen extends StatefulWidget {
-  const Step06PhotosScreen({super.key});
+  Step06PhotosScreen({super.key});
 
   @override
   State<Step06PhotosScreen> createState() => _Step06PhotosScreenState();
@@ -25,7 +25,7 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
 
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -49,7 +49,7 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
               const SizedBox(height: 20),
               Text(
                 context.tr('wizard.wizardPhotosUploadCoverTitle'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: AppColors.charcoal,
@@ -58,13 +58,14 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
               const SizedBox(height: 6),
               Text(
                 context.tr('wizard.wizardPhotosUploadCoverDesc'),
-                style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+                style: TextStyle(fontSize: 14, color: AppColors.neutral600),
               ),
               const SizedBox(height: 20),
               _PhotoSourceTile(
                 icon: Icons.photo_library_outlined,
                 title: context.tr('wizard.wizardPhotosChooseFromGallery'),
-                subtitle: context.tr('wizard.wizardPhotosChooseFromGallerySingle'),
+                subtitle:
+                    context.tr('wizard.wizardPhotosChooseFromGallerySingle'),
                 onTap: () async {
                   Navigator.pop(sheetCtx);
                   final file = await _picker.pickImage(
@@ -107,7 +108,7 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
 
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -131,7 +132,7 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
               const SizedBox(height: 20),
               Text(
                 context.tr('wizard.wizardPhotosAddListingPhotos'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: AppColors.charcoal,
@@ -140,13 +141,14 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
               const SizedBox(height: 6),
               Text(
                 context.tr('wizard.wizardPhotosListingDesc'),
-                style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+                style: TextStyle(fontSize: 14, color: AppColors.neutral600),
               ),
               const SizedBox(height: 20),
               _PhotoSourceTile(
                 icon: Icons.photo_library_outlined,
                 title: context.tr('wizard.wizardPhotosChooseFromGallery'),
-                subtitle: context.tr('wizard.wizardPhotosChooseFromGalleryMulti'),
+                subtitle:
+                    context.tr('wizard.wizardPhotosChooseFromGalleryMulti'),
                 onTap: () async {
                   Navigator.pop(sheetCtx);
                   await _pickFromGallery();
@@ -256,14 +258,14 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
       return CachedNetworkImage(
         imageUrl: path,
         fit: fit,
-        placeholder: (context, url) => Container(color: const Color(0xFFF0F0F0)),
-        errorWidget: (context, url, error) => const _ImageErrorPlaceholder(),
+        placeholder: (context, url) => Container(color: AppColors.neutral100),
+        errorWidget: (context, url, error) => _ImageErrorPlaceholder(),
       );
     }
     return Image.file(
       File(path),
       fit: fit,
-      errorBuilder: (_, __, ___) => const _ImageErrorPlaceholder(),
+      errorBuilder: (_, __, ___) => _ImageErrorPlaceholder(),
     );
   }
 
@@ -287,7 +289,7 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
               // ── Page header ─────────────────────────────────────────────
               Text(
                 context.tr('wizard.wizardPhotosStepTitle'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: AppColors.charcoal,
@@ -296,14 +298,14 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
               const SizedBox(height: 8),
               Text(
                 context.tr('wizard.wizardPhotosStepSubtitle'),
-                style: const TextStyle(fontSize: 15, color: AppColors.neutral600),
+                style: TextStyle(fontSize: 15, color: AppColors.neutral600),
               ),
               const SizedBox(height: 28),
 
               // ── Cover Photo section ──────────────────────────────────────
               Text(
                 context.tr('wizard.wizardPhotosCoverSectionTitle'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: AppColors.charcoal,
@@ -312,7 +314,7 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
               const SizedBox(height: 4),
               Text(
                 context.tr('wizard.wizardPhotosCoverSectionDesc'),
-                style: const TextStyle(fontSize: 13, color: AppColors.neutral600),
+                style: TextStyle(fontSize: 13, color: AppColors.neutral600),
               ),
               const SizedBox(height: 12),
 
@@ -363,7 +365,7 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
                             ),
                             child: Text(
                               context.tr('wizard.wizardPhotosCoverBadge'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.charcoal,
@@ -382,14 +384,16 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
                                 icon: Icons.add_photo_alternate_outlined,
                                 iconColor: AppColors.charcoal,
                                 onTap: _pickCoverPhoto,
-                                tooltip: context.tr('wizard.wizardPhotosChangeCoverTooltip'),
+                                tooltip: context.tr(
+                                    'wizard.wizardPhotosChangeCoverTooltip'),
                               ),
                               const SizedBox(width: 8),
                               _IconActionButton(
                                 icon: Icons.delete_outline_rounded,
                                 iconColor: AppColors.error,
                                 onTap: () => cubit.removeCoverPhoto(),
-                                tooltip: context.tr('wizard.wizardPhotosRemoveCoverTooltip'),
+                                tooltip: context.tr(
+                                    'wizard.wizardPhotosRemoveCoverTooltip'),
                               ),
                             ],
                           ),
@@ -406,10 +410,10 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
                     width: double.infinity,
                     height: 180,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.cardBackground,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color(0xFFE5E7EB),
+                        color: AppColors.neutral200,
                         width: 2,
                       ),
                     ),
@@ -419,20 +423,20 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
                         Container(
                           width: 56,
                           height: 56,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFF0F2F5),
+                          decoration: BoxDecoration(
+                            color: AppColors.neutral100,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.photo_camera_outlined,
-                            color: Color(0xFF9CA3AF),
+                            color: AppColors.neutral400,
                             size: 28,
                           ),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           context.tr('wizard.wizardPhotosUploadCoverTitle'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: AppColors.neutral600,
@@ -441,9 +445,9 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
                         const SizedBox(height: 4),
                         Text(
                           context.tr('wizard.wizardPhotosFileTypes'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF9CA3AF),
+                            color: AppColors.neutral400,
                           ),
                         ),
                       ],
@@ -454,7 +458,7 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
               const SizedBox(height: 24),
 
               // ── Divider ─────────────────────────────────────────────────
-              const Divider(color: Color(0xFFE5E9EE), thickness: 1),
+              Divider(color: AppColors.neutral200, thickness: 1),
               const SizedBox(height: 24),
 
               // ── Progress banner ──────────────────────────────────────────
@@ -462,13 +466,13 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: hasMinimumPhotos
-                      ? const Color(0xFFF0FDF4)
+                      ? const Color(0xFFF0FDF4) // dark-ok
                       : AppColors.ghostWhite,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: hasMinimumPhotos
-                        ? const Color(0xFF86EFAC)
-                        : const Color(0xFFE5E7EB),
+                        ? const Color(0xFF86EFAC) // dark-ok
+                        : AppColors.neutral200,
                   ),
                 ),
                 child: Row(
@@ -478,7 +482,7 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
                           ? Icons.check_circle_outline
                           : Icons.photo_library_outlined,
                       color: hasMinimumPhotos
-                          ? const Color(0xFF15803D)
+                          ? const Color(0xFF15803D) // dark-ok
                           : AppColors.primaryColor,
                     ),
                     const SizedBox(width: 12),
@@ -496,7 +500,7 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: hasMinimumPhotos
-                              ? const Color(0xFF166534)
+                              ? const Color(0xFF166534) // dark-ok
                               : AppColors.charcoal,
                         ),
                       ),
@@ -512,9 +516,10 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFFBEB),
+                    color: const Color(0xFFFFFBEB), // dark-ok
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFFDE68A)),
+                    border:
+                        Border.all(color: const Color(0xFFFDE68A)), // dark-ok
                   ),
                   child: Row(
                     children: [
@@ -527,7 +532,7 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
                       Expanded(
                         child: Text(
                           context.tr('wizard.wizardPhotosUploading'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: AppColors.charcoal,
@@ -574,7 +579,7 @@ class _Step06PhotosScreenState extends State<Step06PhotosScreen> {
                   padding: const EdgeInsets.only(top: 16),
                   child: Text(
                     context.tr('wizard.wizardPhotosEmptyState'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.neutral600,
                       fontSize: 13,
                     ),
@@ -596,7 +601,7 @@ class _IconActionButton extends StatelessWidget {
   final VoidCallback onTap;
   final String tooltip;
 
-  const _IconActionButton({
+  _IconActionButton({
     required this.icon,
     required this.iconColor,
     required this.onTap,
@@ -613,9 +618,9 @@ class _IconActionButton extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.92),
+            color: AppColors.cardBackground.withValues(alpha: 0.92),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E9EE)),
+            border: Border.all(color: AppColors.neutral200),
           ),
           child: Icon(icon, size: 20, color: iconColor),
         ),
@@ -628,7 +633,7 @@ class _AddPhotoTile extends StatelessWidget {
   final bool isUploading;
   final VoidCallback onTap;
 
-  const _AddPhotoTile({
+  _AddPhotoTile({
     required this.isUploading,
     required this.onTap,
   });
@@ -645,7 +650,7 @@ class _AddPhotoTile extends StatelessWidget {
             color: AppColors.ghostWhite,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: const Color(0xFFD1D5DB),
+              color: AppColors.neutral300,
             ),
           ),
           child: Center(
@@ -666,7 +671,7 @@ class _AddPhotoTile extends StatelessWidget {
                     isUploading
                         ? context.tr('wizard.wizardPhotosUploadingShort')
                         : context.tr('wizard.wizardPhotosAddPhotos'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.charcoal,
@@ -676,7 +681,7 @@ class _AddPhotoTile extends StatelessWidget {
                   Text(
                     context.tr('wizard.wizardPhotosGalleryOrCamera'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppColors.neutral600,
                     ),
@@ -696,7 +701,7 @@ class _ListingPhotoTile extends StatelessWidget {
   final String indexLabel;
   final VoidCallback onRemove;
 
-  const _ListingPhotoTile({
+  _ListingPhotoTile({
     required this.imageUrl,
     required this.indexLabel,
     required this.onRemove,
@@ -714,14 +719,14 @@ class _ListingPhotoTile extends StatelessWidget {
                   imageUrl: imageUrl,
                   fit: BoxFit.cover,
                   placeholder: (context, url) =>
-                      Container(color: const Color(0xFFF0F0F0)),
+                      Container(color: AppColors.neutral100),
                   errorWidget: (context, url, error) =>
-                      const _ImageErrorPlaceholder(),
+                      _ImageErrorPlaceholder(),
                 )
               : Image.file(
                   File(imageUrl),
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const _ImageErrorPlaceholder(),
+                  errorBuilder: (_, __, ___) => _ImageErrorPlaceholder(),
                 ),
           // Index label
           Positioned(
@@ -738,6 +743,7 @@ class _ListingPhotoTile extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
+                  // dark-ok: label on the photo scrim
                   color: Colors.white,
                 ),
               ),
@@ -761,6 +767,7 @@ class _ListingPhotoTile extends StatelessWidget {
                   ),
                   child: const Icon(
                     Icons.close,
+                    // dark-ok: icon on the photo scrim
                     color: Colors.white,
                     size: 18,
                   ),
@@ -775,14 +782,14 @@ class _ListingPhotoTile extends StatelessWidget {
 }
 
 class _ImageErrorPlaceholder extends StatelessWidget {
-  const _ImageErrorPlaceholder();
+  _ImageErrorPlaceholder();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.ghostWhite,
       alignment: Alignment.center,
-      child: const Icon(
+      child: Icon(
         Icons.image_outlined,
         color: AppColors.neutral600,
         size: 28,
@@ -797,7 +804,7 @@ class _PhotoSourceTile extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
 
-  const _PhotoSourceTile({
+  _PhotoSourceTile({
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -815,7 +822,7 @@ class _PhotoSourceTile extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(color: AppColors.neutral200),
           ),
           child: Row(
             children: [
@@ -835,7 +842,7 @@ class _PhotoSourceTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: AppColors.charcoal,
@@ -844,7 +851,7 @@ class _PhotoSourceTile extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         color: AppColors.neutral600,
                       ),
@@ -852,7 +859,7 @@ class _PhotoSourceTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right,
                 color: AppColors.neutral600,
               ),

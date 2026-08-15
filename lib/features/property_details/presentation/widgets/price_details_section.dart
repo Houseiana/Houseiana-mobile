@@ -44,7 +44,7 @@ class PriceDetailsSection extends StatelessWidget {
     'totalPrice': 2300,
   };
 
-  const PriceDetailsSection({
+  PriceDetailsSection({
     super.key,
     required this.currency,
     this.minNights,
@@ -65,7 +65,7 @@ class PriceDetailsSection extends StatelessWidget {
             children: [
               Text(
                 context.tr('booking.priceDetails'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: AppColors.charcoal,
@@ -103,7 +103,7 @@ class PriceDetailsSection extends StatelessWidget {
               Center(
                 child: Text(
                   context.tr('propertyDetails.notChargedYet'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppColors.neutral500,
                   ),
@@ -122,19 +122,24 @@ class PriceDetailsSection extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF8E1),
-        border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.3)),
+        // dark-ok: amber minimum-stay notice — the tinted panel and its
+        // amber-on-amber content stay a self-contained light island in
+        // both themes.
+        color: const Color(0xFFFFF8E1), // dark-ok
+        border:
+            Border.all(color: AppColors.primaryColor.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
+          // dark-ok: on the amber notice panel
           const Icon(Icons.event_available_outlined,
-              size: 16, color: Color(0xFFD4A017)),
+              size: 16, color: Color(0xFFD4A017)), // dark-ok
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              context.tr('propertyDetails.minimumStay',
-                  args: {'n': minNights}),
+              context.tr('propertyDetails.minimumStay', args: {'n': minNights}),
+              // dark-ok: on the amber notice panel
               style: const TextStyle(fontSize: 13, color: Color(0xFF7A6C3A)),
             ),
           ),
@@ -150,7 +155,7 @@ class PriceDetailsSection extends StatelessWidget {
       style: const TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w600,
-        color: Color(0xFFD00416),
+        color: AppColors.discountRed,
       ),
     );
   }
@@ -184,7 +189,9 @@ class PriceDetailsSection extends StatelessWidget {
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: focused ? const Color(0xFFFFFBEB) : Colors.transparent,
+              color: focused
+                  ? AppColors.primaryColor.withValues(alpha: 0.1)
+                  : Colors.transparent,
               border: focused
                   ? Border.all(color: AppColors.charcoal, width: 1.5)
                   : null,
@@ -195,7 +202,7 @@ class PriceDetailsSection extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal,
@@ -212,8 +219,9 @@ class PriceDetailsSection extends StatelessWidget {
                     fontSize: 14,
                     fontWeight:
                         value == null ? FontWeight.w400 : FontWeight.w600,
-                    color:
-                        value == null ? AppColors.neutral500 : AppColors.charcoal,
+                    color: value == null
+                        ? AppColors.neutral500
+                        : AppColors.charcoal,
                   ),
                 ),
               ],
@@ -256,7 +264,7 @@ class PriceDetailsSection extends StatelessWidget {
       margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         border: Border.all(color: AppColors.neutral200),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -266,16 +274,16 @@ class PriceDetailsSection extends StatelessWidget {
           if (!state.initialized && state.fatalError != null)
             _calendarError(context)
           else if (!state.initialized)
-            const _InlineCalendarSkeleton()
+            _InlineCalendarSkeleton()
           else ...[
             _monthNav(context, state),
             _weekHeader(context),
             MonthCalendarWidget(
               month: state.leftMonth,
-              prices: state
-                  .pricesByMonth[NightlyPricesPage.monthKeyFromDate(state.leftMonth)],
-              isLoading: state.loadingMonths
-                  .contains(NightlyPricesPage.monthKeyFromDate(state.leftMonth)),
+              prices: state.pricesByMonth[
+                  NightlyPricesPage.monthKeyFromDate(state.leftMonth)],
+              isLoading: state.loadingMonths.contains(
+                  NightlyPricesPage.monthKeyFromDate(state.leftMonth)),
               error: state.errorsByMonth[
                   NightlyPricesPage.monthKeyFromDate(state.leftMonth)],
               checkIn: state.checkIn,
@@ -285,8 +293,9 @@ class PriceDetailsSection extends StatelessWidget {
               baseMonthKey: state.baseMonthKey,
               bookedDates: state.bookedDates,
               onDayTap: context.read<NightlyPricesCubit>().tapDay,
-              onRetry: () =>
-                  context.read<NightlyPricesCubit>().retryMonth(state.leftMonth),
+              onRetry: () => context
+                  .read<NightlyPricesCubit>()
+                  .retryMonth(state.leftMonth),
               showTitle: false,
             ),
             const SizedBox(height: 8),
@@ -320,7 +329,7 @@ class PriceDetailsSection extends StatelessWidget {
           child: Center(
             child: Text(
               DateFormat.yMMMM(locale).format(state.leftMonth),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -356,7 +365,7 @@ class PriceDetailsSection extends StatelessWidget {
                 child: Center(
                   child: Text(
                     l,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppColors.neutral500,
                       fontWeight: FontWeight.w600,
@@ -379,7 +388,7 @@ class PriceDetailsSection extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             context.tr('propertyDetails.calendarLoadError'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               color: AppColors.neutral600,
               fontWeight: FontWeight.w500,
@@ -428,7 +437,7 @@ class PriceDetailsSection extends StatelessWidget {
           context.tr('propertyDetails.calendarApproxPrices',
               args: {'currency': state.currency}),
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 12, color: AppColors.neutral500),
+          style: TextStyle(fontSize: 12, color: AppColors.neutral500),
         ),
         const SizedBox(height: 6),
         Row(
@@ -436,7 +445,7 @@ class PriceDetailsSection extends StatelessWidget {
             Expanded(
               child: Text(
                 summary,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
@@ -452,7 +461,7 @@ class PriceDetailsSection extends StatelessWidget {
                 ),
                 child: Text(
                   context.tr('common.clear'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -473,7 +482,7 @@ class PriceDetailsSection extends StatelessWidget {
     if (!state.hasCompleteRange) {
       return Text(
         context.tr('propertyDetails.priceDetailsHint'),
-        style: const TextStyle(fontSize: 13, color: AppColors.neutral500),
+        style: TextStyle(fontSize: 13, color: AppColors.neutral500),
       );
     }
     if (state.quoteLoading) {
@@ -509,15 +518,15 @@ class PriceDetailsSection extends StatelessWidget {
     final totals = state.selectedRangeTotals;
     if (totals == null) return null;
     final hasDiscount = totals.effective < totals.original;
-    // Rose used for discounted amounts, matching NightlyPriceCell.
-    const discountColor = Color(0xFFE11D48);
+    // The app's discount red, matching NightlyPriceCell.
+    const discountColor = AppColors.discountRed;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           context.tr('propertyDetails.priceDetailsUnavailable'),
-          style: const TextStyle(fontSize: 13, color: AppColors.neutral500),
+          style: TextStyle(fontSize: 13, color: AppColors.neutral500),
         ),
         const SizedBox(height: 10),
         Row(
@@ -525,7 +534,7 @@ class PriceDetailsSection extends StatelessWidget {
             Expanded(
               child: Text(
                 context.tr('propertyDetails.calendarStayTotal'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: AppColors.charcoal,
@@ -535,7 +544,7 @@ class PriceDetailsSection extends StatelessWidget {
             if (hasDiscount) ...[
               Text(
                 Money.format(totals.original, state.currency),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   color: AppColors.neutral400,
                   decoration: TextDecoration.lineThrough,
@@ -562,7 +571,7 @@ class PriceDetailsSection extends StatelessWidget {
 /// Placeholder grid shown while the first nightly-prices page loads, sized like
 /// the real calendar so the section doesn't jump when the data lands.
 class _InlineCalendarSkeleton extends StatelessWidget {
-  const _InlineCalendarSkeleton();
+  _InlineCalendarSkeleton();
 
   @override
   Widget build(BuildContext context) {

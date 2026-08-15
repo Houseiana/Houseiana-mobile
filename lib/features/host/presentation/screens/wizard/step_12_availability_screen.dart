@@ -5,7 +5,7 @@ import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.da
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class Step12AvailabilityScreen extends StatefulWidget {
-  const Step12AvailabilityScreen({super.key});
+  Step12AvailabilityScreen({super.key});
 
   @override
   State<Step12AvailabilityScreen> createState() =>
@@ -48,7 +48,7 @@ class _Step12AvailabilityScreenState extends State<Step12AvailabilityScreen> {
         children: [
           Text(
             context.tr('wizard.setAvailability'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -57,11 +57,12 @@ class _Step12AvailabilityScreenState extends State<Step12AvailabilityScreen> {
           const SizedBox(height: 8),
           Text(
             context.tr('wizard.chooseHowGuests'),
-            style: const TextStyle(fontSize: 15, color: AppColors.neutral600),
+            style: TextStyle(fontSize: 15, color: AppColors.neutral600),
           ),
           const SizedBox(height: 32),
           Text(context.tr('wizard.availabilityType'),
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           _RadioOption(
             title: context.tr('wizard.availFlexible'),
@@ -126,7 +127,7 @@ class _RadioOption extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _RadioOption({
+  _RadioOption({
     required this.title,
     required this.description,
     required this.isSelected,
@@ -142,8 +143,7 @@ class _RadioOption extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           border: Border.all(
-            color:
-                isSelected ? AppColors.primaryColor : const Color(0xFFE5E7EB),
+            color: isSelected ? AppColors.primaryColor : AppColors.neutral200,
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(12),
@@ -164,7 +164,7 @@ class _RadioOption extends StatelessWidget {
                 color: isSelected ? AppColors.primaryColor : Colors.transparent,
               ),
               child: isSelected
-                  ? const Icon(Icons.check, size: 12, color: Colors.white)
+                  ? Icon(Icons.check, size: 12, color: AppColors.brandCharcoal)
                   : null,
             ),
             const SizedBox(width: 12),
@@ -175,8 +175,8 @@ class _RadioOption extends StatelessWidget {
                   Text(title,
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                   Text(description,
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.neutral600)),
+                      style:
+                          TextStyle(fontSize: 12, color: AppColors.neutral600)),
                 ],
               ),
             ),

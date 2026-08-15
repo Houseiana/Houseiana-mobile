@@ -10,7 +10,7 @@ class ResetPasswordScreen extends StatefulWidget {
   final String? email;
   final String? signInId;
 
-  const ResetPasswordScreen({super.key, this.email, this.signInId});
+  ResetPasswordScreen({super.key, this.email, this.signInId});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -78,12 +78,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       builder: (context, state) {
         final isLoading = state is AuthLoading;
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.cardBackground,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.cardBackground,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+              icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
               onPressed: () => Navigator.pop(context),
             ),
           ),
@@ -115,7 +115,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
                     Text(
                       context.tr('auth.resetPassword'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
                         color: AppColors.charcoal,
@@ -131,7 +131,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           'email': widget.email ?? context.tr('auth.yourEmail'),
                         },
                       ),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         color: AppColors.neutral600,
                         height: 1.5,
@@ -150,11 +150,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         prefixIcon: const Icon(Icons.verified_outlined),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                          borderSide: BorderSide(color: AppColors.neutral200),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                          borderSide: BorderSide(color: AppColors.neutral200),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -168,7 +168,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return context.tr('auth.validation.enterVerificationCode');
+                          return context
+                              .tr('auth.validation.enterVerificationCode');
                         }
                         return null;
                       },
@@ -190,16 +191,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 ? Icons.visibility_outlined
                                 : Icons.visibility_off_outlined,
                           ),
-                          onPressed: () =>
-                              setState(() => _obscurePassword = !_obscurePassword),
+                          onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                          borderSide: BorderSide(color: AppColors.neutral200),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                          borderSide: BorderSide(color: AppColors.neutral200),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -216,7 +217,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           return context.tr('auth.validation.enterPassword');
                         }
                         if (value.length < 8) {
-                          return context.tr('auth.validation.passwordMinLength');
+                          return context
+                              .tr('auth.validation.passwordMinLength');
                         }
                         return null;
                       },
@@ -238,16 +240,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 ? Icons.visibility_outlined
                                 : Icons.visibility_off_outlined,
                           ),
-                          onPressed: () => setState(
-                              () => _obscureConfirmPassword = !_obscureConfirmPassword),
+                          onPressed: () => setState(() =>
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword),
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                          borderSide: BorderSide(color: AppColors.neutral200),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                          borderSide: BorderSide(color: AppColors.neutral200),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -261,10 +264,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return context.tr('auth.validation.confirmPasswordRequired');
+                          return context
+                              .tr('auth.validation.confirmPasswordRequired');
                         }
                         if (value != _passwordController.text) {
-                          return context.tr('auth.validation.passwordsDoNotMatch');
+                          return context
+                              .tr('auth.validation.passwordsDoNotMatch');
                         }
                         return null;
                       },
@@ -276,10 +281,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       width: double.infinity,
                       height: 54,
                       child: ElevatedButton(
-                        onPressed: isLoading ? null : () => _resetPassword(context),
+                        onPressed:
+                            isLoading ? null : () => _resetPassword(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryColor,
-                          foregroundColor: AppColors.charcoal,
+                          foregroundColor: AppColors.brandCharcoal,
                           disabledBackgroundColor: AppColors.neutral400,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -287,13 +293,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           ),
                         ),
                         child: isLoading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor:
-                                      AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.brandCharcoal,
+                                  ),
                                 ),
                               )
                             : Text(

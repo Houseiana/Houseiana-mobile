@@ -92,7 +92,7 @@ class AppShadows {
   // Chip shadow when selected
   static List<BoxShadow> get chipShadow => [
         BoxShadow(
-          color: AppColors.charcoal.withValues(alpha: 0.15),
+          color: AppColors.brandCharcoal.withValues(alpha: 0.15),
           blurRadius: 6,
           offset: const Offset(0, 2),
         ),

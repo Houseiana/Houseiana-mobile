@@ -23,7 +23,7 @@ class AvailabilityQuoteRows extends StatelessWidget {
   /// Tighter type/spacing for the calendar footer, where vertical room is scarce.
   final bool compact;
 
-  const AvailabilityQuoteRows({
+  AvailabilityQuoteRows({
     super.key,
     required this.availability,
     required this.currency,
@@ -46,7 +46,7 @@ class AvailabilityQuoteRows extends StatelessWidget {
       return [
         Text(
           context.tr('propertyDetails.priceDetailsUnavailable'),
-          style: const TextStyle(fontSize: 13, color: AppColors.neutral500),
+          style: TextStyle(fontSize: 13, color: AppColors.neutral500),
         ),
       ];
     }
@@ -57,7 +57,7 @@ class AvailabilityQuoteRows extends StatelessWidget {
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Color(0xFFD00416),
+            color: AppColors.discountRed,
           ),
         ),
       ];
@@ -81,9 +81,8 @@ class AvailabilityQuoteRows extends StatelessWidget {
     // right below it does the subtracting, so the column adds up to the total
     // on screen. Same treatment as the reserve step's price card.
     final grossSubtotal = (amount('subtotal') ?? 0) + discount;
-    final grossNightly = nights > 0
-        ? grossSubtotal / nights
-        : (amount('pricePerNight') ?? 0);
+    final grossNightly =
+        nights > 0 ? grossSubtotal / nights : (amount('pricePerNight') ?? 0);
 
     final nightlyLabel = nights == 1
         ? context.tr('booking.priceByNightTemplate',
@@ -116,9 +115,11 @@ class AvailabilityQuoteRows extends StatelessWidget {
 
   Widget _row(String label, String value,
       {bool isTotal = false, bool isDiscount = false}) {
-    const discountGreen = Color(0xFF059669);
-    final labelSize = compact ? (isTotal ? 14.0 : 13.0) : (isTotal ? 16.0 : 14.0);
-    final valueSize = compact ? (isTotal ? 15.0 : 13.0) : (isTotal ? 17.0 : 14.0);
+    const discountGreen = AppColors.success;
+    final labelSize =
+        compact ? (isTotal ? 14.0 : 13.0) : (isTotal ? 16.0 : 14.0);
+    final valueSize =
+        compact ? (isTotal ? 15.0 : 13.0) : (isTotal ? 17.0 : 14.0);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,7 +134,7 @@ class AvailabilityQuoteRows extends StatelessWidget {
                   ? discountGreen
                   : isTotal
                       ? AppColors.charcoal
-                      : const Color(0xFF6B7280),
+                      : AppColors.neutral500,
             ),
           ),
         ),

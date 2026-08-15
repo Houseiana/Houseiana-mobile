@@ -8,34 +8,34 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class HostReviewsScreen extends StatelessWidget {
-  const HostReviewsScreen({super.key});
+  HostReviewsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => HostDashboardCubit()..loadDashboard(),
-      child: const _HostReviewsView(),
+      child: _HostReviewsView(),
     );
   }
 }
 
 class _HostReviewsView extends StatelessWidget {
-  const _HostReviewsView();
+  _HostReviewsView();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('host.reviewsHeader'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -46,7 +46,7 @@ class _HostReviewsView extends StatelessWidget {
       body: BlocBuilder<HostDashboardCubit, HostDashboardState>(
         builder: (context, state) {
           if (state is HostDashboardLoading) {
-            return const TileListSkeleton(
+            return TileListSkeleton(
               itemCount: 6,
               leadingSize: 48,
               showTrailing: true,
@@ -69,7 +69,7 @@ class _HostReviewsView extends StatelessWidget {
                 .toList();
 
             if (reviewed.isEmpty) {
-              return const _EmptyReviews();
+              return _EmptyReviews();
             }
 
             return RefreshIndicator(
@@ -99,7 +99,7 @@ class _HostReviewsView extends StatelessWidget {
 class _ReviewsSummary extends StatelessWidget {
   final List<PropertyModel> properties;
 
-  const _ReviewsSummary({required this.properties});
+  _ReviewsSummary({required this.properties});
 
   @override
   Widget build(BuildContext context) {
@@ -120,10 +120,11 @@ class _ReviewsSummary extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.ghostWhite,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.neutral200),
       ),
       child: Row(
         children: [
+          // dark-ok: the rating star is orange in both themes
           const Icon(Icons.star_rounded, color: Colors.orange, size: 32),
           const SizedBox(width: 14),
           Expanded(
@@ -132,7 +133,7 @@ class _ReviewsSummary extends StatelessWidget {
               children: [
                 Text(
                   average > 0 ? average.toStringAsFixed(1) : '--',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
                     color: AppColors.charcoal,
@@ -143,7 +144,7 @@ class _ReviewsSummary extends StatelessWidget {
                     'total': totalReviews,
                     'properties': properties.length,
                   }),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppColors.neutral600,
                   ),
@@ -160,7 +161,7 @@ class _ReviewsSummary extends StatelessWidget {
 class _ReviewPropertyCard extends StatelessWidget {
   final PropertyModel property;
 
-  const _ReviewPropertyCard({required this.property});
+  _ReviewPropertyCard({required this.property});
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +169,7 @@ class _ReviewPropertyCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.neutral200),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -180,7 +181,7 @@ class _ReviewPropertyCard extends StatelessWidget {
               color: AppColors.primaryColor.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.home_outlined, color: AppColors.charcoal),
+            child: Icon(Icons.home_outlined, color: AppColors.charcoal),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -191,7 +192,7 @@ class _ReviewPropertyCard extends StatelessWidget {
                   property.displayTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: AppColors.charcoal,
@@ -204,7 +205,7 @@ class _ReviewPropertyCard extends StatelessWidget {
                       : property.displayLocation,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppColors.neutral600,
                   ),
@@ -219,14 +220,18 @@ class _ReviewPropertyCard extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.star_rounded,
-                      size: 18, color: Colors.orange),
+                  const Icon(
+                    Icons.star_rounded,
+                    size: 18,
+                    // dark-ok: the rating star is orange in both themes
+                    color: Colors.orange,
+                  ),
                   const SizedBox(width: 3),
                   Text(
                     (property.rating ?? 0) > 0
                         ? property.rating!.toStringAsFixed(1)
                         : '--',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
@@ -236,8 +241,9 @@ class _ReviewPropertyCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                context.tr('host.reviewsCount', args: {'n': property.reviewCount ?? 0}),
-                style: const TextStyle(
+                context.tr('host.reviewsCount',
+                    args: {'n': property.reviewCount ?? 0}),
+                style: TextStyle(
                   fontSize: 12,
                   color: AppColors.neutral600,
                 ),
@@ -251,7 +257,7 @@ class _ReviewPropertyCard extends StatelessWidget {
 }
 
 class _EmptyReviews extends StatelessWidget {
-  const _EmptyReviews();
+  _EmptyReviews();
 
   @override
   Widget build(BuildContext context) {
@@ -261,12 +267,12 @@ class _EmptyReviews extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.rate_review_outlined,
+            Icon(Icons.rate_review_outlined,
                 size: 72, color: AppColors.neutral400),
             const SizedBox(height: 18),
             Text(
               context.tr('host.noReviewsYet'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -276,7 +282,7 @@ class _EmptyReviews extends StatelessWidget {
             Text(
               context.tr('host.noReviewsYetDesc'),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+              style: TextStyle(fontSize: 14, color: AppColors.neutral600),
             ),
           ],
         ),
@@ -289,7 +295,7 @@ class _ErrorState extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _ErrorState({
+  _ErrorState({
     required this.message,
     required this.onRetry,
   });
@@ -307,14 +313,14 @@ class _ErrorState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 15, color: AppColors.charcoal),
+              style: TextStyle(fontSize: 15, color: AppColors.charcoal),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
               ),
               child: Text(context.tr('common.retry')),
             ),

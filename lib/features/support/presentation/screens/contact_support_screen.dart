@@ -10,7 +10,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ContactSupportScreen extends StatefulWidget {
-  const ContactSupportScreen({super.key});
+  ContactSupportScreen({super.key});
 
   @override
   State<ContactSupportScreen> createState() => _ContactSupportScreenState();
@@ -68,7 +68,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(context.tr('support.ticketSubmitted')),
-                backgroundColor: Colors.green,
+                backgroundColor: AppColors.success,
                 behavior: SnackBarBehavior.floating,
               ),
             );
@@ -77,7 +77,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.error,
                 behavior: SnackBarBehavior.floating,
               ),
             );
@@ -86,17 +86,17 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
         builder: (context, state) {
           final isLoading = state is SupportLoading;
           return Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.cardBackground,
             appBar: AppBar(
-              backgroundColor: Colors.white,
+              backgroundColor: AppColors.cardBackground,
               elevation: 0,
               leading: IconButton(
-                icon: const Icon(Icons.close, color: AppColors.charcoal),
+                icon: Icon(Icons.close, color: AppColors.charcoal),
                 onPressed: () => Navigator.pop(context),
               ),
               title: Text(
                 context.tr('support.contactSupportTitle'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
@@ -124,13 +124,13 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.support_agent,
+                          Icon(Icons.support_agent,
                               color: AppColors.charcoal, size: 20),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               context.tr('support.supportInfo'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
                                 color: AppColors.charcoal,
                               ),
@@ -144,7 +144,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                     const SizedBox(height: 32),
                     Text(
                       context.tr('support.name'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.charcoal,
@@ -164,7 +164,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                     const SizedBox(height: 16),
                     Text(
                       context.tr('support.email'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.charcoal,
@@ -188,7 +188,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                     const SizedBox(height: 16),
                     Text(
                       context.tr('support.category'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.charcoal,
@@ -198,7 +198,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                        border: Border.all(color: AppColors.neutral200),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: DropdownButtonHideUnderline(
@@ -225,7 +225,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                     const SizedBox(height: 16),
                     Text(
                       context.tr('support.subject'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.charcoal,
@@ -246,7 +246,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                     const SizedBox(height: 16),
                     Text(
                       context.tr('support.message'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.charcoal,
@@ -278,10 +278,8 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                             : () {
                                 if (_formKey.currentState!.validate()) {
                                   context.read<SupportCubit>().submitTicket(
-                                        subject:
-                                            _subjectController.text.trim(),
-                                        message:
-                                            _messageController.text.trim(),
+                                        subject: _subjectController.text.trim(),
+                                        message: _messageController.text.trim(),
                                         category: _categoryLabel(
                                             context, _selectedCategoryKey),
                                         contactName:
@@ -293,7 +291,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryColor,
-                          foregroundColor: AppColors.charcoal,
+                          foregroundColor: AppColors.brandCharcoal,
                           elevation: 0,
                           disabledBackgroundColor: AppColors.neutral400,
                           shape: RoundedRectangleBorder(
@@ -301,7 +299,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                           ),
                         ),
                         child: isLoading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 24,
                                 height: 24,
                                 child: CircularProgressIndicator(
@@ -333,11 +331,11 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
       hintText: hint,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        borderSide: BorderSide(color: AppColors.neutral200),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        borderSide: BorderSide(color: AppColors.neutral200),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -351,7 +349,8 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
       Navigator.pushNamed(context, Routes.login);
       return;
     }
-    final id = sl<FirestoreChatService>().supportConversationId(_session.userId!);
+    final id =
+        sl<FirestoreChatService>().supportConversationId(_session.userId!);
     Navigator.pushNamed(
       context,
       Routes.chatConversation,
@@ -375,9 +374,9 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
         ),
         child: Row(
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 22,
-              backgroundColor: Colors.white,
+              backgroundColor: AppColors.cardBackground,
               child: Icon(Icons.support_agent, color: AppColors.charcoal),
             ),
             const SizedBox(width: 14),
@@ -387,7 +386,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                 children: [
                   Text(
                     context.tr('messages.liveChat'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
@@ -396,7 +395,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                   const SizedBox(height: 2),
                   Text(
                     context.tr('messages.liveChatSubtitle'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppColors.charcoal,
                     ),
@@ -404,8 +403,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios,
-                size: 16, color: AppColors.charcoal),
+            Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.charcoal),
           ],
         ),
       ),
@@ -418,7 +416,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
       children: [
         Text(
           context.tr('support.directSupport'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -465,7 +463,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.charcoal,
-        side: const BorderSide(color: Color(0xFFE5E7EB)),
+        side: BorderSide(color: AppColors.neutral200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

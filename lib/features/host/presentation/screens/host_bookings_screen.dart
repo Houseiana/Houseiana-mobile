@@ -11,7 +11,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
 class HostBookingsScreen extends StatefulWidget {
-  const HostBookingsScreen({super.key});
+  HostBookingsScreen({super.key});
 
   @override
   State<HostBookingsScreen> createState() => _HostBookingsScreenState();
@@ -54,17 +54,17 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
             state.message.toLowerCase().contains('not logged in');
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF7F8FA),
+          backgroundColor: AppColors.scaffoldBackground,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.cardBackground,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+              icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
               context.tr('host.reservationsTitle'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,
@@ -89,7 +89,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
       if (state is HostBookingsError) {
         return _buildErrorState(context, message: state.message);
       }
-      return const StatsPageSkeleton(statCount: 4, blockCount: 3);
+      return StatsPageSkeleton(statCount: 4, blockCount: 3);
     }
 
     return Column(
@@ -97,7 +97,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
         _buildHeader(context, loaded),
         Expanded(
           child: isRefreshing
-              ? const TileListSkeleton(
+              ? TileListSkeleton(
                   itemCount: 4,
                   tileHeight: 170,
                   padding: EdgeInsets.fromLTRB(16, 4, 16, 24),
@@ -111,8 +111,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
                       child: ListView.separated(
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                         itemCount: loaded.bookings.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: 14),
+                        separatorBuilder: (_, __) => const SizedBox(height: 14),
                         itemBuilder: (context, index) => _BookingCard(
                           booking: loaded.bookings[index],
                           cubit: context.read<HostBookingsCubit>(),
@@ -140,14 +139,14 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
     }
 
     return Container(
-      color: const Color(0xFFF7F8FA),
+      color: AppColors.scaffoldBackground,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             subtitle.toString(),
-            style: const TextStyle(fontSize: 12, color: AppColors.neutral500),
+            style: TextStyle(fontSize: 12, color: AppColors.neutral500),
           ),
           const SizedBox(height: 12),
           _buildStatsGrid(context, stats),
@@ -173,16 +172,16 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
                 label: context.tr('host.totalReservations'),
                 value: stats.totalReservations.toString(),
                 icon: Icons.calendar_month,
-                iconColor: const Color(0xFF00BC7D),
-                iconBg: const Color(0xFFECFDF5),
+                iconColor: const Color(0xFF00BC7D), // dark-ok
+                iconBg: const Color(0xFFECFDF5), // dark-ok
               ),
               const SizedBox(height: 10),
               _StatCard(
                 label: context.tr('host.pendingApproval'),
                 value: stats.totalRequested.toString(),
                 icon: Icons.check_circle_outline,
-                iconColor: const Color(0xFF00BC7D),
-                iconBg: const Color(0xFFECFDF5),
+                iconColor: const Color(0xFF00BC7D), // dark-ok
+                iconBg: const Color(0xFFECFDF5), // dark-ok
               ),
             ],
           ),
@@ -195,16 +194,16 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
                 label: context.tr('host.upcomingLabel'),
                 value: stats.totalUpcoming.toString(),
                 icon: Icons.schedule,
-                iconColor: const Color(0xFF51A2FF),
-                iconBg: const Color(0xFFEFF6FF),
+                iconColor: const Color(0xFF51A2FF), // dark-ok
+                iconBg: const Color(0xFFEFF6FF), // dark-ok
               ),
               const SizedBox(height: 10),
               _StatCard(
                 label: context.tr('host.revenueSecured'),
                 value: '$currency ${_formatMoney(stats.revenueSecured)}',
                 icon: Icons.attach_money,
-                iconColor: const Color(0xFFFFB900),
-                iconBg: const Color(0xFFFFFBEB),
+                iconColor: const Color(0xFFFFB900), // dark-ok
+                iconBg: const Color(0xFFFFFBEB), // dark-ok
               ),
             ],
           ),
@@ -238,18 +237,18 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
       height: 42,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE5E9EE)),
+        border: Border.all(color: AppColors.neutral200),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
           isExpanded: true,
           isDense: true,
-          icon: const Icon(Icons.keyboard_arrow_down,
+          icon: Icon(Icons.keyboard_arrow_down,
               size: 18, color: AppColors.neutral600),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: AppColors.neutral600,
@@ -287,13 +286,13 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
       height: 42,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE5E9EE)),
+        border: Border.all(color: AppColors.neutral200),
       ),
       child: Row(
         children: [
-          const Icon(Icons.search, size: 16, color: AppColors.neutral500),
+          Icon(Icons.search, size: 16, color: AppColors.neutral500),
           const SizedBox(width: 6),
           Expanded(
             child: TextField(
@@ -301,13 +300,12 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
               onChanged: (value) =>
                   context.read<HostBookingsCubit>().search(guestName: value),
               textAlignVertical: TextAlignVertical.center,
-              style: const TextStyle(fontSize: 12, color: AppColors.charcoal),
+              style: TextStyle(fontSize: 12, color: AppColors.charcoal),
               decoration: InputDecoration(
                 isCollapsed: true,
                 border: InputBorder.none,
                 hintText: context.tr('host.searchGuest'),
-                hintStyle:
-                    const TextStyle(fontSize: 12, color: AppColors.neutral400),
+                hintStyle: TextStyle(fontSize: 12, color: AppColors.neutral400),
               ),
             ),
           ),
@@ -354,7 +352,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.calendar_today_outlined,
                 size: 72,
                 color: AppColors.neutral400,
@@ -363,7 +361,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
               Text(
                 context.tr('host.noBookingsFound'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
@@ -372,7 +370,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
               const SizedBox(height: 8),
               Text(
                 context.tr('host.noBookingsInCategory'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   color: AppColors.neutral600,
                 ),
@@ -392,7 +390,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.lock_outline,
               size: 52,
               color: AppColors.neutral500,
@@ -401,7 +399,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
             Text(
               context.tr('host.signInToViewBookings'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -411,7 +409,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
             Text(
               context.tr('host.signInToViewBookingsDesc'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral600,
                 height: 1.5,
@@ -428,7 +426,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                 ),
                 child: Text(context.tr('auth.signIn')),
               ),
@@ -455,7 +453,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
             Text(
               context.tr('host.unableToLoadBookings'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -465,7 +463,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral600,
                 height: 1.5,
@@ -476,7 +474,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
               onPressed: () => context.read<HostBookingsCubit>().loadBookings(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
               ),
               child: Text(context.tr('common.retry')),
             ),
@@ -513,7 +511,7 @@ class _StatCard extends StatelessWidget {
   final Color iconColor;
   final Color iconBg;
 
-  const _StatCard({
+  _StatCard({
     required this.label,
     required this.value,
     required this.icon,
@@ -529,9 +527,9 @@ class _StatCard extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 74),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8EAED)),
+        border: Border.all(color: AppColors.neutral200),
       ),
       child: Row(
         children: [
@@ -545,7 +543,7 @@ class _StatCard extends StatelessWidget {
                   label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                     color: AppColors.neutral500,
@@ -561,7 +559,7 @@ class _StatCard extends StatelessWidget {
                   child: Text(
                     value,
                     maxLines: 1,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 19,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
@@ -594,7 +592,7 @@ class _StatusPill extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _StatusPill({
+  _StatusPill({
     required this.label,
     required this.selected,
     required this.onTap,
@@ -609,10 +607,10 @@ class _StatusPill extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selected ? AppColors.charcoal : Colors.white,
+          color: selected ? AppColors.charcoal : AppColors.cardBackground,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? AppColors.charcoal : const Color(0xFFE5E9EE),
+            color: selected ? AppColors.charcoal : AppColors.neutral200,
           ),
         ),
         child: Row(
@@ -623,7 +621,8 @@ class _StatusPill extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : AppColors.neutral600,
+                color:
+                    selected ? AppColors.cardBackground : AppColors.neutral600,
               ),
             ),
             if (count != null) ...[
@@ -634,7 +633,7 @@ class _StatusPill extends StatelessWidget {
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: selected
-                      ? Colors.white.withValues(alpha: 0.7)
+                      ? AppColors.cardBackground.withValues(alpha: 0.7)
                       : AppColors.neutral400,
                 ),
               ),
@@ -650,7 +649,7 @@ class _BookingCard extends StatelessWidget {
   final BookingModel booking;
   final HostBookingsCubit cubit;
 
-  const _BookingCard({
+  _BookingCard({
     required this.booking,
     required this.cubit,
   });
@@ -659,8 +658,7 @@ class _BookingCard extends StatelessWidget {
 
   String _formatShortDate(BuildContext context, DateTime date) {
     final months = context.tr('common.monthsShort').split(',');
-    final name =
-        (date.month - 1) < months.length ? months[date.month - 1] : '';
+    final name = (date.month - 1) < months.length ? months[date.month - 1] : '';
     return '$name ${date.day}';
   }
 
@@ -683,8 +681,8 @@ class _BookingCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE8EAED)),
+        color: AppColors.cardBackground,
+        border: Border.all(color: AppColors.neutral200),
         borderRadius: BorderRadius.circular(18),
       ),
       padding: const EdgeInsets.all(16),
@@ -728,10 +726,10 @@ class _BookingCard extends StatelessWidget {
                   booking.bookingCodeFormatted,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFFC0C6D0),
+                    color: AppColors.neutral400,
                   ),
                 ),
               ),
@@ -746,13 +744,13 @@ class _BookingCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F2F5),
+                  color: AppColors.neutral100,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   property.isNotEmpty ? property[0].toUpperCase() : 'P',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: AppColors.neutral500,
@@ -768,7 +766,7 @@ class _BookingCard extends StatelessWidget {
                       property,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppColors.charcoal,
@@ -782,24 +780,24 @@ class _BookingCard extends StatelessWidget {
                             _formatShortDate(context, booking.checkIn),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                               color: AppColors.charcoal,
                             ),
                           ),
                         ),
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.symmetric(horizontal: 6),
                           child: Icon(Icons.arrow_forward,
-                              size: 11, color: Color(0xFFC0C6D0)),
+                              size: 11, color: AppColors.neutral400),
                         ),
                         Flexible(
                           child: Text(
                             _formatShortDate(context, booking.checkOut),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                               color: AppColors.charcoal,
@@ -807,12 +805,12 @@ class _BookingCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        const Icon(Icons.nightlight_round,
+                        Icon(Icons.nightlight_round,
                             size: 11, color: AppColors.neutral400),
                         const SizedBox(width: 3),
                         Text(
                           '$nights ${nights > 1 ? context.tr('host.nights') : context.tr('host.night')}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
                             color: AppColors.neutral500,
@@ -826,7 +824,7 @@ class _BookingCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          const Divider(height: 1, color: Color(0xFFF0F2F5)),
+          Divider(height: 1, color: AppColors.neutral100),
           const SizedBox(height: 14),
           // Row 3: guest + guests count + price
           Row(
@@ -835,14 +833,14 @@ class _BookingCard extends StatelessWidget {
               Container(
                 width: 32,
                 height: 32,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF0F2F5),
+                decoration: BoxDecoration(
+                  color: AppColors.neutral100,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   guest.isNotEmpty ? guest[0].toUpperCase() : 'G',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.neutral600,
@@ -858,7 +856,7 @@ class _BookingCard extends StatelessWidget {
                       guest,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: AppColors.charcoal,
@@ -867,12 +865,16 @@ class _BookingCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        const Icon(Icons.star,
-                            size: 11, color: Color(0xFFFFB900)),
+                        const Icon(
+                          Icons.star,
+                          size: 11,
+                          // dark-ok: gold star in both themes
+                          color: Color(0xFFFFB900),
+                        ),
                         const SizedBox(width: 3),
                         Text(
                           context.tr('host.guestLabel'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
                             color: AppColors.neutral500,
                           ),
@@ -883,12 +885,11 @@ class _BookingCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.people_outline,
-                  size: 15, color: Color(0xFFC0C6D0)),
+              Icon(Icons.people_outline, size: 15, color: AppColors.neutral400),
               const SizedBox(width: 3),
               Text(
                 '$_guestCount',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: AppColors.charcoal,
@@ -900,7 +901,7 @@ class _BookingCard extends StatelessWidget {
                 children: [
                   Text(
                     '${booking.currencyLabel} ${_formatMoney(booking.totalPrice)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
@@ -921,7 +922,7 @@ class _BookingCard extends StatelessWidget {
                     onPressed: () => cubit.acceptBooking(booking.id),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
-                      foregroundColor: AppColors.charcoal,
+                      foregroundColor: AppColors.brandCharcoal,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(999),
@@ -941,7 +942,7 @@ class _BookingCard extends StatelessWidget {
                     onPressed: () => _showDeclineDialog(context),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.neutral600,
-                      side: const BorderSide(color: Color(0xFFE8EAED)),
+                      side: BorderSide(color: AppColors.neutral200),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(999),
                       ),
@@ -960,11 +961,11 @@ class _BookingCard extends StatelessWidget {
           // Notes
           if (booking.notes != null && booking.notes!.isNotEmpty) ...[
             const SizedBox(height: 12),
-            const Divider(height: 1, color: Color(0xFFF0F2F5)),
+            Divider(height: 1, color: AppColors.neutral100),
             const SizedBox(height: 8),
             Text(
               '“${booking.notes}”',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontStyle: FontStyle.italic,
                 color: AppColors.neutral500,
@@ -988,27 +989,27 @@ class _BookingCard extends StatelessWidget {
       case 'PAID':
         key = 'host.paid';
         icon = Icons.check;
-        color = const Color(0xFF00BC7D);
+        color = const Color(0xFF00BC7D); // dark-ok
         break;
       case 'PENDING':
         key = 'host.paymentPending';
         icon = Icons.schedule;
-        color = const Color(0xFFF59E0B);
+        color = const Color(0xFFF59E0B); // dark-ok
         break;
       case 'FAILED':
         key = 'host.paymentFailed';
         icon = Icons.close;
-        color = const Color(0xFFEF4444);
+        color = const Color(0xFFEF4444); // dark-ok
         break;
       case 'REFUNDED':
         key = 'host.refunded';
         icon = Icons.undo;
-        color = const Color(0xFF2B7FFF);
+        color = const Color(0xFF2B7FFF); // dark-ok
         break;
       case 'PARTIALLY_REFUNDED':
         key = 'host.partiallyRefunded';
         icon = Icons.undo;
-        color = const Color(0xFF2B7FFF);
+        color = const Color(0xFF2B7FFF); // dark-ok
         break;
       default:
         return const [];
@@ -1065,43 +1066,43 @@ class _BookingCard extends StatelessWidget {
       case 'upcoming':
       case 'currently hosting':
         return const _BadgeColors(
-          bg: Color(0xFFEFF6FF),
-          text: Color(0xFF1447E6),
-          dot: Color(0xFF2B7FFF),
+          bg: Color(0xFFEFF6FF), // dark-ok
+          text: Color(0xFF1447E6), // dark-ok
+          dot: Color(0xFF2B7FFF), // dark-ok
         );
       case 'confirmed':
       case 'complete':
       case 'completed':
         return const _BadgeColors(
-          bg: Color(0xFFD1FAE5),
-          text: Color(0xFF065F46),
-          dot: Color(0xFF10B981),
+          bg: Color(0xFFD1FAE5), // dark-ok
+          text: Color(0xFF065F46), // dark-ok
+          dot: Color(0xFF10B981), // dark-ok
         );
       case 'pending':
       case 'requested':
         return const _BadgeColors(
-          bg: Color(0xFFFEF3C7),
-          text: Color(0xFF92400E),
-          dot: Color(0xFFF59E0B),
+          bg: Color(0xFFFEF3C7), // dark-ok
+          text: Color(0xFF92400E), // dark-ok
+          dot: Color(0xFFF59E0B), // dark-ok
         );
       case 'checking out':
         return const _BadgeColors(
-          bg: Color(0xFFFFF7ED),
-          text: Color(0xFFC2410C),
-          dot: Color(0xFFF97316),
+          bg: Color(0xFFFFF7ED), // dark-ok
+          text: Color(0xFFC2410C), // dark-ok
+          dot: Color(0xFFF97316), // dark-ok
         );
       case 'cancelled':
       case 'declined':
         return const _BadgeColors(
-          bg: Color(0xFFFEE2E2),
-          text: Color(0xFF991B1B),
-          dot: Color(0xFFEF4444),
+          bg: Color(0xFFFEE2E2), // dark-ok
+          text: Color(0xFF991B1B), // dark-ok
+          dot: Color(0xFFEF4444), // dark-ok
         );
       default:
         return const _BadgeColors(
-          bg: Color(0xFFF3F4F6),
-          text: Color(0xFF374151),
-          dot: Color(0xFF9CA3AF),
+          bg: Color(0xFFF3F4F6), // dark-ok
+          text: Color(0xFF374151), // dark-ok
+          dot: Color(0xFF9CA3AF), // dark-ok
         );
     }
   }

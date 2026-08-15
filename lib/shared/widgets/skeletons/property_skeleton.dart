@@ -8,7 +8,7 @@ class PropertySkeletonCard extends StatelessWidget {
   final double imageHeight;
   final bool isCompact;
 
-  const PropertySkeletonCard({
+  PropertySkeletonCard({
     super.key,
     this.height = 280,
     this.imageHeight = 160,
@@ -149,7 +149,7 @@ class PropertySkeletonCard extends StatelessWidget {
 class CompactPropertySkeleton extends StatelessWidget {
   final double width;
 
-  const CompactPropertySkeleton({
+  CompactPropertySkeleton({
     super.key,
     this.width = 200,
   });
@@ -178,7 +178,7 @@ class CompactPropertySkeleton extends StatelessWidget {
             // Image
             Container(
               height: 120,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.neutral200,
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(12),

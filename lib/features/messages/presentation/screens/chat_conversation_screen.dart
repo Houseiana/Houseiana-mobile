@@ -12,7 +12,7 @@ import 'package:houseiana_mobile_app/shared/widgets/skeletons/message_skeleton.d
 class ChatConversationScreen extends StatefulWidget {
   final Map<String, dynamic>? conversation;
 
-  const ChatConversationScreen({
+  ChatConversationScreen({
     super.key,
     this.conversation,
   });
@@ -51,10 +51,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         ? 'guest'
         : ((conv['hostId'] ?? '').toString() == myId ? 'host' : 'guest');
 
-    _participantName = (conv['name'] ?? conv['participantName'] ?? '').toString();
+    _participantName =
+        (conv['name'] ?? conv['participantName'] ?? '').toString();
     _participantAvatar =
         (conv['avatar'] ?? conv['participantAvatar'] ?? '').toString();
-    _propertyTitle = (conv['property'] ?? conv['propertyTitle'] ?? '').toString();
+    _propertyTitle =
+        (conv['property'] ?? conv['propertyTitle'] ?? '').toString();
   }
 
   @override
@@ -135,12 +137,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
@@ -153,7 +155,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 children: [
                   Text(
                     _participantName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppColors.charcoal,
@@ -162,14 +164,14 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   if (_isSupport)
                     Text(
                       context.tr('messages.supportTeam'),
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.neutral600),
+                      style:
+                          TextStyle(fontSize: 12, color: AppColors.neutral600),
                     )
                   else if (_propertyTitle.isNotEmpty)
                     Text(
                       _propertyTitle,
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.neutral600),
+                      style:
+                          TextStyle(fontSize: 12, color: AppColors.neutral600),
                     ),
                 ],
               ),
@@ -185,8 +187,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 if (state is ChatError) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                        content:
-                            Text(_friendlyError(context, state.message))),
+                        content: Text(_friendlyError(context, state.message))),
                   );
                 } else if (state is ChatMessagesLoaded) {
                   WidgetsBinding.instance
@@ -195,7 +196,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               },
               builder: (context, state) {
                 if (state is ChatLoading || state is ChatInitial) {
-                  return const ChatSkeletonLoader();
+                  return ChatSkeletonLoader();
                 }
 
                 final messages = state is ChatMessagesLoaded
@@ -211,7 +212,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                             ? context.tr('messages.supportWelcome')
                             : context.tr('messages.chatEmptyMessage'),
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: AppColors.neutral600, fontSize: 15),
                       ),
                     ),
@@ -236,7 +237,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   Widget _headerAvatar() {
     if (_isSupport) {
-      return const CircleAvatar(
+      return CircleAvatar(
         radius: 18,
         backgroundColor: AppColors.primaryColor,
         child: Icon(Icons.support_agent, color: AppColors.charcoal, size: 20),
@@ -249,7 +250,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         onBackgroundImageError: (_, __) {},
       );
     }
-    return const CircleAvatar(
+    return CircleAvatar(
       radius: 18,
       backgroundColor: AppColors.primaryColor,
       child: Icon(Icons.person, color: AppColors.charcoal, size: 20),
@@ -260,7 +261,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
@@ -284,7 +285,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   decoration: InputDecoration(
                     hintText: context.tr('messages.typeMessage'),
                     border: InputBorder.none,
-                    hintStyle: const TextStyle(color: AppColors.neutral400),
+                    hintStyle: TextStyle(color: AppColors.neutral400),
                   ),
                   maxLines: null,
                   textInputAction: TextInputAction.send,
@@ -301,7 +302,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: const Icon(Icons.send, color: AppColors.charcoal),
+                icon: Icon(Icons.send, color: AppColors.charcoal),
                 onPressed: _sendMessage,
               ),
             ),
@@ -388,7 +389,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   Widget _bubbleAvatar() {
     if (_isSupport) {
-      return const CircleAvatar(
+      return CircleAvatar(
         radius: 14,
         backgroundColor: AppColors.primaryColor,
         child: Icon(Icons.support_agent, size: 14, color: AppColors.charcoal),
@@ -401,9 +402,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         onBackgroundImageError: (_, __) {},
       );
     }
-    return const CircleAvatar(
+    return CircleAvatar(
       radius: 14,
       backgroundColor: AppColors.neutral400,
+      // dark-ok: icon sits on the neutral avatar fill
       child: Icon(Icons.person, size: 14, color: Colors.white),
     );
   }

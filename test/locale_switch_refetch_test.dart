@@ -130,7 +130,7 @@ void main() {
     addTearDown(locale.dispose);
 
     await tester.pumpWidget(
-      _LocaleHost(locale: locale, child: const CountryScreen()),
+      _LocaleHost(locale: locale, child: CountryScreen()),
     );
     await tester.pumpAndSettle();
 

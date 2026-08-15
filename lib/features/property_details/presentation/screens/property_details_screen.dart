@@ -33,7 +33,7 @@ import '../../../../core/models/property_model.dart';
 class PropertyDetailsScreen extends StatefulWidget {
   final String? propertyIdToLoad;
 
-  const PropertyDetailsScreen({super.key, this.propertyIdToLoad});
+  PropertyDetailsScreen({super.key, this.propertyIdToLoad});
 
   @override
   State<PropertyDetailsScreen> createState() => _PropertyDetailsScreenState();
@@ -129,7 +129,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     final favorites = sl<FavoritesNotifier>();
     if (favorites.value.isNotEmpty) return;
     try {
-      favorites.addAll(await sl<UserService>().getFavoriteIds(_session.userId!));
+      favorites
+          .addAll(await sl<UserService>().getFavoriteIds(_session.userId!));
     } catch (_) {
       // A favourites hiccup must not take the details page down with it.
     }
@@ -138,8 +139,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   /// Opens the inline calendar on the check-in field and brings the booking
   /// section into view — what used to be a push to a full-screen date picker.
   Future<void> _promptForStayDates(PropertyModel property) async {
-    _ensureStayCubit(property.id)
-        .focusField(NightlyStayField.checkIn, currency: property.currency ?? 'EGP');
+    _ensureStayCubit(property.id).focusField(NightlyStayField.checkIn,
+        currency: property.currency ?? 'EGP');
     final anchor = _priceSectionKey.currentContext;
     if (anchor == null) return;
     await Scrollable.ensureVisible(
@@ -223,8 +224,10 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     return [];
   }
 
-  String _getTitle(Map<String, dynamic> p) =>
-      (p['title'] ?? p['name'] ?? AppLocalizations.of(context).tr('property.untitled')).toString();
+  String _getTitle(Map<String, dynamic> p) => (p['title'] ??
+          p['name'] ??
+          AppLocalizations.of(context).tr('property.untitled'))
+      .toString();
 
   String _getDescription(Map<String, dynamic> p) =>
       (p['description'] ?? p['about'] ?? '').toString();
@@ -253,8 +256,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     final url = propertyId.isNotEmpty
         ? 'https://houseiana.com/property/$propertyId'
         : 'https://houseiana.com';
-    final message =
-        AppLocalizations.of(context).tr('property.shareMessage');
+    final message = AppLocalizations.of(context).tr('property.shareMessage');
     final shareText = '$title\n\n$message\n\n$url';
 
     // Origin rect for the share popover on iPad/macOS (ignored on iPhone/Android,
@@ -276,8 +278,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(
-          content:
-              Text(AppLocalizations.of(context).tr('property.linkCopied')),
+          content: Text(AppLocalizations.of(context).tr('property.linkCopied')),
           duration: const Duration(milliseconds: 1500),
         ));
     }
@@ -354,13 +355,16 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
         return context.tr('propertyDetails.cancelFixedPolicy');
       }
       if (days > 0) {
-        return context.tr('propertyDetails.cancelFreeDays', args: {'days': days});
+        return context
+            .tr('propertyDetails.cancelFreeDays', args: {'days': days});
       }
       if (hours > 0) {
-        return context.tr('propertyDetails.cancelFreeHours', args: {'hours': hours});
+        return context
+            .tr('propertyDetails.cancelFreeHours', args: {'hours': hours});
       }
       if (policyType.isNotEmpty) {
-        return context.tr('propertyDetails.cancelPolicyType', args: {'type': policyType});
+        return context
+            .tr('propertyDetails.cancelPolicyType', args: {'type': policyType});
       }
       return context.tr('propertyDetails.noCancellationPolicy');
     }
@@ -443,10 +447,12 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   Widget build(BuildContext context) {
     return BlocBuilder<PropertyDetailsCubit, PropertyDetailsState>(
       builder: (context, state) {
+        // The hero photo sits under the status bar, so white status icons are
+        // correct in BOTH themes — this must not follow the app brightness.
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle.light,
           child: Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.cardBackground,
             body: _buildBody(state),
           ),
         );
@@ -456,7 +462,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
 
   Widget _buildBody(PropertyDetailsState state) {
     if (state is PropertyDetailsLoading) {
-      return const PropertyDetailsSkeleton();
+      return PropertyDetailsSkeleton();
     }
 
     if (state is PropertyDetailsError) {
@@ -480,7 +486,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       final area = _getArea(property);
       final hostName = _getHostName(property);
       final hostAvatar = _getHostAvatar(property);
-      final hostMap = property['host'] is Map ? property['host'] as Map : const {};
+      final hostMap =
+          property['host'] is Map ? property['host'] as Map : const {};
       final hostId = (hostMap['id'] ?? hostMap['_id'] ?? '').toString();
       final propertyType = _getPropertyType(property);
       final description = _getDescription(property);
@@ -505,12 +512,12 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     if (photos.isNotEmpty) _buildThumbnailStrip(photos),
                     _buildPropertyInfo(propertyType, title, rating, reviewCount,
                         location, bedrooms, beds, bathrooms, maxGuests, area),
-                    const _SectionDivider(),
+                    _SectionDivider(),
                     // Straight under the header, the way the web card sits at
                     // the top of the sidebar: the guest shouldn't have to scroll
                     // past the whole listing to find the dates and the price.
                     _buildPriceDetailsSection(state.property),
-                    const _SectionDivider(),
+                    _SectionDivider(),
                     if (hostId.isNotEmpty) ...[
                       HostedByWidget(
                         hostName: hostName,
@@ -522,11 +529,11 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                           arguments: {'userId': hostId},
                         ),
                       ),
-                      const _SectionDivider(),
+                      _SectionDivider(),
                     ],
                     if (description.isNotEmpty) ...[
                       _buildAboutSection(description),
-                      const _SectionDivider(),
+                      _SectionDivider(),
                     ],
                     if (bedrooms > 0 ||
                         beds > 0 ||
@@ -535,11 +542,11 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                         area.isNotEmpty) ...[
                       _buildPropertyDetailsSection(
                           bedrooms, beds, bathrooms, maxGuests, area),
-                      const _SectionDivider(),
+                      _SectionDivider(),
                     ],
                     if (amenities.isNotEmpty) ...[
                       _buildAmenitiesSection(amenities),
-                      const _SectionDivider(),
+                      _SectionDivider(),
                     ],
                     BlocBuilder<NightlyPricesCubit, NightlyPricesState>(
                       buildWhen: (prev, curr) => prev.checkIn != curr.checkIn,
@@ -564,10 +571,10 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                         hasCancellationWindow: _hasCancellationWindow(property),
                       ),
                     ),
-                    const _SectionDivider(),
+                    _SectionDivider(),
                     _buildLocationSection(property, location),
                     if (ratings.isNotEmpty || reviewCount > 0) ...[
-                      const _SectionDivider(),
+                      _SectionDivider(),
                       // _buildReviewsSection(
                       //     ratings, reviewCount, rating, hasMoreRatings, property),
                     ],
@@ -627,7 +634,10 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.black.withValues(alpha: 0.4), Colors.transparent],
+                  colors: [
+                    Colors.black.withValues(alpha: 0.4),
+                    Colors.transparent
+                  ],
                 ),
               ),
             ),
@@ -651,7 +661,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     curve: Curves.easeInOut,
                   ),
                   backgroundColor: Colors.black.withValues(alpha: 0.45),
-                  iconColor: Colors.white,
+                  iconColor: Colors.white, // dark-ok: chip over the hero photo
                 ),
               ),
             ),
@@ -668,7 +678,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     curve: Curves.easeInOut,
                   ),
                   backgroundColor: Colors.black.withValues(alpha: 0.45),
-                  iconColor: Colors.white,
+                  iconColor: Colors.white, // dark-ok: chip over the hero photo
                 ),
               ),
             ),
@@ -696,8 +706,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                 // flips the notifier optimistically and rolls it back if the
                 // POST fails.
                 Builder(builder: (context) {
-                  final cubitState =
-                      context.read<PropertyDetailsCubit>().state;
+                  final cubitState = context.read<PropertyDetailsCubit>().state;
                   final propId = cubitState is PropertyDetailsLoaded
                       ? cubitState.property.id
                       : '';
@@ -708,8 +717,11 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                       return _CircleButton(
                         icon:
                             isFavorite ? Icons.favorite : Icons.favorite_border,
-                        iconColor:
-                            isFavorite ? Colors.red : AppColors.charcoal,
+                        // dark-ok: the chip under it is a white circle over
+                        // the hero photo, so the resting icon stays fixed-dark.
+                        iconColor: isFavorite
+                            ? AppColors.heartRed
+                            : AppColors.brandCharcoal,
                         onTap: () {
                           if (!_session.isLoggedIn) {
                             showSignInToSaveFavoritesSheet(context);
@@ -747,8 +759,9 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                       width: active ? 20 : 7,
                       height: 7,
                       decoration: BoxDecoration(
+                        // dark-ok: page dots over the hero photo
                         color: active
-                            ? Colors.white
+                            ? Colors.white // dark-ok
                             : Colors.white.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -776,7 +789,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   child: Text(
                     '${_currentPage + 1} / ${photos.length}',
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Colors.white, // dark-ok: counter over the photo
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -793,16 +806,20 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     return Container(
       width: double.infinity,
       height: 300,
+      // dark-ok: stands in for the hero photo, so it keeps the neutral grey
+      // of an unloaded image in both themes.
       decoration: const BoxDecoration(
         gradient: LinearGradient(
+          // dark-ok: grey stand-in for the hero photo
           colors: [Color(0xFFE5E5E5), Color(0xFFD0D0D0)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
       child: const Center(
-        child:
-            Icon(Icons.home_work_outlined, size: 64, color: Color(0xFFB0B0B0)),
+        child: Icon(Icons.home_work_outlined,
+            size: 64,
+            color: Color(0xFFB0B0B0)), // dark-ok: on the grey placeholder
       ),
     );
   }
@@ -810,7 +827,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   Widget _buildThumbnailStrip(List<String> photos) {
     return Container(
       height: 68,
-      color: Colors.white,
+      color: AppColors.cardBackground,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
@@ -844,7 +861,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   imageUrl: photos[index],
                   fit: BoxFit.cover,
                   errorWidget: (_, __, ___) =>
-                      Container(color: const Color(0xFFD0D0D0)),
+                      Container(color: AppColors.neutral300),
                 ),
               ),
             ),
@@ -878,8 +895,12 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF9E6),
+                  // dark-ok: amber property-type chip — the tinted fill and
+                  // its amber-on-amber label stay a self-contained light
+                  // island in both themes.
+                  color: const Color(0xFFFFF9E6), // dark-ok: amber chip fill
                   borderRadius: BorderRadius.circular(6),
+                  // dark-ok: amber chip border
                   border: Border.all(color: const Color(0xFFFDE68A)),
                 ),
                 child: Text(
@@ -887,14 +908,14 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFB45309),
+                    color: Color(0xFFB45309), // dark-ok: on the amber chip
                   ),
                 ),
               ),
             ),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -915,14 +936,15 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.star, size: 14, color: Colors.white),
+                      const Icon(Icons.star,
+                          size: 14, color: AppColors.brandCharcoal),
                       const SizedBox(width: 3),
                       Text(
                         rating.toStringAsFixed(1),
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: AppColors.brandCharcoal,
                         ),
                       ),
                     ],
@@ -933,31 +955,31 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               if (reviewCount > 0) ...[
                 Text(
                   reviewCount == 1
-                      ? context.tr('propertyDetails.reviewSingular', args: {'n': reviewCount})
-                      : context.tr('propertyDetails.reviewPlural', args: {'n': reviewCount}),
-                  style:
-                      const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                      ? context.tr('propertyDetails.reviewSingular',
+                          args: {'n': reviewCount})
+                      : context.tr('propertyDetails.reviewPlural',
+                          args: {'n': reviewCount}),
+                  style: TextStyle(fontSize: 13, color: AppColors.neutral500),
                 ),
                 const SizedBox(width: 8),
               ],
               if (location.isNotEmpty) ...[
-                const Text(
+                Text(
                   '\u00B7',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.neutral500,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.location_on_outlined,
-                    size: 15, color: Color(0xFF6B7280)),
+                Icon(Icons.location_on_outlined,
+                    size: 15, color: AppColors.neutral500),
                 const SizedBox(width: 2),
                 Flexible(
                   child: Text(
                     location,
-                    style:
-                        const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                    style: TextStyle(fontSize: 13, color: AppColors.neutral500),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -975,25 +997,24 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                       _QuickStat(
                           icon: Icons.meeting_room_outlined,
                           label: _bedroomsLabel(bedrooms)),
-                      const _StatDot(),
+                      _StatDot(),
                     ],
                     if (beds > 0) ...[
                       _QuickStat(
-                          icon: Icons.bed_outlined,
-                          label: _bedsLabel(beds)),
-                      const _StatDot(),
+                          icon: Icons.bed_outlined, label: _bedsLabel(beds)),
+                      _StatDot(),
                     ],
                     if (bathrooms > 0) ...[
                       _QuickStat(
                           icon: Icons.bathtub_outlined,
                           label: _bathroomsLabel(bathrooms)),
-                      const _StatDot(),
+                      _StatDot(),
                     ],
                     if (maxGuests > 0) ...[
                       _QuickStat(
                           icon: Icons.people_outline,
                           label: _guestsLabel(maxGuests)),
-                      if (area.isNotEmpty) const _StatDot(),
+                      if (area.isNotEmpty) _StatDot(),
                     ],
                     if (area.isNotEmpty)
                       _QuickStat(icon: Icons.square_foot, label: area),
@@ -1029,13 +1050,13 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               description,
               maxLines: maxLines,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  fontSize: 14, color: Color(0xFF6B7280), height: 1.6),
+              style: TextStyle(
+                  fontSize: 14, color: AppColors.neutral500, height: 1.6),
             ),
             secondChild: Text(
               description,
-              style: const TextStyle(
-                  fontSize: 14, color: Color(0xFF6B7280), height: 1.6),
+              style: TextStyle(
+                  fontSize: 14, color: AppColors.neutral500, height: 1.6),
             ),
             crossFadeState: _descriptionExpanded
                 ? CrossFadeState.showSecond
@@ -1052,7 +1073,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   _descriptionExpanded
                       ? context.tr('propertyDetails.showLess')
                       : context.tr('propertyDetails.readMore'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -1109,14 +1130,11 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
           if (bedrooms > 0)
             _buildDetailRow(
                 Icons.meeting_room_outlined, _bedroomsLabel(bedrooms)),
-          if (beds > 0)
-            _buildDetailRow(Icons.bed_outlined, _bedsLabel(beds)),
+          if (beds > 0) _buildDetailRow(Icons.bed_outlined, _bedsLabel(beds)),
           if (bathrooms > 0)
-            _buildDetailRow(
-                Icons.bathtub_outlined, _bathroomsLabel(bathrooms)),
+            _buildDetailRow(Icons.bathtub_outlined, _bathroomsLabel(bathrooms)),
           if (maxGuests > 0)
-            _buildDetailRow(
-                Icons.people_outline, _guestsUpToLabel(maxGuests)),
+            _buildDetailRow(Icons.people_outline, _guestsUpToLabel(maxGuests)),
           if (area.isNotEmpty)
             _buildDetailRow(Icons.square_foot, _areaLabel(area)),
         ],
@@ -1142,9 +1160,9 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
           const SizedBox(width: 14),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFF374151),
+                color: AppColors.neutral700,
                 fontWeight: FontWeight.w500),
           ),
         ],
@@ -1188,8 +1206,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   Expanded(
                     child: Text(
                       name,
-                      style: const TextStyle(
-                          fontSize: 14, color: Color(0xFF374151)),
+                      style:
+                          TextStyle(fontSize: 14, color: AppColors.neutral700),
                     ),
                   ),
                 ],
@@ -1222,13 +1240,14 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.charcoal,
-                    side: const BorderSide(color: AppColors.charcoal),
+                    side: BorderSide(color: AppColors.charcoal),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
                   child: Text(
-                    context.tr('propertyDetails.showAllAmenities', args: {'count': amenities.length}),
+                    context.tr('propertyDetails.showAllAmenities',
+                        args: {'count': amenities.length}),
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w600),
                   ),
@@ -1286,8 +1305,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                 Expanded(
                   child: Text(
                     location,
-                    style: const TextStyle(
-                        fontSize: 13, color: Color(0xFF6B7280), height: 1.5),
+                    style: TextStyle(
+                        fontSize: 13, color: AppColors.neutral500, height: 1.5),
                   ),
                 ),
               ],
@@ -1320,21 +1339,22 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     )
                   : Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE8F0FE),
-                        border: Border.all(color: const Color(0xFFCBD5E1)),
+                        color: AppColors.neutral100,
+                        border: Border.all(color: AppColors.neutral200),
                       ),
                       child: Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.location_searching,
+                            Icon(Icons.location_searching,
                                 size: 40, color: AppColors.neutral400),
                             const SizedBox(height: 8),
                             Text(
                               location.isNotEmpty
                                   ? 'Loading map...'
-                                  : context.tr('propertyDetails.locationNotAvailable'),
-                              style: const TextStyle(
+                                  : context.tr(
+                                      'propertyDetails.locationNotAvailable'),
+                              style: TextStyle(
                                   fontSize: 13, color: AppColors.neutral400),
                             ),
                           ],
@@ -1353,7 +1373,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                 label: Text(context.tr('propertyDetails.getDirections')),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.charcoal,
-                  side: const BorderSide(color: AppColors.charcoal),
+                  side: BorderSide(color: AppColors.charcoal),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -1386,7 +1406,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               Expanded(
                 child: Text(
                   context.tr('propertyDetails.reviewsSection'),
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal),
@@ -1410,10 +1430,13 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
           const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.all(20),
+            // Brand-yellow tint rather than a pinned cream: this panel wraps
+            // brightness-aware text, which would go near-white on cream.
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFBEB),
+              color: AppColors.primaryColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFFDE68A)),
+              border: Border.all(
+                  color: AppColors.primaryColor.withValues(alpha: 0.35)),
             ),
             child: Row(
               children: [
@@ -1421,7 +1444,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   children: [
                     Text(
                       rating > 0 ? rating.toStringAsFixed(1) : '--',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 40,
                         fontWeight: FontWeight.w800,
                         color: AppColors.charcoal,
@@ -1442,10 +1465,12 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       reviewCount == 1
-                          ? context.tr('propertyDetails.reviewSingular', args: {'n': reviewCount})
-                          : context.tr('propertyDetails.reviewPlural', args: {'n': reviewCount}),
-                      style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF6B7280)),
+                          ? context.tr('propertyDetails.reviewSingular',
+                              args: {'n': reviewCount})
+                          : context.tr('propertyDetails.reviewPlural',
+                              args: {'n': reviewCount}),
+                      style:
+                          TextStyle(fontSize: 12, color: AppColors.neutral500),
                     ),
                   ],
                 ),
@@ -1455,9 +1480,11 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
           ),
           const SizedBox(height: 16),
           ...displayedReviews.map((r) {
-            final guestName =
-                (r['guestName'] ?? r['userName'] ?? r['name'] ?? context.tr('propertyDetails.guestFallback'))
-                    .toString();
+            final guestName = (r['guestName'] ??
+                    r['userName'] ??
+                    r['name'] ??
+                    context.tr('propertyDetails.guestFallback'))
+                .toString();
             final comment =
                 (r['comment'] ?? r['review'] ?? r['text'] ?? '').toString();
             final ratingVal =
@@ -1488,13 +1515,14 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.charcoal,
-                    side: const BorderSide(color: AppColors.charcoal),
+                    side: BorderSide(color: AppColors.charcoal),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
                   child: Text(
-                    context.tr('propertyDetails.showAllReviews', args: {'n': reviewCount}),
+                    context.tr('propertyDetails.showAllReviews',
+                        args: {'n': reviewCount}),
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w600),
                   ),
@@ -1527,7 +1555,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.neutral200),
       ),
@@ -1541,7 +1569,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                 backgroundColor: AppColors.ghostWhite,
                 child: Text(
                   name.isNotEmpty ? name[0].toUpperCase() : 'G',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontWeight: FontWeight.w700, color: AppColors.charcoal),
                 ),
               ),
@@ -1552,7 +1580,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: AppColors.charcoal),
@@ -1560,7 +1588,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     if (date.isNotEmpty)
                       Text(
                         date,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 12, color: AppColors.neutral400),
                       ),
                   ],
@@ -1579,8 +1607,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
             const SizedBox(height: 12),
             Text(
               comment,
-              style: const TextStyle(
-                  fontSize: 13, color: Color(0xFF6B7280), height: 1.6),
+              style: TextStyle(
+                  fontSize: 13, color: AppColors.neutral500, height: 1.6),
             ),
           ],
         ],
@@ -1631,9 +1659,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     // discount, so before this the bar could advertise 3000 while the calendar
     // immediately below it quoted 2000.
     final night = stay.nextAvailableNight;
-    final price = showsTotal
-        ? quotedTotal
-        : (night?.effectivePrice ?? payloadPrice);
+    final price =
+        showsTotal ? quotedTotal : (night?.effectivePrice ?? payloadPrice);
     final original = showsTotal
         ? null
         : (night != null
@@ -1661,8 +1688,8 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
         12 + MediaQuery.of(context).padding.bottom,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: const Border(top: BorderSide(color: AppColors.neutral200)),
+        color: AppColors.cardBackground,
+        border: Border(top: BorderSide(color: AppColors.neutral200)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -1683,12 +1710,12 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     Money.format(original, currency),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      color: Color(0xFF979797),
+                      color: AppColors.neutral400,
                       decoration: TextDecoration.lineThrough,
-                      decorationColor: Color(0xFF979797),
+                      decorationColor: AppColors.neutral400,
                     ),
                   ),
                 Row(
@@ -1699,7 +1726,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                         price > 0 ? Money.format(price, currency) : '--',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
                           color: AppColors.charcoal,
@@ -1714,7 +1741,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD00416),
+                            color: AppColors.discountRed,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -1722,6 +1749,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
+                              // dark-ok: on the red discount badge
                               color: Colors.white,
                             ),
                           ),
@@ -1740,7 +1768,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                       : context.tr('propertyDetails.perNight'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                  style: TextStyle(fontSize: 12, color: AppColors.neutral500),
                 ),
                 // The percentage alone doesn't tell the guest what they keep.
                 if (savings > 0)
@@ -1752,7 +1780,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF059669),
+                      color: AppColors.success,
                     ),
                   ),
                 const SizedBox(height: 2),
@@ -1780,7 +1808,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                 onPressed: () => _onReserve(property),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.bioYellow,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   shape: RoundedRectangleBorder(
@@ -1791,7 +1819,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   child: Text(
                     buttonText,
                     maxLines: 1,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: AppColors.charcoal),
@@ -1812,12 +1840,12 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline_outlined,
+            Icon(Icons.error_outline_outlined,
                 size: 64, color: AppColors.neutral400),
             const SizedBox(height: 16),
             Text(
               context.tr('common.errorOccurred'),
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal),
@@ -1825,7 +1853,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
             const SizedBox(height: 8),
             Text(
               message,
-              style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+              style: TextStyle(fontSize: 14, color: AppColors.neutral500),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -1833,7 +1861,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.bioYellow,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
                 elevation: 0,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
@@ -1886,7 +1914,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   void _showSignInPrompt() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -1908,6 +1936,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               width: 64,
               height: 64,
               decoration: const BoxDecoration(
+                // dark-ok: pale-yellow medallion behind the brand-yellow icon
                 color: Color(0xFFFFF9E6),
                 shape: BoxShape.circle,
               ),
@@ -1925,7 +1954,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
             const SizedBox(height: 8),
             Text(
               context.tr('propertyDetails.signInToReserveDescription'),
-              style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+              style: TextStyle(fontSize: 14, color: AppColors.neutral500),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -1939,7 +1968,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.bioYellow,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25)),
@@ -1953,7 +1982,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(context.tr('common.cancel'),
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+                  style: TextStyle(fontSize: 14, color: AppColors.neutral500)),
             ),
           ],
         ),
@@ -2015,11 +2044,11 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
 }
 
 class _SectionDivider extends StatelessWidget {
-  const _SectionDivider();
+  _SectionDivider();
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
+    return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       child: Divider(color: AppColors.neutral200, height: 1),
     );
@@ -2032,7 +2061,7 @@ class _CircleButton extends StatelessWidget {
   final Color? backgroundColor;
   final Color? iconColor;
 
-  const _CircleButton({
+  _CircleButton({
     required this.icon,
     required this.onTap,
     this.backgroundColor,
@@ -2047,7 +2076,9 @@ class _CircleButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: backgroundColor ?? Colors.white,
+          // dark-ok: these chips float on the hero photo, so the default
+          // white circle (and its fixed-dark icon) stay put in both themes.
+          color: backgroundColor ?? Colors.white, // dark-ok
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
@@ -2057,7 +2088,8 @@ class _CircleButton extends StatelessWidget {
             ),
           ],
         ),
-        child: Icon(icon, size: 18, color: iconColor ?? AppColors.charcoal),
+        child:
+            Icon(icon, size: 18, color: iconColor ?? AppColors.brandCharcoal),
       ),
     );
   }
@@ -2067,7 +2099,7 @@ class _QuickStat extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _QuickStat({required this.icon, required this.label});
+  _QuickStat({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -2078,7 +2110,7 @@ class _QuickStat extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: AppColors.charcoal),
@@ -2089,11 +2121,11 @@ class _QuickStat extends StatelessWidget {
 }
 
 class _StatDot extends StatelessWidget {
-  const _StatDot();
+  _StatDot();
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
+    return Padding(
       padding: EdgeInsets.symmetric(horizontal: 8),
       child: Text('\u00B7',
           style: TextStyle(fontSize: 16, color: AppColors.neutral400)),

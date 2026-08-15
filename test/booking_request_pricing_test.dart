@@ -119,7 +119,7 @@ void main() {
           ),
           builder: (_) => BlocProvider.value(
             value: cubit,
-            child: const BookingRequestScreen(),
+            child: BookingRequestScreen(),
           ),
         ),
       ),

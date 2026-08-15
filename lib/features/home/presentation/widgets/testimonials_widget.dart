@@ -7,7 +7,7 @@
 //   final List<Testimonial> testimonials;
 //   final VoidCallback? onViewAll;
 //
-//   const TestimonialsWidget({
+//   TestimonialsWidget({
 //     super.key,
 //     required this.testimonials,
 //     this.onViewAll,
@@ -112,7 +112,7 @@
 // class _TestimonialCard extends StatefulWidget {
 //   final Testimonial testimonial;
 //
-//   const _TestimonialCard({required this.testimonial});
+//   _TestimonialCard({required this.testimonial});
 //
 //   @override
 //   State<_TestimonialCard> createState() => _TestimonialCardState();

@@ -6,7 +6,7 @@ import 'package:houseiana_mobile_app/core/widgets/custom_button.dart';
 class NoInternetConnectionWidget extends StatelessWidget {
   final VoidCallback? onRetry;
 
-  const NoInternetConnectionWidget({
+  NoInternetConnectionWidget({
     super.key,
     this.onRetry,
   });
@@ -19,13 +19,13 @@ class NoInternetConnectionWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.wifi_off_rounded,
               size: 80,
               color: AppColors.textSecondary,
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               AppStrings.noInternetConnection,
               style: TextStyle(
                 fontSize: 20,
@@ -34,7 +34,7 @@ class NoInternetConnectionWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Please check your internet connection and try again.',
               textAlign: TextAlign.center,
               style: TextStyle(

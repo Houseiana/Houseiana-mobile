@@ -16,7 +16,7 @@ import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/whatsapp_support_button.dart';
 
 class BottomNavScreen extends StatefulWidget {
-  const BottomNavScreen({super.key});
+  BottomNavScreen({super.key});
 
   @override
   State<BottomNavScreen> createState() => _BottomNavScreenState();
@@ -25,13 +25,17 @@ class BottomNavScreen extends StatefulWidget {
 class _BottomNavScreenState extends State<BottomNavScreen> {
   final _session = sl<UserSession>();
 
-  static const List<Widget> _screens = [
-    HomeScreen(),
-    PropertiesScreen(),
-    CountryScreen(),
-    TripsScreen(),
-    ProfileScreen(),
-  ];
+  // Rebuilt on every build rather than cached: a shared instance is identity-
+  // equal, so `Element.updateChild` would skip the tab subtree and leave it in
+  // the previous theme's colors after a light/dark switch. Tab state survives —
+  // the State objects are matched by position and runtimeType, not by instance.
+  List<Widget> get _screens => [
+        HomeScreen(),
+        PropertiesScreen(),
+        CountryScreen(),
+        TripsScreen(),
+        ProfileScreen(),
+      ];
 
   List<Widget> get _allScreens =>
       _session.isHost ? [..._screens, const SizedBox.shrink()] : _screens;
@@ -74,14 +78,14 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
                     builder: (btnCtx) =>
                         MediaQuery.viewInsetsOf(btnCtx).bottom > 0
                             ? const SizedBox.shrink()
-                            : const WhatsAppSupportButton(),
+                            : WhatsAppSupportButton(),
                   ),
                 ),
               ],
             ),
             bottomNavigationBar: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBackground,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.08),
@@ -99,9 +103,9 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
                     currentIndex: state.index,
                     onTap: (index) => _onTabTap(ctx, index),
                     type: BottomNavigationBarType.fixed,
-                    backgroundColor: Colors.white,
+                    backgroundColor: AppColors.cardBackground,
                     selectedItemColor: AppColors.primaryColor,
-                    unselectedItemColor: const Color(0xFF9CA3AF),
+                    unselectedItemColor: AppColors.neutral400,
                     selectedFontSize: 12,
                     unselectedFontSize: 12,
                     showSelectedLabels: true,
@@ -121,15 +125,19 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
 
   List<BottomNavigationBarItem> _buildNavItems() {
     final items = <BottomNavigationBarItem>[
-      _navItem(AppIcons.home, AppIcons.homeFilled, context.tr('bottomNav.home')),
-      _navItem(AppIcons.search, AppIcons.search, context.tr('bottomNav.search')),
+      _navItem(
+          AppIcons.home, AppIcons.homeFilled, context.tr('bottomNav.home')),
+      _navItem(
+          AppIcons.search, AppIcons.search, context.tr('bottomNav.search')),
       _navItem(AppIcons.globe, AppIcons.globe, context.tr('bottomNav.country')),
-      _navItem(AppIcons.trips, AppIcons.tripsFilled, context.tr('bottomNav.trips')),
-      _navItem(AppIcons.profile, AppIcons.profileFilled, context.tr('bottomNav.profile')),
+      _navItem(
+          AppIcons.trips, AppIcons.tripsFilled, context.tr('bottomNav.trips')),
+      _navItem(AppIcons.profile, AppIcons.profileFilled,
+          context.tr('bottomNav.profile')),
     ];
     if (_session.isHost) {
-      items.add(_navItem(
-          AppIcons.superhostOutline, AppIcons.superhost, context.tr('bottomNav.host')));
+      items.add(_navItem(AppIcons.superhostOutline, AppIcons.superhost,
+          context.tr('bottomNav.host')));
     }
     return items;
   }
@@ -158,7 +166,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
 /// [SizedBox.shrink] placeholders until first selected. Hidden tabs get
 /// `TickerMode(enabled: false)` so their animations/spinners stop ticking.
 class _LazyIndexedStack extends StatefulWidget {
-  const _LazyIndexedStack({required this.index, required this.children});
+  _LazyIndexedStack({required this.index, required this.children});
 
   final int index;
   final List<Widget> children;

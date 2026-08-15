@@ -4,7 +4,7 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class PropertySetupScreen extends StatefulWidget {
-  const PropertySetupScreen({super.key});
+  PropertySetupScreen({super.key});
 
   @override
   State<PropertySetupScreen> createState() => _PropertySetupScreenState();
@@ -41,17 +41,17 @@ class _PropertySetupScreenState extends State<PropertySetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('host.propertySetupTitle'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -71,9 +71,10 @@ class _PropertySetupScreenState extends State<PropertySetupScreen> {
               TextFormField(
                 controller: _titleController,
                 decoration: _decor(context.tr('host.propertyTitleHint')),
-                validator: (v) => (v == null || v.isEmpty) ? context.tr('host.propertyTitleValidation') : null,
+                validator: (v) => (v == null || v.isEmpty)
+                    ? context.tr('host.propertyTitleValidation')
+                    : null,
               ),
-
               const SizedBox(height: 24),
               _label(context.tr('host.descriptionLabel')),
               const SizedBox(height: 8),
@@ -81,50 +82,53 @@ class _PropertySetupScreenState extends State<PropertySetupScreen> {
                 controller: _descriptionController,
                 maxLines: 5,
                 decoration: _decor(context.tr('host.descriptionHint')),
-                validator: (v) => (v == null || v.isEmpty) ? context.tr('host.descriptionValidation') : null,
+                validator: (v) => (v == null || v.isEmpty)
+                    ? context.tr('host.descriptionValidation')
+                    : null,
               ),
-
               const SizedBox(height: 24),
               _label(context.tr('host.cityLabel')),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _cityController,
                 decoration: _decor(context.tr('host.cityHint')),
-                validator: (v) => (v == null || v.isEmpty) ? context.tr('host.cityValidation') : null,
+                validator: (v) => (v == null || v.isEmpty)
+                    ? context.tr('host.cityValidation')
+                    : null,
               ),
-
               const SizedBox(height: 24),
               _label(context.tr('host.addressLabel')),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _addressController,
                 decoration: _decor(context.tr('host.addressHint')),
-                validator: (v) => (v == null || v.isEmpty) ? context.tr('host.addressValidation') : null,
+                validator: (v) => (v == null || v.isEmpty)
+                    ? context.tr('host.addressValidation')
+                    : null,
               ),
-
               const SizedBox(height: 24),
               _label(context.tr('host.photosLabel')),
               const SizedBox(height: 8),
               Container(
                 height: 120,
                 decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                  border: Border.all(color: AppColors.neutral200),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.add_photo_alternate, size: 40, color: AppColors.neutral400),
+                      Icon(Icons.add_photo_alternate,
+                          size: 40, color: AppColors.neutral400),
                       const SizedBox(height: 8),
-                      Text(context.tr('host.addPhotosOptional'), style: const TextStyle(color: AppColors.neutral600)),
+                      Text(context.tr('host.addPhotosOptional'),
+                          style: TextStyle(color: AppColors.neutral600)),
                     ],
                   ),
                 ),
               ),
-
               const SizedBox(height: 32),
-
               SizedBox(
                 width: double.infinity,
                 height: 54,
@@ -146,13 +150,15 @@ class _PropertySetupScreenState extends State<PropertySetupScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
-                    foregroundColor: AppColors.charcoal,
+                    foregroundColor: AppColors.brandCharcoal,
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   child: Text(
                     context.tr('host.continueToPricing'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -165,7 +171,7 @@ class _PropertySetupScreenState extends State<PropertySetupScreen> {
 
   Widget _label(String text) => Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: AppColors.charcoal,
@@ -176,11 +182,11 @@ class _PropertySetupScreenState extends State<PropertySetupScreen> {
         hintText: hint,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: BorderSide(color: AppColors.neutral200),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: BorderSide(color: AppColors.neutral200),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

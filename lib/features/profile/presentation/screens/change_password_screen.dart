@@ -6,7 +6,7 @@ import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
-  const ChangePasswordScreen({super.key});
+  ChangePasswordScreen({super.key});
 
   @override
   State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
@@ -57,17 +57,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('profile.changePassword'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -93,12 +93,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.lock_outline, color: AppColors.charcoal, size: 20),
+                    Icon(Icons.lock_outline,
+                        color: AppColors.charcoal, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         context.tr('profile.strongPasswordInfo'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: AppColors.charcoal,
                         ),
@@ -107,12 +108,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 32),
-
               Text(
                 context.tr('auth.currentPassword'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
@@ -126,7 +125,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   hintText: context.tr('profile.enterCurrentPassword'),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureCurrentPassword ? Icons.visibility_off : Icons.visibility,
+                      _obscureCurrentPassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: AppColors.neutral600,
                     ),
                     onPressed: () {
@@ -137,11 +138,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderSide: BorderSide(color: AppColors.neutral200),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderSide: BorderSide(color: AppColors.neutral200),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -155,12 +156,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   return null;
                 },
               ),
-
               const SizedBox(height: 24),
-
               Text(
                 context.tr('auth.newPassword'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
@@ -174,7 +173,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   hintText: context.tr('profile.enterNewPasswordHint'),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureNewPassword ? Icons.visibility_off : Icons.visibility,
+                      _obscureNewPassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: AppColors.neutral600,
                     ),
                     onPressed: () {
@@ -185,11 +186,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderSide: BorderSide(color: AppColors.neutral200),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderSide: BorderSide(color: AppColors.neutral200),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -200,27 +201,31 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   if (value == null || value.isEmpty) {
                     return context.tr('profile.newPasswordRequired');
                   }
-                  if (!_hasMinLength || !_hasUppercase || !_hasLowercase ||
-                      !_hasNumber || !_hasSpecialChar) {
+                  if (!_hasMinLength ||
+                      !_hasUppercase ||
+                      !_hasLowercase ||
+                      !_hasNumber ||
+                      !_hasSpecialChar) {
                     return context.tr('profile.passwordRequirementsNotMet');
                   }
                   return null;
                 },
               ),
-
               const SizedBox(height: 16),
-
-              _buildPasswordRequirement(context.tr('profile.reqMinLength'), _hasMinLength),
-              _buildPasswordRequirement(context.tr('profile.reqUppercase'), _hasUppercase),
-              _buildPasswordRequirement(context.tr('profile.reqLowercase'), _hasLowercase),
-              _buildPasswordRequirement(context.tr('profile.reqNumber'), _hasNumber),
-              _buildPasswordRequirement(context.tr('profile.reqSpecialChar'), _hasSpecialChar),
-
+              _buildPasswordRequirement(
+                  context.tr('profile.reqMinLength'), _hasMinLength),
+              _buildPasswordRequirement(
+                  context.tr('profile.reqUppercase'), _hasUppercase),
+              _buildPasswordRequirement(
+                  context.tr('profile.reqLowercase'), _hasLowercase),
+              _buildPasswordRequirement(
+                  context.tr('profile.reqNumber'), _hasNumber),
+              _buildPasswordRequirement(
+                  context.tr('profile.reqSpecialChar'), _hasSpecialChar),
               const SizedBox(height: 24),
-
               Text(
                 context.tr('profile.confirmNewPassword'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
@@ -234,7 +239,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   hintText: context.tr('profile.confirmNewPasswordHint'),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                      _obscureConfirmPassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: AppColors.neutral600,
                     ),
                     onPressed: () {
@@ -245,11 +252,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderSide: BorderSide(color: AppColors.neutral200),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    borderSide: BorderSide(color: AppColors.neutral200),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -266,9 +273,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   return null;
                 },
               ),
-
               const SizedBox(height: 32),
-
               SizedBox(
                 width: double.infinity,
                 height: 54,
@@ -282,14 +287,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
-                    foregroundColor: AppColors.charcoal,
+                    foregroundColor: AppColors.brandCharcoal,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: _isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
@@ -367,7 +372,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message']?.toString() ?? context.tr('profile.passwordChangeFailed')),
+            content: Text(result['message']?.toString() ??
+                context.tr('profile.passwordChangeFailed')),
             backgroundColor: Colors.red.shade700,
           ),
         );

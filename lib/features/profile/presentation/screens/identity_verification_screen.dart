@@ -16,14 +16,14 @@ import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dar
 /// sections. Lets the user add/update their Government ID (passport / national
 /// id) and an emergency contact against the real backend endpoints.
 class IdentityVerificationScreen extends StatelessWidget {
-  const IdentityVerificationScreen({super.key});
+  IdentityVerificationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final session = sl<UserSession>();
     if (!session.isLoggedIn) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         appBar: _appBar(context),
         body: _LoginRequired(),
       );
@@ -31,22 +31,22 @@ class IdentityVerificationScreen extends StatelessWidget {
 
     return BlocProvider(
       create: (_) => sl<IdentityVerificationCubit>()..load(),
-      child: const _IdentityView(),
+      child: _IdentityView(),
     );
   }
 }
 
 AppBar _appBar(BuildContext context) {
   return AppBar(
-    backgroundColor: Colors.white,
+    backgroundColor: AppColors.cardBackground,
     elevation: 0,
     leading: IconButton(
-      icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+      icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
       onPressed: () => Navigator.pop(context),
     ),
     title: Text(
       context.tr('profile.identityVerification'),
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: AppColors.charcoal,
@@ -57,12 +57,12 @@ AppBar _appBar(BuildContext context) {
 }
 
 class _IdentityView extends StatelessWidget {
-  const _IdentityView();
+  _IdentityView();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: _appBar(context),
       body: BlocConsumer<IdentityVerificationCubit, IdentityVerificationState>(
         listenWhen: (prev, curr) =>
@@ -79,7 +79,7 @@ class _IdentityView extends StatelessWidget {
         builder: (context, state) {
           switch (state.status) {
             case IdentityLoadStatus.loading:
-              return const TileListSkeleton(
+              return TileListSkeleton(
                 itemCount: 4,
                 leadingSize: 40,
                 tileHeight: 76,
@@ -102,7 +102,7 @@ class _IdentityView extends StatelessWidget {
 class _IdentityForm extends StatelessWidget {
   final IdentityVerificationState state;
 
-  const _IdentityForm({required this.state});
+  _IdentityForm({required this.state});
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +119,7 @@ class _IdentityForm extends StatelessWidget {
         children: [
           Text(
             context.tr('profile.identityIntro'),
-            style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+            style: TextStyle(fontSize: 14, color: AppColors.neutral600),
           ),
           const SizedBox(height: 20),
           if (!hasGovId) ...[
@@ -164,7 +164,7 @@ class _PassportSection extends StatefulWidget {
     String? photoPath,
   }) onSave;
 
-  const _PassportSection({
+  _PassportSection({
     required this.data,
     required this.isSaving,
     required this.onSave,
@@ -301,7 +301,7 @@ class _NationalIdSection extends StatefulWidget {
     String? backPhotoPath,
   }) onSave;
 
-  const _NationalIdSection({
+  _NationalIdSection({
     required this.data,
     required this.isSaving,
     required this.onSave,
@@ -456,7 +456,7 @@ class _EmergencyContactSection extends StatefulWidget {
   final bool isSaving;
   final void Function(Map<String, dynamic> body) onSave;
 
-  const _EmergencyContactSection({
+  _EmergencyContactSection({
     required this.data,
     required this.relationshipOptions,
     required this.isSaving,
@@ -623,13 +623,13 @@ String _isoDate(DateTime d) =>
 /// number, falling back to the raw number. Returns null when no number exists.
 String? _maskedSummary(Map<String, dynamic>? data, String numberKey) {
   if (data == null) return null;
-  final number = (data['numberMasked'] ??
-          data[numberKey] ??
-          data['number'])
-      ?.toString();
+  final number =
+      (data['numberMasked'] ?? data[numberKey] ?? data['number'])?.toString();
   if (number == null || number.isEmpty) return null;
   final country = data['issuingCountry']?.toString();
-  return (country != null && country.isNotEmpty) ? '$number · $country' : number;
+  return (country != null && country.isNotEmpty)
+      ? '$number · $country'
+      : number;
 }
 
 /// Resolves an already-uploaded passport photo URL from the backend record.
@@ -703,7 +703,7 @@ class _SectionCard extends StatelessWidget {
   final VoidCallback onToggle;
   final Widget child;
 
-  const _SectionCard({
+  _SectionCard({
     required this.icon,
     required this.title,
     required this.summary,
@@ -719,8 +719,8 @@ class _SectionCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        color: AppColors.cardBackground,
+        border: Border.all(color: AppColors.neutral200),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -748,7 +748,7 @@ class _SectionCard extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: AppColors.charcoal,
@@ -792,7 +792,7 @@ class _DateRow extends StatelessWidget {
   final ValueChanged<DateTime> onIssue;
   final ValueChanged<DateTime> onExpiry;
 
-  const _DateRow({
+  _DateRow({
     required this.issueDate,
     required this.expiryDate,
     required this.onIssue,
@@ -834,7 +834,7 @@ class _DateField extends StatelessWidget {
   final DateTime lastDate;
   final ValueChanged<DateTime> onPicked;
 
-  const _DateField({
+  _DateField({
     required this.label,
     required this.value,
     required this.firstDate,
@@ -848,15 +848,6 @@ class _DateField extends StatelessWidget {
       initialDate: value ?? DateTime.now(),
       firstDate: firstDate,
       lastDate: lastDate,
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: AppColors.primaryColor,
-            onPrimary: AppColors.charcoal,
-          ),
-        ),
-        child: child!,
-      ),
     );
     if (picked != null) onPicked(picked);
   }
@@ -874,7 +865,7 @@ class _DateField extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(color: AppColors.neutral200),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -892,7 +883,7 @@ class _DateField extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Icon(Icons.calendar_today,
+                Icon(Icons.calendar_today,
                     size: 18, color: AppColors.neutral600),
               ],
             ),
@@ -909,7 +900,7 @@ class _UploadBox extends StatelessWidget {
   final String? existingUrl;
   final VoidCallback onTap;
 
-  const _UploadBox({
+  _UploadBox({
     required this.label,
     required this.localPath,
     required this.existingUrl,
@@ -926,7 +917,7 @@ class _UploadBox extends StatelessWidget {
       child: Container(
         height: 110,
         decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.neutral200),
           borderRadius: BorderRadius.circular(12),
           image: hasLocal
               ? DecorationImage(
@@ -958,7 +949,7 @@ class _UploadBox extends StatelessWidget {
                             ? context.tr('profile.tapToReplace')
                             : label,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           color: AppColors.neutral600,
                         ),
@@ -978,7 +969,7 @@ class _LabeledField extends StatelessWidget {
   final String hint;
   final TextInputType? keyboardType;
 
-  const _LabeledField({
+  _LabeledField({
     required this.label,
     required this.controller,
     required this.hint,
@@ -1002,11 +993,11 @@ class _LabeledField extends StatelessWidget {
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              borderSide: BorderSide(color: AppColors.neutral200),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              borderSide: BorderSide(color: AppColors.neutral200),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -1025,7 +1016,7 @@ class _Dropdown extends StatelessWidget {
   final List<DropdownMenuItem<String>> items;
   final ValueChanged<String?> onChanged;
 
-  const _Dropdown({
+  _Dropdown({
     required this.value,
     required this.hint,
     required this.items,
@@ -1037,7 +1028,7 @@ class _Dropdown extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.neutral200),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
@@ -1046,7 +1037,7 @@ class _Dropdown extends StatelessWidget {
           isExpanded: true,
           hint: Text(
             hint,
-            style: const TextStyle(fontSize: 14, color: AppColors.neutral500),
+            style: TextStyle(fontSize: 14, color: AppColors.neutral500),
           ),
           items: items,
           onChanged: onChanged,
@@ -1058,13 +1049,13 @@ class _Dropdown extends StatelessWidget {
 
 class _FieldLabel extends StatelessWidget {
   final String text;
-  const _FieldLabel(this.text);
+  _FieldLabel(this.text);
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w600,
         color: AppColors.charcoal,
@@ -1075,13 +1066,13 @@ class _FieldLabel extends StatelessWidget {
 
 class _GroupLabel extends StatelessWidget {
   final String text;
-  const _GroupLabel(this.text);
+  _GroupLabel(this.text);
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 17,
         fontWeight: FontWeight.w700,
         color: AppColors.charcoal,
@@ -1095,7 +1086,7 @@ class _SaveButton extends StatelessWidget {
   final bool enabled;
   final VoidCallback onPressed;
 
-  const _SaveButton({
+  _SaveButton({
     required this.isSaving,
     required this.enabled,
     required this.onPressed,
@@ -1110,7 +1101,7 @@ class _SaveButton extends StatelessWidget {
         onPressed: (isSaving || !enabled) ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryColor,
-          foregroundColor: AppColors.charcoal,
+          foregroundColor: AppColors.brandCharcoal,
           disabledBackgroundColor: AppColors.neutral400.withValues(alpha: 0.4),
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -1118,7 +1109,7 @@ class _SaveButton extends StatelessWidget {
           ),
         ),
         child: isSaving
-            ? const SizedBox(
+            ? SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
@@ -1141,14 +1132,15 @@ class _CompletionAlert extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF7ED),
-        border: Border.all(color: const Color(0xFFFB923C)),
+        // Warning tints, so the banner keeps its accent on either surface.
+        color: AppColors.warning.withValues(alpha: 0.12),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.6)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.error_outline, color: Color(0xFFEA580C), size: 20),
+          Icon(Icons.error_outline, color: AppColors.warning, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -1156,18 +1148,18 @@ class _CompletionAlert extends StatelessWidget {
               children: [
                 Text(
                   context.tr('profile.completeProfile'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFFEA580C),
+                    color: AppColors.charcoal,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   context.tr('profile.completeProfileDesc'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFFEA580C),
+                    color: AppColors.charcoal,
                     height: 1.4,
                   ),
                 ),
@@ -1184,7 +1176,7 @@ class _LoadError extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _LoadError({required this.message, required this.onRetry});
+  _LoadError({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -1199,14 +1191,14 @@ class _LoadError extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.neutral600),
+              style: TextStyle(color: AppColors.neutral600),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
               ),
               child: Text(context.tr('common.retry')),
             ),
@@ -1226,13 +1218,13 @@ class _LoginRequired extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.verified_user_outlined,
+            Icon(Icons.verified_user_outlined,
                 size: 52, color: AppColors.neutral500),
             const SizedBox(height: 16),
             Text(
               context.tr('profile.signInForKyc'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -1242,7 +1234,7 @@ class _LoginRequired extends StatelessWidget {
             Text(
               context.tr('profile.signInForKycDescription'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral600,
                 height: 1.5,
@@ -1259,7 +1251,7 @@ class _LoginRequired extends StatelessWidget {
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                 ),
                 child: Text(context.tr('auth.signIn')),
               ),

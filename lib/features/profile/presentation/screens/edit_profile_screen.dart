@@ -6,7 +6,7 @@ import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
+  EditProfileScreen({super.key});
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -23,7 +23,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     final session = sl<UserSession>();
-    _nameController = TextEditingController(text: session.fullName == 'User' ? '' : session.fullName);
+    _nameController = TextEditingController(
+        text: session.fullName == 'User' ? '' : session.fullName);
     _emailController = TextEditingController(text: session.email ?? '');
   }
 
@@ -39,17 +40,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('profile.editProfile'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -65,10 +66,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: [
               Stack(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 60,
                     backgroundColor: AppColors.ghostWhite,
-                    child: Icon(Icons.person, size: 60, color: AppColors.neutral400),
+                    child: Icon(Icons.person,
+                        size: 60, color: AppColors.neutral400),
                   ),
                   Positioned(
                     bottom: 0,
@@ -78,16 +80,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.primaryColor,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
+                        border: Border.all(
+                            color: AppColors.cardBackground, width: 3),
                       ),
-                      child: const Icon(Icons.camera_alt, size: 20, color: AppColors.charcoal),
+                      child: Icon(Icons.camera_alt,
+                          size: 20, color: AppColors.charcoal),
                     ),
                   ),
                 ],
               ),
-
               const SizedBox(height: 32),
-
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
@@ -100,9 +102,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   fillColor: AppColors.ghostWhite,
                 ),
               ),
-
               const SizedBox(height: 20),
-
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -116,9 +116,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   fillColor: AppColors.ghostWhite,
                 ),
               ),
-
               const SizedBox(height: 20),
-
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
@@ -132,9 +130,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   fillColor: AppColors.ghostWhite,
                 ),
               ),
-
               const SizedBox(height: 20),
-
               TextFormField(
                 controller: _bioController,
                 maxLines: 4,
@@ -148,9 +144,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   fillColor: AppColors.ghostWhite,
                 ),
               ),
-
               const SizedBox(height: 32),
-
               SizedBox(
                 width: double.infinity,
                 height: 54,
@@ -164,7 +158,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     final nameParts = _nameController.text.trim().split(' ');
                     final body = {
                       'firstName': nameParts.first,
-                      'lastName': nameParts.length > 1 ? nameParts.skip(1).join(' ') : '',
+                      'lastName': nameParts.length > 1
+                          ? nameParts.skip(1).join(' ')
+                          : '',
                       'email': _emailController.text.trim(),
                       if (_phoneController.text.trim().isNotEmpty)
                         'phone': _phoneController.text.trim(),
@@ -172,7 +168,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         'bio': _bioController.text.trim(),
                     };
 
-                    final ok = await sl<UserService>().updateProfile(userId, body);
+                    final ok =
+                        await sl<UserService>().updateProfile(userId, body);
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -186,7 +183,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
-                    foregroundColor: AppColors.charcoal,
+                    foregroundColor: AppColors.brandCharcoal,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -194,7 +191,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   child: Text(
                     context.tr('common.saveChanges'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

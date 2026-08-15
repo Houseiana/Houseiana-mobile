@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/utils/money.dart';
+import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
@@ -16,7 +17,7 @@ import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart';
 
 class SearchPropertiesScreen extends StatefulWidget {
-  const SearchPropertiesScreen({super.key});
+  SearchPropertiesScreen({super.key});
 
   @override
   State<SearchPropertiesScreen> createState() => _SearchPropertiesScreenState();
@@ -178,7 +179,7 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -195,7 +196,7 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
               child: BlocBuilder<SearchCubit, SearchState>(
                 builder: (context, state) {
                   if (state is SearchLoading) {
-                    return const ListSkeletonLoader(
+                    return ListSkeletonLoader(
                       showSearchBar: false,
                       showCategories: false,
                     );
@@ -228,8 +229,8 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.neutral200)),
       ),
       child: Row(
         children: [
@@ -239,12 +240,12 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: const Color(0xFFF9F9FA),
+                color: AppColors.ghostWhite,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
+                border: Border.all(color: AppColors.neutral200),
               ),
-              child: const Icon(Icons.arrow_back,
-                  size: 18, color: Color(0xFF1D242B)),
+              child:
+                  Icon(Icons.arrow_back, size: 18, color: AppColors.charcoal),
             ),
           ),
           const SizedBox(width: 12),
@@ -254,22 +255,23 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
               child: Container(
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF9F9FA),
+                  color: AppColors.ghostWhite,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                  border: Border.all(color: AppColors.neutral200),
                 ),
                 child: Row(
                   children: [
                     const SizedBox(width: 12),
-                    const Icon(Icons.search,
-                        size: 16, color: Color(0xFF6B7280)),
+                    Icon(Icons.search, size: 16, color: AppColors.neutral500),
                     const SizedBox(width: 8),
                     Text(
-                      _location.isNotEmpty ? _location : context.tr('home.anywhere'),
-                      style: const TextStyle(
+                      _location.isNotEmpty
+                          ? _location
+                          : context.tr('home.anywhere'),
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF1D242B),
+                        color: AppColors.charcoal,
                       ),
                     ),
                   ],
@@ -284,16 +286,15 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: _mapView
-                    ? const Color(0xFFFCC519)
-                    : const Color(0xFFF9F9FA),
+                color: _mapView ? AppColors.primaryColor : AppColors.ghostWhite,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
+                border: Border.all(color: AppColors.neutral200),
               ),
               child: Icon(
                 _mapView ? Icons.list_alt : Icons.map_outlined,
                 size: 18,
-                color: const Color(0xFF1D242B),
+                // Active state is the brand yellow in both themes.
+                color: _mapView ? AppColors.brandCharcoal : AppColors.charcoal,
               ),
             ),
           ),
@@ -327,10 +328,11 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: const Color(0xFF1D242B),
+                color: AppColors.charcoal,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.tune, size: 18, color: Colors.white),
+              child:
+                  Icon(Icons.tune, size: 18, color: AppColors.cardBackground),
             ),
           ),
         ],
@@ -383,18 +385,17 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
               children: [
                 Text(
                   foundText,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1D242B),
+                    color: AppColors.charcoal,
                   ),
                 ),
                 if (parts.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
                     parts.join(' · '),
-                    style: const TextStyle(
-                        fontSize: 12, color: Color(0xFF6B7280)),
+                    style: TextStyle(fontSize: 12, color: AppColors.neutral500),
                   ),
                 ],
               ],
@@ -423,7 +424,7 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
       onRefresh: () async {
         _doSearch();
       },
-      color: const Color(0xFFFCC519),
+      color: AppColors.primaryColor,
       child: ListView.separated(
         controller: _scrollController,
         padding: const EdgeInsets.all(20),
@@ -434,7 +435,7 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(color: Color(0xFFFCC519)),
+                child: CircularProgressIndicator(color: AppColors.primaryColor),
               ),
             );
           }
@@ -445,7 +446,8 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
   }
 
   Widget _buildPropertyCard(Map<String, dynamic> p) {
-    final propertyId = (p['id'] ?? p['_id'] ?? p['propertyId'] ?? '').toString();
+    final propertyId =
+        (p['id'] ?? p['_id'] ?? p['propertyId'] ?? '').toString();
     final rating = (p['rating'] ?? p['averageRating'] ?? 0.0);
     final reviewCount = (p['reviewsCount'] ?? p['reviewCount'] ?? 0);
     final isGuestFavorite =
@@ -516,15 +518,15 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.search_off_outlined,
-                size: 64, color: Color(0xFFD1D5DB)),
+            Icon(Icons.search_off_outlined,
+                size: 64, color: AppColors.neutral300),
             const SizedBox(height: 16),
             Text(
               context.tr('property.noPropertiesFound'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1D242B),
+                color: AppColors.charcoal,
               ),
             ),
             const SizedBox(height: 8),
@@ -533,7 +535,7 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
                   ? context.tr('property.noPropertiesFoundDescription')
                   : context.tr('property.noPropertiesInPlace',
                       args: {'place': searched}),
-              style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+              style: TextStyle(fontSize: 14, color: AppColors.neutral500),
               textAlign: TextAlign.center,
             ),
             if (canWidenToRegion) ...[
@@ -550,10 +552,10 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
                 child: Text(
                   context.tr('property.searchWholeRegion',
                       args: {'place': _parentRegionName}),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1D242B),
+                    color: AppColors.charcoal,
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -563,8 +565,8 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFCC519),
-                foregroundColor: const Color(0xFF1D242B),
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: AppColors.brandCharcoal,
                 elevation: 0,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
@@ -587,29 +589,29 @@ class _SearchPropertiesScreenState extends State<SearchPropertiesScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline_outlined,
-                size: 64, color: Color(0xFFD1D5DB)),
+            Icon(Icons.error_outline_outlined,
+                size: 64, color: AppColors.neutral300),
             const SizedBox(height: 16),
             Text(
               context.tr('common.errorOccurred'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1D242B),
+                color: AppColors.charcoal,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               message,
-              style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+              style: TextStyle(fontSize: 14, color: AppColors.neutral500),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _doSearch,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFCC519),
-                foregroundColor: const Color(0xFF1D242B),
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: AppColors.brandCharcoal,
                 elevation: 0,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 32, vertical: 14),

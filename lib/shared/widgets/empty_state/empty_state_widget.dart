@@ -10,7 +10,7 @@ class EmptyStateWidget extends StatelessWidget {
   final String? buttonText;
   final VoidCallback? onButtonPressed;
 
-  const EmptyStateWidget({
+  EmptyStateWidget({
     super.key,
     required this.title,
     this.subtitle,
@@ -47,7 +47,7 @@ class EmptyStateWidget extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -60,7 +60,7 @@ class EmptyStateWidget extends StatelessWidget {
               Text(
                 subtitle!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   color: AppColors.neutral600,
                   height: 1.5,
@@ -75,7 +75,7 @@ class EmptyStateWidget extends StatelessWidget {
                 onPressed: onButtonPressed,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 32,
                     vertical: 14,
@@ -104,7 +104,7 @@ class EmptyStateWidget extends StatelessWidget {
 class NoFavoritesWidget extends StatelessWidget {
   final VoidCallback? onExplorePressed;
 
-  const NoFavoritesWidget({
+  NoFavoritesWidget({
     super.key,
     this.onExplorePressed,
   });
@@ -125,7 +125,7 @@ class NoFavoritesWidget extends StatelessWidget {
 class NoTripsWidget extends StatelessWidget {
   final VoidCallback? onExplorePressed;
 
-  const NoTripsWidget({
+  NoTripsWidget({
     super.key,
     this.onExplorePressed,
   });
@@ -147,7 +147,7 @@ class NoSearchResultsWidget extends StatelessWidget {
   final String query;
   final VoidCallback? onClearSearch;
 
-  const NoSearchResultsWidget({
+  NoSearchResultsWidget({
     super.key,
     required this.query,
     this.onClearSearch,
@@ -167,11 +167,11 @@ class NoSearchResultsWidget extends StatelessWidget {
 
 /// No messages empty state
 class NoMessagesWidget extends StatelessWidget {
-  const NoMessagesWidget({super.key});
+  NoMessagesWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const EmptyStateWidget(
+    return EmptyStateWidget(
       icon: Icons.chat_bubble_outline,
       title: 'No messages',
       subtitle: 'When you book a stay or contact a host, your conversations will appear here.',
@@ -181,11 +181,11 @@ class NoMessagesWidget extends StatelessWidget {
 
 /// No notifications empty state
 class NoNotificationsWidget extends StatelessWidget {
-  const NoNotificationsWidget({super.key});
+  NoNotificationsWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const EmptyStateWidget(
+    return EmptyStateWidget(
       icon: Icons.notifications_none_outlined,
       title: 'All caught up!',
       subtitle: 'You\'ll see notifications about your bookings, messages, and more here.',
@@ -199,7 +199,7 @@ class ErrorStateWidget extends StatelessWidget {
   final VoidCallback? onRetry;
   final IconData icon;
 
-  const ErrorStateWidget({
+  ErrorStateWidget({
     super.key,
     this.message,
     this.onRetry,
@@ -234,7 +234,7 @@ class ErrorStateWidget extends StatelessWidget {
             Text(
               context.tr('common.errorOccurred'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -247,7 +247,7 @@ class ErrorStateWidget extends StatelessWidget {
               Text(
                 message!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   color: AppColors.neutral600,
                   height: 1.5,
@@ -264,7 +264,7 @@ class ErrorStateWidget extends StatelessWidget {
                 label: Text(context.tr('common.tryAgain')),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.charcoal,
-                  side: const BorderSide(color: AppColors.neutral200),
+                  side: BorderSide(color: AppColors.neutral200),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
                     vertical: 12,
@@ -286,7 +286,7 @@ class ErrorStateWidget extends StatelessWidget {
 class NoInternetWidget extends StatelessWidget {
   final VoidCallback? onRetry;
 
-  const NoInternetWidget({
+  NoInternetWidget({
     super.key,
     this.onRetry,
   });
@@ -319,7 +319,7 @@ class NoInternetWidget extends StatelessWidget {
             Text(
               context.tr('common.noInternet'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: AppColors.charcoal,
@@ -330,7 +330,7 @@ class NoInternetWidget extends StatelessWidget {
             Text(
               context.tr('common.noInternetDescription'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral600,
                 height: 1.5,
@@ -345,7 +345,7 @@ class NoInternetWidget extends StatelessWidget {
                 label: Text(context.tr('common.retry')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 32,
                     vertical: 14,

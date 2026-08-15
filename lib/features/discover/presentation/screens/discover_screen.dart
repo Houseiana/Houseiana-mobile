@@ -11,7 +11,7 @@ import 'package:houseiana_mobile_app/shared/widgets/cards/property_card_v2.dart'
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart';
 
 class DiscoverScreen extends StatefulWidget {
-  const DiscoverScreen({super.key});
+  DiscoverScreen({super.key});
 
   @override
   State<DiscoverScreen> createState() => _DiscoverScreenState();
@@ -64,21 +64,22 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     final typeGroups = _buildTypeGroups(_properties);
     final topRated = [..._properties]
       ..sort((a, b) => _ratingOf(b).compareTo(_ratingOf(a)));
-    final guestFavorites =
-        _properties.where((property) => property.isGuestFavorite == true).toList();
+    final guestFavorites = _properties
+        .where((property) => property.isGuestFavorite == true)
+        .toList();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('discover.title'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -87,7 +88,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         centerTitle: true,
       ),
       body: _isLoading
-          ? const ListSkeletonLoader(
+          ? ListSkeletonLoader(
               showSearchBar: false,
               showCategories: false,
             )
@@ -112,7 +113,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       if (cityGroups.isNotEmpty) ...[
                         _SectionHeader(
                           title: context.tr('discover.browseLive'),
-                          subtitle: context.tr('discover.browseLiveDescription'),
+                          subtitle:
+                              context.tr('discover.browseLiveDescription'),
                         ),
                         const SizedBox(height: 16),
                         SizedBox(
@@ -120,7 +122,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: cityGroups.length,
-                            separatorBuilder: (_, __) => const SizedBox(width: 12),
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 12),
                             itemBuilder: (context, index) {
                               final group = cityGroups[index];
                               return _DestinationCard(
@@ -148,7 +151,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       if (guestFavorites.isNotEmpty) ...[
                         _SectionHeader(
                           title: context.tr('discover.guestFavorites'),
-                          subtitle: context.tr('discover.guestFavoritesDescription'),
+                          subtitle:
+                              context.tr('discover.guestFavoritesDescription'),
                         ),
                         const SizedBox(height: 12),
                         ...guestFavorites.take(3).map(_buildPropertyCard),
@@ -157,7 +161,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       if (typeGroups.isNotEmpty) ...[
                         _SectionHeader(
                           title: context.tr('discover.browseByType'),
-                          subtitle: context.tr('discover.browseByTypeDescription'),
+                          subtitle:
+                              context.tr('discover.browseByTypeDescription'),
                         ),
                         const SizedBox(height: 16),
                         Wrap(
@@ -182,7 +187,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           padding: const EdgeInsets.only(top: 60),
                           child: _EmptyState(
                             title: context.tr('discover.noLiveListings'),
-                            message: context.tr('discover.noLiveListingsDescription'),
+                            message: context
+                                .tr('discover.noLiveListingsDescription'),
                           ),
                         ),
                     ],
@@ -205,7 +211,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       reviewCount: property.reviewsCount ?? property.reviewCount ?? 0,
       isFavorite: property.isFavourited ?? false,
       isSuperhost: property.isGuestFavorite ?? false,
-      ribbonText: property.isGuestFavorite == true ? context.tr('home.guestFavorite') : null,
+      ribbonText: property.isGuestFavorite == true
+          ? context.tr('home.guestFavorite')
+          : null,
       onTap: () => Navigator.pushNamed(
         context,
         Routes.propertyDetails,
@@ -266,7 +274,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 class _SearchHeader extends StatelessWidget {
   final VoidCallback onTapSearch;
 
-  const _SearchHeader({required this.onTapSearch});
+  _SearchHeader({required this.onTapSearch});
 
   @override
   Widget build(BuildContext context) {
@@ -277,11 +285,11 @@ class _SearchHeader extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.ghostWhite,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.neutral200),
         ),
         child: Row(
           children: [
-            const Icon(Icons.search, color: AppColors.neutral600),
+            Icon(Icons.search, color: AppColors.neutral600),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -289,7 +297,7 @@ class _SearchHeader extends StatelessWidget {
                 children: [
                   Text(
                     context.tr('discover.searchLiveListings'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: AppColors.charcoal,
@@ -298,7 +306,7 @@ class _SearchHeader extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     context.tr('discover.exploreCurrentStays'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       color: AppColors.neutral600,
                     ),
@@ -306,7 +314,7 @@ class _SearchHeader extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.neutral600),
+            Icon(Icons.chevron_right, color: AppColors.neutral600),
           ],
         ),
       ),
@@ -318,7 +326,7 @@ class _SectionHeader extends StatelessWidget {
   final String title;
   final String subtitle;
 
-  const _SectionHeader({
+  _SectionHeader({
     required this.title,
     required this.subtitle,
   });
@@ -330,7 +338,7 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: AppColors.charcoal,
@@ -339,7 +347,7 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           subtitle,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             color: AppColors.neutral600,
           ),
@@ -353,7 +361,7 @@ class _DestinationCard extends StatelessWidget {
   final _CityDiscoverGroup group;
   final VoidCallback onTap;
 
-  const _DestinationCard({
+  _DestinationCard({
     required this.group,
     required this.onTap,
   });
@@ -376,7 +384,7 @@ class _DestinationCard extends StatelessWidget {
                       imageUrl: cover,
                       fit: BoxFit.cover,
                       placeholder: (context, url) =>
-                          Container(color: const Color(0xFFF0F0F0)),
+                          Container(color: AppColors.neutral100),
                       errorWidget: (context, url, error) => _fallback(),
                     )
                   : _fallback(),
@@ -404,15 +412,16 @@ class _DestinationCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: Colors.white, // dark-ok: caption over the photo
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      context.tr('discover.liveStays', args: {'count': group.properties.length}),
+                      context.tr('discover.liveStays',
+                          args: {'count': group.properties.length}),
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Colors.white70,
+                        color: Colors.white70, // dark-ok: over the photo
                       ),
                     ),
                   ],
@@ -428,7 +437,7 @@ class _DestinationCard extends StatelessWidget {
   Widget _fallback() {
     return Container(
       color: AppColors.neutral200,
-      child: const Icon(
+      child: Icon(
         Icons.location_city,
         color: AppColors.neutral500,
         size: 36,
@@ -441,7 +450,7 @@ class _TypeChip extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _TypeChip({
+  _TypeChip({
     required this.label,
     required this.onTap,
   });
@@ -458,7 +467,7 @@ class _TypeChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoal,
@@ -474,7 +483,7 @@ class _ErrorState extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _ErrorState({
+  _ErrorState({
     required this.message,
     required this.onRetry,
   });
@@ -492,14 +501,14 @@ class _ErrorState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.neutral600),
+              style: TextStyle(color: AppColors.neutral600),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
-                foregroundColor: AppColors.charcoal,
+                foregroundColor: AppColors.brandCharcoal,
               ),
               child: Text(context.tr('common.retry')),
             ),
@@ -514,7 +523,7 @@ class _EmptyState extends StatelessWidget {
   final String title;
   final String message;
 
-  const _EmptyState({
+  _EmptyState({
     required this.title,
     required this.message,
   });
@@ -523,7 +532,7 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Icon(
+        Icon(
           Icons.travel_explore_outlined,
           size: 52,
           color: AppColors.neutral500,
@@ -532,7 +541,7 @@ class _EmptyState extends StatelessWidget {
         Text(
           title,
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
             color: AppColors.charcoal,
@@ -542,7 +551,7 @@ class _EmptyState extends StatelessWidget {
         Text(
           message,
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             color: AppColors.neutral600,
           ),

@@ -7,7 +7,7 @@
 //   final Widget child;
 //   final VoidCallback? onRetry;
 //
-//   const NetworkAwareWrapper({
+//   NetworkAwareWrapper({
 //     super.key,
 //     required this.child,
 //     this.onRetry,

@@ -12,7 +12,7 @@ class ReviewsScreen extends StatelessWidget {
   final int totalReviews;
   final List<Review> reviews;
 
-  const ReviewsScreen({
+  ReviewsScreen({
     super.key,
     this.propertyId,
     this.averageRating = 0,
@@ -51,17 +51,18 @@ class ReviewsScreen extends StatelessWidget {
     List<Review> visibleReviews,
   ) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.charcoal),
+          icon: Icon(Icons.close, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          context.tr('propertyDetails.reviewsCountTitle', args: {'count': reviewsCount}),
-          style: const TextStyle(
+          context.tr('propertyDetails.reviewsCountTitle',
+              args: {'count': reviewsCount}),
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -83,12 +84,13 @@ class ReviewsScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 48),
                 child: Text(
                   context.tr('propertyDetails.noReviewsYet'),
-                  style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+                  style: TextStyle(fontSize: 14, color: AppColors.neutral600),
                 ),
               ),
             )
           else
-            ...visibleReviews.map((review) => _buildReviewCard(context, review)),
+            ...visibleReviews
+                .map((review) => _buildReviewCard(context, review)),
         ],
       ),
     );
@@ -96,9 +98,8 @@ class ReviewsScreen extends StatelessWidget {
 
   Review _fromModel(ReviewModel model) {
     return Review(
-      reviewerName: model.userName?.isNotEmpty == true
-          ? model.userName!
-          : 'Guest',
+      reviewerName:
+          model.userName?.isNotEmpty == true ? model.userName! : 'Guest',
       reviewerPhotoUrl: model.userAvatar,
       rating: model.rating,
       date: model.formattedDate,
@@ -118,11 +119,11 @@ class ReviewsScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.star, size: 32, color: Color(0xFFFCC519)),
+              const Icon(Icons.star, size: 32, color: AppColors.primaryColor),
               const SizedBox(width: 8),
               Text(
                 rating.toStringAsFixed(2),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
                   color: AppColors.charcoal,
@@ -133,8 +134,9 @@ class ReviewsScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Builder(
             builder: (context) => Text(
-              context.tr('propertyDetails.basedOnReviews', args: {'count': reviewsCount}),
-              style: const TextStyle(
+              context.tr('propertyDetails.basedOnReviews',
+                  args: {'count': reviewsCount}),
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.neutral600,
               ),
@@ -150,7 +152,7 @@ class ReviewsScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.neutral200),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -168,7 +170,7 @@ class ReviewsScreen extends StatelessWidget {
                 child: review.reviewerPhotoUrl == null
                     ? Text(
                         review.reviewerName[0].toUpperCase(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: AppColors.charcoal,
@@ -183,7 +185,7 @@ class ReviewsScreen extends StatelessWidget {
                   children: [
                     Text(
                       review.reviewerName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: AppColors.charcoal,
@@ -192,7 +194,7 @@ class ReviewsScreen extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       review.date,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         color: AppColors.neutral600,
                       ),
@@ -203,11 +205,12 @@ class ReviewsScreen extends StatelessWidget {
               // Rating
               Row(
                 children: [
-                  const Icon(Icons.star, size: 16, color: Color(0xFFFCC519)),
+                  const Icon(Icons.star,
+                      size: 16, color: AppColors.primaryColor),
                   const SizedBox(width: 4),
                   Text(
                     review.rating.toStringAsFixed(1),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppColors.charcoal,
@@ -223,7 +226,7 @@ class ReviewsScreen extends StatelessWidget {
           // Review Text
           Text(
             review.comment,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               color: AppColors.charcoal,
               height: 1.5,
@@ -244,7 +247,7 @@ class ReviewsScreen extends StatelessWidget {
                 children: [
                   Text(
                     context.tr('propertyDetails.responseFromHost'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.charcoal,
@@ -253,7 +256,7 @@ class ReviewsScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     review.hostResponse!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       color: AppColors.neutral600,
                       height: 1.5,

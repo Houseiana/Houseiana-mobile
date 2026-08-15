@@ -16,7 +16,7 @@ import 'package:houseiana_mobile_app/i18n/locale_aware_state.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/trip_skeleton.dart';
 
 class TripsScreen extends StatefulWidget {
-  const TripsScreen({super.key});
+  TripsScreen({super.key});
 
   @override
   State<TripsScreen> createState() => _TripsScreenState();
@@ -93,8 +93,7 @@ class _TripsScreenState extends State<TripsScreen>
     // Only safe once the tree has rebuilt onto the new controller — disposing
     // one that is still attached to the live TabBar/TabBarView throws.
     if (previous != null) {
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => previous.dispose());
+      WidgetsBinding.instance.addPostFrameCallback((_) => previous.dispose());
     }
 
     if (tabs.isNotEmpty) _loadTab(tabs[controller.index]);
@@ -184,13 +183,13 @@ class _TripsScreenState extends State<TripsScreen>
   Widget _buildScaffold(BuildContext context) {
     final isLoggedIn = _session.isLoggedIn;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         title: Text(
           context.tr('trips.tripsTitle'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -227,7 +226,7 @@ class _TripsScreenState extends State<TripsScreen>
           // across the app instead of an endless skeleton.
           ? _buildSignInPrompt()
           : (_loadingTabs || _tabController == null
-              ? const TripSkeletonList(itemCount: 4)
+              ? TripSkeletonList(itemCount: 4)
               : TabBarView(
                   controller: _tabController,
                   children: [for (final tab in _tabs) _buildTabView(tab)],
@@ -255,7 +254,7 @@ class _TripsScreenState extends State<TripsScreen>
             const SizedBox(height: 24),
             Text(
               context.tr('trips.signInToView'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,
@@ -264,7 +263,7 @@ class _TripsScreenState extends State<TripsScreen>
             const SizedBox(height: 8),
             Text(
               context.tr('trips.signInToViewDescription'),
-              style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+              style: TextStyle(fontSize: 14, color: AppColors.neutral600),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -275,7 +274,7 @@ class _TripsScreenState extends State<TripsScreen>
                 onPressed: _openLogin,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  foregroundColor: AppColors.charcoal,
+                  foregroundColor: AppColors.brandCharcoal,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
@@ -294,8 +293,9 @@ class _TripsScreenState extends State<TripsScreen>
   }
 
   Widget _buildTabView(TripFilterTab tab) {
-    if (_loadingTabKeys.contains(tab.key) && !_tripsByTab.containsKey(tab.key)) {
-      return const TripSkeletonList(itemCount: 4);
+    if (_loadingTabKeys.contains(tab.key) &&
+        !_tripsByTab.containsKey(tab.key)) {
+      return TripSkeletonList(itemCount: 4);
     }
     return _buildTripList(_tripsByTab[tab.key] ?? const [], tab);
   }
@@ -468,7 +468,7 @@ class _TripsScreenState extends State<TripsScreen>
       onTap: goToDetails,
       child: Container(
         decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.neutral200),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -488,7 +488,7 @@ class _TripsScreenState extends State<TripsScreen>
                       placeholder: (context, url) => Container(
                         height: 180,
                         width: double.infinity,
-                        color: const Color(0xFFF0F0F0),
+                        color: AppColors.neutral100,
                       ),
                       errorWidget: (context, url, error) => _imagePlaceholder(),
                     )
@@ -528,7 +528,7 @@ class _TripsScreenState extends State<TripsScreen>
                           propertyName.toString(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: AppColors.charcoal,
@@ -543,7 +543,7 @@ class _TripsScreenState extends State<TripsScreen>
                         const SizedBox(width: 2),
                         Text(
                           trip.averageRating!.toStringAsFixed(1),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: AppColors.charcoal,
@@ -557,12 +557,12 @@ class _TripsScreenState extends State<TripsScreen>
 
                   Row(
                     children: [
-                      const Icon(Icons.calendar_today,
+                      Icon(Icons.calendar_today,
                           size: 14, color: AppColors.neutral600),
                       const SizedBox(width: 6),
                       Text(
                         '$checkIn - $checkOut',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: AppColors.neutral600,
                         ),
@@ -574,7 +574,7 @@ class _TripsScreenState extends State<TripsScreen>
 
                   Row(
                     children: [
-                      const Icon(Icons.nights_stay_outlined,
+                      Icon(Icons.nights_stay_outlined,
                           size: 14, color: AppColors.neutral600),
                       const SizedBox(width: 6),
                       Text(
@@ -584,18 +584,18 @@ class _TripsScreenState extends State<TripsScreen>
                               : 'trips.nightsCount',
                           args: {'n': nights},
                         ),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: AppColors.neutral600,
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Icon(Icons.person_outline,
+                      Icon(Icons.person_outline,
                           size: 14, color: AppColors.neutral600),
                       const SizedBox(width: 4),
                       Text(
                         '${trip.guests}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: AppColors.neutral600,
                         ),
@@ -607,7 +607,7 @@ class _TripsScreenState extends State<TripsScreen>
 
                   Text(
                     bookingId,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppColors.neutral400,
                     ),
@@ -620,7 +620,7 @@ class _TripsScreenState extends State<TripsScreen>
                       children: [
                         TextSpan(
                           text: priceText,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: AppColors.charcoal,
@@ -628,7 +628,7 @@ class _TripsScreenState extends State<TripsScreen>
                         ),
                         TextSpan(
                           text: '  ${context.tr('trips.total')}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             color: AppColors.neutral400,
                           ),
@@ -658,6 +658,7 @@ class _TripsScreenState extends State<TripsScreen>
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
+                        // dark-ok: amber "payment due" warning, web parity
                         color: Color(0xFFB45309),
                       ),
                     ),
@@ -687,7 +688,7 @@ class _TripsScreenState extends State<TripsScreen>
                             onPressed: messageHost,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryColor,
-                              foregroundColor: AppColors.charcoal,
+                              foregroundColor: AppColors.brandCharcoal,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -723,7 +724,7 @@ class _TripsScreenState extends State<TripsScreen>
                             onPressed: goToDetails,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryColor,
-                              foregroundColor: AppColors.charcoal,
+                              foregroundColor: AppColors.brandCharcoal,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -743,7 +744,7 @@ class _TripsScreenState extends State<TripsScreen>
                         onPressed: bookAgain,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryColor,
-                          foregroundColor: AppColors.charcoal,
+                          foregroundColor: AppColors.brandCharcoal,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -761,7 +762,7 @@ class _TripsScreenState extends State<TripsScreen>
                         onPressed: goToDetails,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryColor,
-                          foregroundColor: AppColors.charcoal,
+                          foregroundColor: AppColors.brandCharcoal,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -782,8 +783,18 @@ class _TripsScreenState extends State<TripsScreen>
   }
 
   static const List<String> _monthsShort = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   String _formatDate(DateTime dt) =>
@@ -792,7 +803,8 @@ class _TripsScreenState extends State<TripsScreen>
   Color _statusBadgeColor(TripModel trip) {
     if (trip.isCancelled) return Colors.red;
     if (trip.isUpcoming) return AppColors.success;
-    if (trip.isNeedToPay) return const Color(0xFFD97706); // amber, web parity
+    // dark-ok: amber "need to pay" status color, web parity
+    if (trip.isNeedToPay) return const Color(0xFFD97706);
     return AppColors.neutral600;
   }
 
@@ -821,7 +833,7 @@ class _TripsScreenState extends State<TripsScreen>
     return Container(
       height: 180,
       color: AppColors.ghostWhite,
-      child: const Center(
+      child: Center(
         child: Icon(Icons.home_work_outlined,
             size: 50, color: AppColors.neutral400),
       ),
@@ -849,13 +861,13 @@ class _TripsScreenState extends State<TripsScreen>
   /// any future status the lookup adds; the raw lookup name is the last resort.
   String _localizedTabLabel(TripFilterTab tab) {
     final filter = tab.filter;
-    final id = filter is num
-        ? filter.toInt()
-        : int.tryParse(filter.toString().trim());
+    final id =
+        filter is num ? filter.toInt() : int.tryParse(filter.toString().trim());
     final keyById = id == null ? null : _tabLabelKeyById[id];
     if (keyById != null) return context.tr(keyById);
 
-    final normalized = tab.label.toUpperCase().replaceAll(RegExp(r'[\s_-]'), '');
+    final normalized =
+        tab.label.toUpperCase().replaceAll(RegExp(r'[\s_-]'), '');
     switch (normalized) {
       case 'UPCOMING':
         return context.tr('trips.upcoming');
@@ -882,12 +894,11 @@ class _TripsScreenState extends State<TripsScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.luggage_outlined,
-                size: 80, color: AppColors.neutral400),
+            Icon(Icons.luggage_outlined, size: 80, color: AppColors.neutral400),
             const SizedBox(height: 24),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.charcoal,
@@ -896,7 +907,7 @@ class _TripsScreenState extends State<TripsScreen>
             const SizedBox(height: 8),
             Text(
               subtitle,
-              style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+              style: TextStyle(fontSize: 14, color: AppColors.neutral600),
               textAlign: TextAlign.center,
             ),
           ],

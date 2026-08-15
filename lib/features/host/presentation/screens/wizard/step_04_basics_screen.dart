@@ -6,7 +6,7 @@ import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.da
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class Step04BasicsScreen extends StatefulWidget {
-  const Step04BasicsScreen({super.key});
+  Step04BasicsScreen({super.key});
 
   @override
   State<Step04BasicsScreen> createState() => _Step04BasicsScreenState();
@@ -19,7 +19,8 @@ class _Step04BasicsScreenState extends State<Step04BasicsScreen> {
   void initState() {
     super.initState();
     final data = context.read<ListingWizardCubit>().state.data;
-    _areaController = TextEditingController(text: data.totalArea?.toInt().toString() ?? '25');
+    _areaController =
+        TextEditingController(text: data.totalArea?.toInt().toString() ?? '25');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final cubit = context.read<ListingWizardCubit>();
@@ -52,7 +53,7 @@ class _Step04BasicsScreenState extends State<Step04BasicsScreen> {
         children: [
           Text(
             context.tr('wizard.shareBasics'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -150,7 +151,7 @@ class _Step04BasicsScreenState extends State<Step04BasicsScreen> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
@@ -158,7 +159,7 @@ class _Step04BasicsScreenState extends State<Step04BasicsScreen> {
               ),
               Text(
                 subLabel,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   color: AppColors.neutral600,
                 ),
@@ -207,7 +208,7 @@ class _Step04BasicsScreenState extends State<Step04BasicsScreen> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppColors.charcoal,
@@ -217,7 +218,9 @@ class _Step04BasicsScreenState extends State<Step04BasicsScreen> {
                 subLabel,
                 style: TextStyle(
                   fontSize: 12,
-                  color: value < 25 || value > 3000 ? Colors.red : AppColors.neutral600,
+                  color: value < 25 || value > 3000
+                      ? AppColors.error
+                      : AppColors.neutral600,
                 ),
               ),
             ],
@@ -244,7 +247,7 @@ class _Step04BasicsScreenState extends State<Step04BasicsScreen> {
                     isDense: true,
                     contentPadding: EdgeInsets.zero,
                   ),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: AppColors.charcoal,
@@ -252,9 +255,12 @@ class _Step04BasicsScreenState extends State<Step04BasicsScreen> {
                   onChanged: onChanged,
                 ),
               ),
-              const Text(
+              Text(
                 'm²',
-                style: TextStyle(fontSize: 13, color: AppColors.neutral700, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.neutral700,
+                    fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -269,7 +275,7 @@ class _Counter extends StatelessWidget {
   final VoidCallback onDec;
   final VoidCallback onInc;
 
-  const _Counter({
+  _Counter({
     required this.value,
     required this.onDec,
     required this.onInc,
@@ -285,9 +291,13 @@ class _Counter extends StatelessWidget {
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: value > 1 ? AppColors.neutral400 : AppColors.neutral200),
+              border: Border.all(
+                  color:
+                      value > 1 ? AppColors.neutral400 : AppColors.neutral200),
             ),
-            child: Icon(Icons.remove, size: 20, color: value > 1 ? AppColors.neutral700 : AppColors.neutral300),
+            child: Icon(Icons.remove,
+                size: 20,
+                color: value > 1 ? AppColors.neutral700 : AppColors.neutral300),
           ),
         ),
         Container(
@@ -306,7 +316,7 @@ class _Counter extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.neutral400),
             ),
-            child: const Icon(Icons.add, size: 20, color: AppColors.neutral700),
+            child: Icon(Icons.add, size: 20, color: AppColors.neutral700),
           ),
         ),
       ],

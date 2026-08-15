@@ -9,7 +9,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Color? backgroundColor;
   final double elevation;
 
-  const CustomAppBar({
+  CustomAppBar({
     super.key,
     required this.title,
     this.centerTitle = true,

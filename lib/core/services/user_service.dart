@@ -528,6 +528,47 @@ class UserService {
     return true;
   }
 
+  /// GET /users/{userId}/payouts — payout transaction history.
+  /// Mirrors the web `AccountAPI.getPayouts`: rows live under `payouts`
+  /// (or `data`), with a sibling `totalMoney` + `currency` pair that feeds
+  /// the "Your credit balance" box.
+  Future<PayoutHistory> getPayouts(
+    String userId, {
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final response = await _api.get(
+      '/users/$userId/payouts',
+      queryParameters: {'page': page, 'limit': limit},
+    );
+
+    dynamic payload = response;
+    if (payload is Map && payload['data'] is Map) {
+      payload = payload['data'];
+    }
+
+    final rows = <Map<String, dynamic>>[];
+    num totalMoney = 0;
+    String currency = '';
+    if (payload is Map) {
+      final raw = payload['payouts'] ?? payload['data'] ?? payload['items'];
+      if (raw is List) rows.addAll(raw.whereType<Map<String, dynamic>>());
+      // Backend decimals sometimes arrive as strings — never hard-cast money.
+      final rawTotal = payload['totalMoney'];
+      totalMoney =
+          rawTotal is num ? rawTotal : num.tryParse('$rawTotal') ?? 0;
+      currency = payload['currency']?.toString() ?? '';
+    } else if (payload is List) {
+      rows.addAll(payload.whereType<Map<String, dynamic>>());
+    }
+
+    return PayoutHistory(
+      payouts: rows,
+      totalMoney: totalMoney,
+      currency: currency,
+    );
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   Map<String, dynamic>? _item(dynamic response) {
@@ -616,4 +657,18 @@ class UserService {
     }
     return [];
   }
+}
+
+/// Result of [UserService.getPayouts]: the transaction rows plus the
+/// credit-balance pair the backend returns alongside them.
+class PayoutHistory {
+  final List<Map<String, dynamic>> payouts;
+  final num totalMoney;
+  final String currency;
+
+  const PayoutHistory({
+    required this.payouts,
+    required this.totalMoney,
+    required this.currency,
+  });
 }

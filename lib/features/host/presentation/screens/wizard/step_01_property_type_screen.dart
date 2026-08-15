@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
-import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.dart' hide sl;
+import 'package:houseiana_mobile_app/features/host/cubit/listing_wizard_cubit.dart'
+    hide sl;
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/end_points.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 
 class Step01PropertyTypeScreen extends StatefulWidget {
-  const Step01PropertyTypeScreen({super.key});
+  Step01PropertyTypeScreen({super.key});
 
   @override
   State<Step01PropertyTypeScreen> createState() =>
@@ -85,36 +86,57 @@ class _Step01PropertyTypeScreenState extends State<Step01PropertyTypeScreen> {
   // for any id the backend adds later.
   IconData _iconForType(Map<String, dynamic> type) {
     switch (type['id']?.toString()) {
-      case '1':  return Icons.apartment;        // Apartment / Condo
-      case '2':  return Icons.house;            // House
-      case '3':  return Icons.villa;            // Villa
-      case '4':  return Icons.meeting_room;     // Studio / Loft
-      case '5':  return Icons.home_work;        // Townhouse
-      case '6':  return Icons.house_siding;     // Guesthouse / Annex
-      case '7':  return Icons.apartment;        // Serviced Apartment
-      case '8':  return Icons.hotel;            // Aparthotel
-      case '9':  return Icons.cabin;            // Cabin / Chalet
-      case '10': return Icons.agriculture;      // Farm Stay
-      case '11': return Icons.sailing;          // Houseboat
-      case '12': return Icons.holiday_village;  // Casa
-      case '13': return Icons.category;         // Other
+      case '1':
+        return Icons.apartment; // Apartment / Condo
+      case '2':
+        return Icons.house; // House
+      case '3':
+        return Icons.villa; // Villa
+      case '4':
+        return Icons.meeting_room; // Studio / Loft
+      case '5':
+        return Icons.home_work; // Townhouse
+      case '6':
+        return Icons.house_siding; // Guesthouse / Annex
+      case '7':
+        return Icons.apartment; // Serviced Apartment
+      case '8':
+        return Icons.hotel; // Aparthotel
+      case '9':
+        return Icons.cabin; // Cabin / Chalet
+      case '10':
+        return Icons.agriculture; // Farm Stay
+      case '11':
+        return Icons.sailing; // Houseboat
+      case '12':
+        return Icons.holiday_village; // Casa
+      case '13':
+        return Icons.category; // Other
     }
     return _iconForName(type['name']?.toString() ?? '');
   }
 
   IconData _iconForName(String typeName) {
     final lowerName = typeName.toLowerCase();
-    if (lowerName.contains('apartment') || lowerName.contains('condo')) return Icons.apartment;
+    if (lowerName.contains('apartment') || lowerName.contains('condo')) {
+      return Icons.apartment;
+    }
     if (lowerName.contains('houseboat')) return Icons.sailing;
     if (lowerName.contains('townhouse')) return Icons.home_work;
     // Check guesthouse/annex before the generic `house` match — otherwise
     // "Guesthouse" contains "house" and grabs the plain house icon.
-    if (lowerName.contains('guesthouse') || lowerName.contains('annex')) return Icons.house_siding;
+    if (lowerName.contains('guesthouse') || lowerName.contains('annex')) {
+      return Icons.house_siding;
+    }
     if (lowerName.contains('house')) return Icons.house;
     if (lowerName.contains('villa')) return Icons.villa;
-    if (lowerName.contains('studio') || lowerName.contains('loft')) return Icons.meeting_room;
+    if (lowerName.contains('studio') || lowerName.contains('loft')) {
+      return Icons.meeting_room;
+    }
     if (lowerName.contains('aparthotel')) return Icons.hotel;
-    if (lowerName.contains('cabin') || lowerName.contains('chalet')) return Icons.cabin;
+    if (lowerName.contains('cabin') || lowerName.contains('chalet')) {
+      return Icons.cabin;
+    }
     if (lowerName.contains('farm')) return Icons.agriculture;
     if (lowerName.contains('casa')) return Icons.holiday_village;
     return Icons.category;
@@ -134,7 +156,7 @@ class _Step01PropertyTypeScreenState extends State<Step01PropertyTypeScreen> {
         children: [
           Text(
             context.tr('wizard.whichBestDescribes'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: AppColors.charcoal,
@@ -170,13 +192,13 @@ class _Step01PropertyTypeScreenState extends State<Step01PropertyTypeScreen> {
                       border: Border.all(
                         color: isSelected
                             ? AppColors.primaryColor
-                            : const Color(0xFFE5E7EB),
+                            : AppColors.neutral200,
                         width: isSelected ? 2 : 1,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       color: isSelected
                           ? AppColors.primaryColor.withValues(alpha: 0.1)
-                          : Colors.white,
+                          : AppColors.cardBackground,
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,

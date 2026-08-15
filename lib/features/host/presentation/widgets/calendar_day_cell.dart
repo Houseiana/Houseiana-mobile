@@ -15,7 +15,7 @@ class CalendarDayCell extends StatelessWidget {
   final String currency;
   final VoidCallback? onTap;
 
-  const CalendarDayCell({
+  CalendarDayCell({
     super.key,
     required this.day,
     required this.info,
@@ -28,38 +28,42 @@ class CalendarDayCell extends StatelessWidget {
   });
 
   // Web legend colors.
-  static const Color _confirmedBg = Color(0xFF1D242B);
-  static const Color _pendingBg = Color(0xFFFFFBEB);
-  static const Color _pendingText = Color(0xFFB38600);
-  static const Color _pendingBorder = Color(0x80FCC519);
-  static const Color _blockedBg = Color(0xFFF5F6F8);
-  static const Color _checkoutBg = Color(0xFFF0FDF4);
-  static const Color _checkoutText = Color(0xFF009966);
-  static const Color _checkoutBorder = Color(0xFF86EFAC);
-  static const Color _discountBadge = Color(0xFFF43F5E); // rose-500 (web parity)
+  // dark-ok: the legend reads the same in both themes (web parity).
+  static const Color _confirmedBg = Color(0xFF1D242B); // dark-ok
+  static const Color _pendingBg = Color(0xFFFFFBEB); // dark-ok
+  static const Color _pendingText = Color(0xFFB38600); // dark-ok
+  static const Color _pendingBorder = Color(0x80FCC519); // dark-ok
+  static const Color _blockedBg = Color(0xFFF5F6F8); // dark-ok
+  static const Color _checkoutBg = Color(0xFFF0FDF4); // dark-ok
+  static const Color _checkoutText = Color(0xFF009966); // dark-ok
+  static const Color _checkoutBorder = Color(0xFF86EFAC); // dark-ok
+  static const Color _discountBadge =
+      Color(0xFFF43F5E); // dark-ok // rose-500 (web parity)
 
   @override
   Widget build(BuildContext context) {
     final status = info?.status ?? CalendarStatus.available;
 
-    Color bg = Colors.white;
+    Color bg = AppColors.cardBackground;
     Color fg = AppColors.charcoal;
     Color priceColor = AppColors.neutral400;
     Border? border = Border.all(color: AppColors.neutral200);
     bool showBlockedIcon = false;
 
     if (isSelected) {
-      bg = AppColors.charcoal;
+      bg = AppColors.brandCharcoal;
+      // dark-ok: the selected cell is always the dark brand charcoal
       fg = Colors.white;
-      priceColor = Colors.white70;
+      priceColor = Colors.white70; // dark-ok
       border = null;
     } else {
       switch (status) {
         case CalendarStatus.booked:
         case CalendarStatus.reserved:
           bg = _confirmedBg;
+          // dark-ok: the confirmed cell is always the dark legend color
           fg = Colors.white;
-          priceColor = Colors.white70;
+          priceColor = Colors.white70; // dark-ok
           border = null;
           break;
         case CalendarStatus.pending:
@@ -120,7 +124,7 @@ class CalendarDayCell extends StatelessWidget {
               // prices below.
               _dayRow(fg, showBadge),
               if (showBlockedIcon)
-                const Icon(Icons.block, size: 12, color: AppColors.neutral400)
+                Icon(Icons.block, size: 12, color: AppColors.neutral400)
               else
                 _priceContent(fg, priceColor, showDiscount),
             ],
@@ -172,6 +176,7 @@ class CalendarDayCell extends StatelessWidget {
           fontSize: 9,
           height: 1.0,
           fontWeight: FontWeight.w800,
+          // dark-ok: label on the rose discount pill
           color: Colors.white,
         ),
       ),
@@ -189,6 +194,7 @@ class CalendarDayCell extends StatelessWidget {
       final discounted = d.discountedPrice!;
       // Make the discounted amount pop in rose to match the badge, but fall
       // back to the foreground color on dark backgrounds (selected / booked).
+      // dark-ok: compares against the fixed white used on the dark cells
       final discountColor = fg == Colors.white ? Colors.white : _discountBadge;
       return Column(
         mainAxisSize: MainAxisSize.min,

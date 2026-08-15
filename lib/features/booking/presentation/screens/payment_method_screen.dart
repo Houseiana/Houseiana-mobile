@@ -11,7 +11,7 @@ import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dar
 import 'package:url_launcher/url_launcher.dart';
 
 class PaymentMethodScreen extends StatefulWidget {
-  const PaymentMethodScreen({super.key});
+  PaymentMethodScreen({super.key});
 
   @override
   State<PaymentMethodScreen> createState() => _PaymentMethodScreenState();
@@ -215,7 +215,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(context.tr('booking.copiedToClipboard', args: {'label': label})),
+          content: Text(
+              context.tr('booking.copiedToClipboard', args: {'label': label})),
           backgroundColor: AppColors.success,
           duration: const Duration(seconds: 2),
         ),
@@ -412,17 +413,17 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.charcoal),
+          icon: Icon(Icons.arrow_back, color: AppColors.charcoal),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.tr('booking.paymentMethod'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoal,
@@ -438,7 +439,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               children: [
                 Text(
                   context.tr('booking.selectPaymentMethod'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.charcoal,
@@ -448,7 +449,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 if (_methodsLoading)
                   ...List.generate(
                     4,
-                    (_) => const Padding(
+                    (_) => Padding(
                       padding: EdgeInsets.only(bottom: 12),
                       child: TileSkeletonItem(
                         leadingSize: 48,
@@ -494,7 +495,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   const SizedBox(height: 24),
                   Text(
                     context.tr('booking.confirmYourBooking'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppColors.charcoal,
@@ -504,31 +505,40 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFFBEB),
+                      // dark-ok: amber notice callout — the tinted panel and
+                      // its amber-on-amber text stay a self-contained light
+                      // island in both themes.
+                      color: const Color(0xFFFFFBEB), // dark-ok
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFEF3C7)),
+                      border:
+                          Border.all(color: const Color(0xFFFEF3C7)), // dark-ok
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // dark-ok: on the amber notice panel
                         const Icon(Icons.warning_amber_rounded,
-                            color: Color(0xFFD97706), size: 20),
+                            color: Color(0xFFD97706), size: 20), // dark-ok
                         const SizedBox(width: 12),
                         Expanded(
                           child: RichText(
                             text: TextSpan(
                               style: const TextStyle(
                                 fontSize: 13,
+                                // dark-ok: on the amber notice panel
                                 color: Color(0xFF92400E),
                                 height: 1.5,
                               ),
                               children: [
                                 TextSpan(
-                                  text: '${context.tr('booking.importantNotConfirmed')}\n',
-                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                  text:
+                                      '${context.tr('booking.importantNotConfirmed')}\n',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w700),
                                 ),
                                 TextSpan(
-                                  text: context.tr('booking.importantAfterInstaPay'),
+                                  text: context
+                                      .tr('booking.importantAfterInstaPay'),
                                 ),
                               ],
                             ),
@@ -544,7 +554,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBackground,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.08),
@@ -568,7 +578,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF25D366), // WhatsApp Green
+                        // dark-ok: WhatsApp brand green, fixed in both themes
+                        backgroundColor: const Color(0xFF25D366),
+                        // dark-ok: on the WhatsApp green fill
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -584,7 +596,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                           : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryColor,
-                        foregroundColor: AppColors.charcoal,
+                        foregroundColor: AppColors.brandCharcoal,
                         disabledBackgroundColor: AppColors.neutral400,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -592,7 +604,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                         ),
                       ),
                       child: _isProcessing
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 22,
                               height: 22,
                               child: CircularProgressIndicator(
@@ -628,13 +640,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.error_outline,
-                  color: Colors.red, size: 20),
+              const Icon(Icons.error_outline, color: Colors.red, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  _methodsError ??
-                      context.tr('booking.paymentMethodsError'),
+                  _methodsError ?? context.tr('booking.paymentMethodsError'),
                   style: const TextStyle(fontSize: 13, color: Colors.red),
                 ),
               ),
@@ -663,17 +673,16 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       decoration: BoxDecoration(
         color: AppColors.ghostWhite,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.neutral200),
       ),
       child: Column(
         children: [
-          const Icon(Icons.payments_outlined,
-              color: AppColors.neutral400, size: 36),
+          Icon(Icons.payments_outlined, color: AppColors.neutral400, size: 36),
           const SizedBox(height: 12),
           Text(
             context.tr('booking.paymentMethodsEmpty'),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 14, color: AppColors.neutral600),
+            style: TextStyle(fontSize: 14, color: AppColors.neutral600),
           ),
           const SizedBox(height: 12),
           TextButton.icon(
@@ -704,14 +713,13 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           border: Border.all(
-            color:
-                isSelected ? AppColors.primaryColor : const Color(0xFFE5E7EB),
+            color: isSelected ? AppColors.primaryColor : AppColors.neutral200,
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(12),
           color: isSelected
               ? AppColors.primaryColor.withValues(alpha: 0.05)
-              : Colors.white,
+              : AppColors.cardBackground,
         ),
         child: Row(
           children: [
@@ -737,7 +745,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 children: [
                   Text(
                     method.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: AppColors.charcoal,
@@ -746,7 +754,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   const SizedBox(height: 4),
                   Text(
                     method.description,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       color: AppColors.neutral600,
                     ),
@@ -768,7 +776,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 color: isSelected ? AppColors.primaryColor : Colors.transparent,
               ),
               child: isSelected
-                  ? const Icon(
+                  ? Icon(
                       Icons.check,
                       size: 16,
                       color: AppColors.charcoal,
@@ -788,7 +796,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         const SizedBox(height: 24),
         Text(
           context.tr('booking.instaPay'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: AppColors.charcoal,
@@ -797,7 +805,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         const SizedBox(height: 12),
         Text(
           '${context.tr('booking.howToPayInstaPay')}\n${context.tr('booking.howToPayInstaPayDesc')}',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             color: AppColors.neutral600,
             height: 1.5,
@@ -809,23 +817,29 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFF9FAFB),
+              color: AppColors.ghostWhite,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              border: Border.all(color: AppColors.neutral200),
             ),
             child: Column(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    'assets/images/instapay-qrcode.jpeg',
-                    width: 140,
-                    height: 140,
-                    fit: BoxFit.cover,
+                Container(
+                  // dark-ok: the QR asset has a baked-in white background, so
+                  // it keeps a white plate in both themes to stay scannable.
+                  color: Colors.white, // dark-ok
+                  padding: const EdgeInsets.all(8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.asset(
+                      'assets/images/instapay-qrcode.jpeg',
+                      width: 140,
+                      height: 140,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
+                Text(
                   '1122880022355422',
                   style: TextStyle(
                     fontSize: 14,
@@ -835,7 +849,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 ),
                 Text(
                   context.tr('booking.poweredByInstaPay'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppColors.neutral500,
                   ),
@@ -844,19 +858,23 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 ElevatedButton.icon(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(context.tr('booking.qrSavedToGallery'))),
+                      SnackBar(
+                          content:
+                              Text(context.tr('booking.qrSavedToGallery'))),
                     );
                   },
                   icon: const Icon(Icons.download_rounded, size: 18),
                   label: Text(context.tr('booking.downloadQrCode')),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.charcoal,
+                    backgroundColor: AppColors.brandCharcoal,
+                    // dark-ok: on the fixed-dark brandCharcoal button
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
                 ),
               ],
@@ -876,7 +894,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         const SizedBox(height: 16),
         Text(
           context.tr('booking.afterTransferNotice'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             color: AppColors.neutral600,
           ),
@@ -891,7 +909,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
             color: AppColors.neutral500,
@@ -902,8 +920,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            color: AppColors.cardBackground,
+            border: Border.all(color: AppColors.neutral200),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -911,7 +929,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               Expanded(
                 child: Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     color: AppColors.charcoal,
                   ),
@@ -922,7 +940,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               const SizedBox(width: 12),
               GestureDetector(
                 onTap: () => _copyToClipboard(label, value),
-                child: const Icon(
+                child: Icon(
                   Icons.copy_rounded,
                   size: 20,
                   color: AppColors.neutral400,

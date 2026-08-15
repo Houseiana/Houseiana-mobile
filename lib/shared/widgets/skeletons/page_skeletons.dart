@@ -14,7 +14,7 @@ class TileListSkeleton extends StatelessWidget {
   final double tileHeight;
   final EdgeInsetsGeometry padding;
 
-  const TileListSkeleton({
+  TileListSkeleton({
     super.key,
     this.itemCount = 6,
     this.leadingSize = 44,
@@ -52,7 +52,7 @@ class TileSkeletonItem extends StatelessWidget {
   final bool showTrailing;
   final double height;
 
-  const TileSkeletonItem({
+  TileSkeletonItem({
     super.key,
     this.leadingSize = 44,
     this.leadingCircle = false,
@@ -147,7 +147,7 @@ class FormSkeleton extends StatelessWidget {
   final bool showButton;
   final EdgeInsetsGeometry padding;
 
-  const FormSkeleton({
+  FormSkeleton({
     super.key,
     this.fieldCount = 5,
     this.showAvatar = false,
@@ -170,7 +170,7 @@ class FormSkeleton extends StatelessWidget {
                 child: Container(
                   width: 88,
                   height: 88,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.neutral200,
                     shape: BoxShape.circle,
                   ),
@@ -178,7 +178,7 @@ class FormSkeleton extends StatelessWidget {
               ),
               const SizedBox(height: 24),
             ],
-            ...List.generate(fieldCount, (_) => const _FormFieldSkeleton()),
+            ...List.generate(fieldCount, (_) => _FormFieldSkeleton()),
             if (showButton) ...[
               const SizedBox(height: 12),
               Container(
@@ -198,7 +198,7 @@ class FormSkeleton extends StatelessWidget {
 }
 
 class _FormFieldSkeleton extends StatelessWidget {
-  const _FormFieldSkeleton();
+  _FormFieldSkeleton();
 
   @override
   Widget build(BuildContext context) {
@@ -237,7 +237,7 @@ class DetailsPageSkeleton extends StatelessWidget {
   final bool circularHero;
   final int sectionCount;
 
-  const DetailsPageSkeleton({
+  DetailsPageSkeleton({
     super.key,
     this.heroHeight = 240,
     this.circularHero = false,
@@ -260,7 +260,7 @@ class DetailsPageSkeleton extends StatelessWidget {
                   child: Container(
                     width: heroHeight,
                     height: heroHeight,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.neutral200,
                       shape: BoxShape.circle,
                     ),
@@ -328,7 +328,7 @@ class CalendarSkeleton extends StatelessWidget {
   final bool showHeader;
   final EdgeInsetsGeometry padding;
 
-  const CalendarSkeleton({
+  CalendarSkeleton({
     super.key,
     this.showHeader = true,
     this.padding = const EdgeInsets.all(16),
@@ -429,7 +429,7 @@ class GridSkeleton extends StatelessWidget {
   final double childAspectRatio;
   final EdgeInsetsGeometry padding;
 
-  const GridSkeleton({
+  GridSkeleton({
     super.key,
     this.itemCount = 6,
     this.crossAxisCount = 2,
@@ -467,7 +467,7 @@ class StatsPageSkeleton extends StatelessWidget {
   final int statCount;
   final int blockCount;
 
-  const StatsPageSkeleton({
+  StatsPageSkeleton({
     super.key,
     this.statCount = 4,
     this.blockCount = 3,
