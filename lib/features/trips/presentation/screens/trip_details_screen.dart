@@ -56,7 +56,9 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
   String _extractTitle(BuildContext context) {
     return _booking?.property?.displayTitle ??
         _booking?.propertyTitle ??
-        context.tr('trips.propertyFallback');
+        context.tr(_booking?.isHotel == true
+            ? 'trips.hotelFallback'
+            : 'trips.propertyFallback');
   }
 
   String _extractLocation() {
@@ -330,14 +332,43 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton.icon(
-                  onPressed: () => Navigator.pushNamed(
-                    context,
-                    Routes.reviewProperty,
-                    arguments: {
-                      'bookingId': _bookingId,
-                      'propertyId': _booking?.propertyId ?? '',
-                    },
-                  ),
+                  onPressed: () {
+                    // Hotel reviews go to their own endpoint and carry six
+                    // category scores instead of the property form's single
+                    // rating, so they cannot share ReviewPropertyScreen.
+                    if (_booking?.isHotel == true) {
+                      final hotelId = _booking?.hotelId ?? '';
+                      // isHotel can be true off `bookingKind` alone, with no id
+                      // to address the hotel by — posting to
+                      // /api/hotels//reviews/create would 404 after the guest
+                      // had already written the review.
+                      if (hotelId.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(context.tr('hotels.hotelNotFound')),
+                          ),
+                        );
+                        return;
+                      }
+                      Navigator.pushNamed(
+                        context,
+                        Routes.hotelReviewCreate,
+                        arguments: {
+                          'hotelId': hotelId,
+                          'hotelName': _extractTitle(context),
+                        },
+                      );
+                      return;
+                    }
+                    Navigator.pushNamed(
+                      context,
+                      Routes.reviewProperty,
+                      arguments: {
+                        'bookingId': _bookingId,
+                        'propertyId': _booking?.propertyId ?? '',
+                      },
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
                     foregroundColor: AppColors.brandCharcoal,
@@ -375,6 +406,8 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            // Cancelling is booking-id based — /booking-manager/{id}/cancel
+            // takes hotel stays and property stays alike.
             if (_canCancel)
               SizedBox(
                 width: double.infinity,
@@ -415,8 +448,13 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
         color: AppColors.neutral100,
         borderRadius: BorderRadius.circular(16),
       ),
-      child:
-          Icon(Icons.home_work_outlined, size: 64, color: AppColors.neutral300),
+      child: Icon(
+        _booking?.isHotel == true
+            ? Icons.hotel_outlined
+            : Icons.home_work_outlined,
+        size: 64,
+        color: AppColors.neutral300,
+      ),
     );
   }
 

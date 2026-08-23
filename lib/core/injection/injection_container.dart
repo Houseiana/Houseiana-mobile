@@ -7,6 +7,7 @@ import 'package:houseiana_mobile_app/core/injection/chat_injection.dart';
 import 'package:houseiana_mobile_app/core/injection/i18n_injection.dart';
 import 'package:houseiana_mobile_app/core/injection/properties_injection.dart';
 import 'package:houseiana_mobile_app/core/injection/host_injection.dart';
+import 'package:houseiana_mobile_app/core/injection/hotels_injection.dart';
 import 'package:houseiana_mobile_app/core/injection/notifications_injection.dart';
 import 'package:houseiana_mobile_app/core/injection/profile_injection.dart';
 import 'package:houseiana_mobile_app/core/injection/support_injection.dart';
@@ -26,6 +27,7 @@ Future<void> init() async {
   initI18n();
   initTheme();
   initProperties();
+  initHotels();
   initHost();
   initNotifications();
   initProfile();

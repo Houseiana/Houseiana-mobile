@@ -97,6 +97,53 @@ class EndPoints {
   static String cancelBooking(String id) => '/booking-manager/$id/cancel';
   static String approveBooking(String id) => '/booking-manager/$id/approve';
 
+  // ── Hotels (guest) ──────────────────────────────────────────────────────────
+  // NOTE: hotels are deployed to STAGING only today — a build pointed at
+  // production 404s on every one of these paths. See HotelService.available.
+  //
+  // GET  /api/hotel-search           → grouped hotel search
+  //   query: userId? checkIn checkOut adults children rooms regionId page limit
+  //   → { success, data: { hotels: [ { regionId?, name, totalCount, hotels:[…] } ],
+  //       totalGroups }, pagination: { page, limit, total, totalPages } }
+  //   GROUPING SHIFTS: WITHOUT regionId the groups are REGIONS and carry
+  //   `regionId`; WITH regionId=N the groups are CITIES and omit the key.
+  //   That regionId is a THIRD id space — not /api/Lookups/RegionCategory and
+  //   not region-villages. No guest lookup exists; read it off the response.
+  //   `price` is per-night when nights == 0, and the STAY TOTAL when nights > 0.
+  //   Errors arrive as HTTP 200 + success:false — never trust the status code.
+  static const String hotelSearch = '/api/hotel-search';
+
+  // GET  /api/hotels/{id}/details?checkIn=&checkOut=  → hotel + roomTypes + ratePlans
+  //   CAUTION: currencyCode is PER RATE PLAN and can differ inside one hotel.
+  static String hotelDetails(String id) => '/api/hotels/$id/details';
+
+  // POST /api/hotel-quote
+  //   body: { checkIn, checkOut, selections: [{ ratePlanId, rooms }] }
+  //   No auth required. Dates are plain yyyy-MM-dd — never toIso8601String().
+  static const String hotelQuote = '/api/hotel-quote';
+
+  // POST /api/hotel-bookings/create
+  //   body: { guestId, checkIn, checkOut,
+  //           selections: [{ ratePlanId, rooms, adults, children,
+  //                          leadGuests: [{ firstName, lastName, phone }] }],
+  //           specialRequests, arrivalTime }
+  //   HARD RULE: leadGuests.length MUST equal rooms for EVERY selection, or the
+  //   backend rejects the whole request.
+  static const String createHotelBooking = '/api/hotel-bookings/create';
+
+  // GET  /api/hotels/{hotelId}/reviews?page=&limit=  → data is an ARRAY
+  static String hotelReviews(String hotelId) => '/api/hotels/$hotelId/reviews';
+
+  // POST /api/hotels/{hotelId}/reviews/create
+  //   body: { guestId, ratingValue:int, comment, cleanliness, accuracy, checkIn,
+  //           communication, location, value }  — six category doubles, no bookingId,
+  //   and the key is guestId (not userId, unlike the property rating endpoint).
+  static String createHotelReview(String hotelId) =>
+      '/api/hotels/$hotelId/reviews/create';
+
+  // POST /api/hotels/{hotelId}/favorite  body: { userId } → data: bool (toggle)
+  static String hotelFavorite(String hotelId) => '/api/hotels/$hotelId/favorite';
+
   // ── Chat ────────────────────────────────────────────────────────────────────
   // GET  /api/chat/conversations        → list conversations (query: userId)
   // POST /api/chat/conversations        → create conversation

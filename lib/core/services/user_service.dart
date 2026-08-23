@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:houseiana_mobile_app/core/models/booking_model.dart';
 import 'package:houseiana_mobile_app/core/models/gender_option.dart';
@@ -584,18 +585,34 @@ class UserService {
     dynamic raw = response;
     if (raw is Map) raw = raw['data'] ?? raw['items'] ?? raw;
     if (raw is Map) {
-      raw = raw['items'] ??
+      // Explicit key paths only. The old fallback picked "the first List found
+      // anywhere in the map", which silently returns just ONE of two arrays the
+      // day the backend starts splitting property and hotel stays — the exact
+      // class of bug already documented for property search. Hotel bookings
+      // land in this same list today (`{ success, data: [...] }`), but the
+      // split shape is cheap to survive, so handle it rather than guess.
+      final properties = raw['properties'];
+      final hotels = raw['hotels'];
+      raw = raw['trips'] ??
+          raw['bookings'] ??
+          raw['items'] ??
           raw['data'] ??
-          raw.values.firstWhere(
-            (v) => v is List,
-            orElse: () => [],
-          );
+          [
+            ...(properties is List ? properties : const []),
+            ...(hotels is List ? hotels : const []),
+          ];
     }
     if (raw is List) {
-      return raw
+      final trips = raw
           .whereType<Map<String, dynamic>>()
           .map((e) => TripModel.fromJson(e))
           .toList();
+      if (kDebugMode) {
+        debugPrint('[Trips] keys='
+            '${response is Map ? response.keys.toList() : response.runtimeType}'
+            ' rows=${trips.length} hotels=${trips.where((t) => t.isHotel).length}');
+      }
+      return trips;
     }
     return [];
   }

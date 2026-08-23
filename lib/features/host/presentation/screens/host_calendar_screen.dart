@@ -858,9 +858,8 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
           text: context.tr('hostCalendar.blockThisDate', args: {'n': nights}),
           icon: Icons.lock_outline,
           isLoading: state.busyBlock,
-          backgroundColor: AppColors.brandCharcoal,
-          // dark-ok: label on the always-dark brand button
-          textColor: Colors.white,
+          backgroundColor: AppColors.ctaBackground,
+          textColor: AppColors.ctaForeground,
           onPressed: _reason == null
               ? null
               : () => cubit.blockSelected(
@@ -1133,9 +1132,8 @@ class _CalendarActionSheetState extends State<_CalendarActionSheet> {
               .tr('hostCalendar.applyDiscount', args: {'p': _discountPercent}),
           icon: Icons.percent,
           isLoading: state.busyDiscount,
-          backgroundColor: AppColors.brandCharcoal,
-          // dark-ok: label on the always-dark brand button
-          textColor: Colors.white,
+          backgroundColor: AppColors.ctaBackground,
+          textColor: AppColors.ctaForeground,
           onPressed: canApply
               ? () => cubit.applyDiscount(_discountPercent,
                   priceBeforeDiscount: base)

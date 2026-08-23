@@ -63,10 +63,10 @@ class _ReviewPropertyBodyState extends State<_ReviewPropertyBody> {
       return;
     }
     context.read<ReviewSubmissionCubit>().submitReview(
-          bookingId: widget.bookingId ?? '',
+          guestId: _session.userId ?? '',
           propertyId: widget.propertyId ?? '',
-          userId: _session.userId ?? '',
-          rating: _rating,
+          // The picker is five whole stars, and the API takes an int.
+          rating: _rating.round(),
           comment: _commentController.text.trim(),
         );
   }

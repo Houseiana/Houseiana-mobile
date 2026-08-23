@@ -8,9 +8,12 @@ import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/models/hotel/hotel_summary.dart';
 import 'package:houseiana_mobile_app/core/models/region_category_model.dart';
 import 'package:houseiana_mobile_app/core/services/cache_service.dart';
 import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
+import 'package:houseiana_mobile_app/core/services/hotel_favorites_notifier.dart';
+import 'package:houseiana_mobile_app/core/services/hotel_service.dart';
 import 'package:houseiana_mobile_app/core/services/lookups_cache.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
@@ -22,9 +25,14 @@ import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.
 import 'package:houseiana_mobile_app/shared/widgets/empty_state/empty_state_widget.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/list_skeleton.dart';
 import 'package:houseiana_mobile_app/core/utils/discount_utils.dart';
+import 'package:houseiana_mobile_app/shared/widgets/cards/compact_hotel_card.dart';
 import 'package:houseiana_mobile_app/shared/widgets/cards/property_card_v2.dart';
 import 'package:houseiana_mobile_app/shared/widgets/favorite_heart_button.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+
+/// The two content sections the home page switches between (web parity:
+/// an "Apartments | Hotels" pill sitting under the search bar).
+enum _HomeSegment { apartments, hotels }
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({super.key});
@@ -64,6 +72,26 @@ class _HomeScreenState extends State<HomeScreen>
     'home.placesToStayIn',
   ];
 
+  // ── Hotels segment ────────────────────────────────────────────────────
+  _HomeSegment _segment = _HomeSegment.apartments;
+
+  /// Lazy-load guard: the hotels request fires only the first time the Hotels
+  /// segment is opened, so the apartments cold start costs exactly what it
+  /// costs today.
+  bool _hotelsRequested = false;
+
+  /// Set when the backend answered 404 — hotels are not deployed on this host.
+  bool _hotelsUnavailable = false;
+
+  List<HotelGroup> _hotelGroups = [];
+  List<HotelSummary> _hotels = [];
+  String? _hotelsLoadErrorKey;
+  bool _hotelsLoading = true;
+  bool _hotelsLoadingMore = false;
+  bool _hotelsHasMore = true;
+  int _hotelsPage = 1;
+
+  final _hotelService = sl<HotelService>();
   final _propertyService = sl<PropertyService>();
   final _userService = sl<UserService>();
   final _session = sl<UserSession>();
@@ -94,6 +122,10 @@ class _HomeScreenState extends State<HomeScreen>
   void onLocaleChanged() {
     _loadCategories();
     _loadData();
+    // Hotel rows are backend-localized through the same `lang` header. The
+    // guard preserves the lazy-load contract: a user who never opened the
+    // Hotels segment still pays no hotel request.
+    if (_hotelsRequested) _loadHotels();
   }
 
   /// Attaches the realtime unread-message counter (idempotent).
@@ -182,12 +214,17 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 200 &&
-        !_isLoadingMore &&
-        _hasMore) {
-      _loadMore();
+    if (_scrollController.position.pixels <
+        _scrollController.position.maxScrollExtent - 200) {
+      return;
     }
+    // One controller drives both segments, so paginate whichever is on screen
+    // — otherwise scrolling the hotels rail would page the apartments list.
+    if (_segment == _HomeSegment.hotels) {
+      if (!_hotelsLoadingMore && _hotelsHasMore) _loadMoreHotels();
+      return;
+    }
+    if (!_isLoadingMore && _hasMore) _loadMore();
   }
 
   /// Loads the home listings with a **cache-first** (read-through) strategy:
@@ -284,6 +321,233 @@ class _HomeScreenState extends State<HomeScreen>
         _isLoading = false;
         _hasMore = page.hasMore;
       });
+    }
+  }
+
+
+  // ── Hotels segment ──────────────────────────────────────────────────────
+
+  /// Mirrors [_loadData] (cache-first, write-through, page 1 only) with hotel
+  /// keys. Only ever fires once the user actually opens the Hotels segment.
+  Future<void> _loadHotels({bool forceRefresh = false}) async {
+    _hotelsRequested = true;
+
+    // Hotels are not deployed on this backend — never hit the network again.
+    if (!HotelService.available.value) {
+      if (!mounted) return;
+      setState(() {
+        _hotelsUnavailable = true;
+        _hotelsLoading = false;
+      });
+      return;
+    }
+
+    final listKey = HotelCache.listKey(sl<LookupsCache>().activeLang);
+
+    if (!forceRefresh) {
+      final cached = _cache.getJson<Map>(listKey);
+      if (cached != null) {
+        final groups = _hotelGroupsFromCache(cached['groups']);
+        // The cached rows carry their own `isFavorite`, and the notifier is
+        // in-memory only — so without this a restart inside the 2h TTL renders
+        // every saved hotel with a hollow heart, and the next tap UN-saves it.
+        _seedHotelHeartsFrom([for (final g in groups) ...g.hotels]);
+        if (!mounted) return;
+        setState(() {
+          _hotelGroups = groups;
+          _hotels = [for (final g in groups) ...g.hotels];
+          _hotelsPage = 1;
+          _hotelsHasMore = cached['hasMore'] == true;
+          _hotelsLoading = false;
+          _hotelsUnavailable = false;
+          _hotelsLoadErrorKey = null;
+        });
+        return;
+      }
+    }
+
+    setState(() {
+      _hotelsLoading = true;
+      _hotelsLoadErrorKey = null;
+      _hotelsUnavailable = false;
+      _hotelsPage = 1;
+      _hotelsHasMore = true;
+    });
+
+    final HotelSearchPage page;
+    try {
+      page = await _hotelService.searchHotels(
+        HotelSearchParams(
+          page: 1,
+          limit: _pageLimit,
+          userId: _hotelSearchUserId,
+        ),
+      );
+    } on HotelsUnavailableException {
+      if (!mounted) return;
+      setState(() {
+        _hotelsUnavailable = true;
+        _hotelsLoading = false;
+      });
+      return;
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _hotelsLoading = false;
+        _hotelsLoadErrorKey = loadErrorKeyFor(e);
+      });
+      return;
+    }
+
+    await _cache.setJson(
+      listKey,
+      {
+        'hasMore': page.hasMore,
+        'groups': [for (final g in page.groups) g.toJson()],
+      },
+      ttl: HotelCache.listTtl,
+    );
+
+    _seedHotelHearts(page);
+
+    if (!mounted) return;
+    setState(() {
+      _hotelGroups = page.groups;
+      _hotels = page.flatHotels;
+      _hotelsLoading = false;
+      _hotelsHasMore = page.hasMore;
+    });
+  }
+
+  /// Re-arms the availability latch and fetches again. Only ever reached from
+  /// the guest tapping Retry — nothing calls it automatically, so a backend
+  /// without hotels is still asked exactly once per session by default.
+  Future<void> _retryHotels() async {
+    HotelService.retryAvailability();
+    if (!mounted) return;
+    setState(() {
+      _hotelsUnavailable = false;
+      _hotelsLoading = true;
+    });
+    await _loadHotels(forceRefresh: true);
+  }
+
+  /// Sent only when signed in, and only so the rows come back with a truthful
+  /// `isFavorite`: there is no "my favourite hotels" endpoint to seed hearts
+  /// from, so the search rows are the only source.
+  String? get _hotelSearchUserId =>
+      _session.isLoggedIn ? _session.userId : null;
+
+  /// Union, never seed: page two must not wipe page one's hearts. And only
+  /// `isFavorite` — `isGuestFavorite` is the quality badge, and seeding from it
+  /// lights up hotels the user never saved.
+  void _seedHotelHearts(HotelSearchPage page) =>
+      _seedHotelHeartsFrom(page.flatHotels);
+
+  void _seedHotelHeartsFrom(List<HotelSummary> hotels) {
+    sl<HotelFavoritesNotifier>().addAll(
+      hotels.where((h) => h.isFavorite).map((h) => h.hotelId),
+    );
+  }
+
+  List<HotelGroup> _hotelGroupsFromCache(dynamic raw) => raw is! List
+      ? const []
+      : raw
+          .whereType<Map>()
+          .map((e) => HotelGroup.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+
+  Future<void> _loadMoreHotels() async {
+    if (_hotelsLoadingMore || !_hotelsHasMore || _hotelsUnavailable) return;
+    setState(() => _hotelsLoadingMore = true);
+    final nextPage = _hotelsPage + 1;
+    try {
+      final page = await _hotelService.searchHotels(
+        HotelSearchParams(
+          page: nextPage,
+          limit: _pageLimit,
+          userId: _hotelSearchUserId,
+        ),
+      );
+      _seedHotelHearts(page);
+      if (!mounted) return;
+      setState(() {
+        _hotelsPage = nextPage;
+        _hotelGroups = _mergeHotelGroups(_hotelGroups, page.groups);
+        _hotels = [for (final g in _hotelGroups) ...g.hotels];
+        _hotelsHasMore = page.hasMore;
+        _hotelsLoadingMore = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      // _hotelsHasMore is deliberately left alone so the next scroll retries
+      // the same page rather than silently ending the list.
+      setState(() => _hotelsLoadingMore = false);
+    }
+  }
+
+  /// Same key rule as [_mergeGroups]: hotel-search flips between REGION groups
+  /// (regionId present) and CITY groups (regionId absent), so the name fallback
+  /// is load-bearing, not defensive. Dedupes on hotelId; page one's group
+  /// metadata wins.
+  List<HotelGroup> _mergeHotelGroups(
+    List<HotelGroup> prev,
+    List<HotelGroup> next,
+  ) {
+    String keyOf(HotelGroup g) =>
+        g.regionId != null ? 'id:${g.regionId}' : 'name:${g.name}';
+
+    final indexByKey = <String, int>{};
+    final merged = <HotelGroup>[];
+    for (var i = 0; i < prev.length; i++) {
+      indexByKey[keyOf(prev[i])] = i;
+      merged.add(prev[i]);
+    }
+
+    for (final g in next) {
+      final key = keyOf(g);
+      final existingIdx = indexByKey[key];
+      if (existingIdx != null) {
+        final existing = merged[existingIdx];
+        final seen = existing.hotels.map((h) => h.hotelId).toSet();
+        final newHotels =
+            g.hotels.where((h) => !seen.contains(h.hotelId)).toList();
+        merged[existingIdx] =
+            existing.copyWith(hotels: [...existing.hotels, ...newHotels]);
+      } else {
+        indexByKey[key] = merged.length;
+        merged.add(g);
+      }
+    }
+    return merged;
+  }
+
+  /// Optimistic hotel favourite. Separate from [_toggleFavorite]: hotels have
+  /// their own toggle endpoint and their own notifier (a property favourite
+  /// replace-seeds the property set and would wipe every hotel heart).
+  Future<void> _toggleHotelFavorite(String hotelId) async {
+    if (!_session.isLoggedIn) {
+      await showSignInToSaveFavoritesSheet(context);
+      return;
+    }
+    final favorites = sl<HotelFavoritesNotifier>();
+    favorites.toggle(hotelId);
+    try {
+      final isFavorite = await _hotelService.toggleFavorite(
+        hotelId: hotelId,
+        userId: _session.userId!,
+      );
+      // The endpoint TOGGLES and answers with the resulting state. If the
+      // optimistic guess disagreed — the heart was drawn hollow from a stale
+      // cache, say — settle on the server's answer instead of leaving the UI
+      // showing the opposite of the truth.
+      if (favorites.contains(hotelId) != isFavorite) favorites.toggle(hotelId);
+    } catch (e) {
+      favorites.toggle(hotelId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('hotels.favoriteFailed'))),
+      );
     }
   }
 
@@ -425,7 +689,9 @@ class _HomeScreenState extends State<HomeScreen>
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.primaryColor,
-          onRefresh: () => _loadData(forceRefresh: true),
+          onRefresh: () => _segment == _HomeSegment.hotels
+              ? _loadHotels(forceRefresh: true)
+              : _loadData(forceRefresh: true),
           child: CustomScrollView(
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
@@ -439,9 +705,15 @@ class _HomeScreenState extends State<HomeScreen>
                     _buildHeroSection(),
                     const SizedBox(height: 16),
                     _buildSearchBar(),
+                    const SizedBox(height: 16),
+                    _buildSegmentedToggle(),
                     const SizedBox(height: 20),
                     _buildUnreadMessagesAlert(),
-                    _buildCategoryFilters(),
+                    // The region-category chips send `featuredRegionId`, which
+                    // /api/hotel-search does not accept — its regionId is a
+                    // different id space with no guest lookup behind it.
+                    if (_segment == _HomeSegment.apartments)
+                      _buildCategoryFilters(),
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -450,7 +722,9 @@ class _HomeScreenState extends State<HomeScreen>
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 sliver: _buildContentSliver(),
               ),
-              if (_isLoadingMore)
+              if (_segment == _HomeSegment.hotels
+                  ? _hotelsLoadingMore
+                  : _isLoadingMore)
                 const SliverPadding(
                   padding: EdgeInsets.symmetric(vertical: 20),
                   sliver: SliverToBoxAdapter(
@@ -1164,6 +1438,7 @@ class _HomeScreenState extends State<HomeScreen>
   /// adapters, and the grouped/flat lists are lazy [SliverList]s so only
   /// visible sections/cards get built.
   Widget _buildContentSliver() {
+    if (_segment == _HomeSegment.hotels) return _buildHotelsContentSliver();
     if (_isLoading) {
       return SliverToBoxAdapter(
         child: ListSkeletonLoader(
@@ -1231,6 +1506,282 @@ class _HomeScreenState extends State<HomeScreen>
       itemBuilder: (_, gi) => _buildCityGroupSection(_cityGroups[gi], gi),
       separatorBuilder: (_, __) => const SizedBox(height: 32),
     );
+  }
+
+
+  /// The Hotels segment's listings area. Deliberately a sibling of
+  /// [_buildContentSliver] rather than more branches inside it — the apartments
+  /// path stays byte-identical to what it was.
+  Widget _buildHotelsContentSliver() {
+    if (_hotelsUnavailable) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: EmptyStateWidget(
+            icon: Icons.hotel_outlined,
+            title: context.tr('hotels.unavailableHere'),
+            subtitle: context.tr('hotels.unavailableHereDescription'),
+            // The 404 verdict is cached for the session, so without this the
+            // guest would have to restart the app to pick up a backend that
+            // deployed hotels in the meantime.
+            buttonText: context.tr('common.tryAgain'),
+            onButtonPressed: _retryHotels,
+          ),
+        ),
+      );
+    }
+
+    if (_hotelsLoading) {
+      return SliverToBoxAdapter(
+        child: ListSkeletonLoader(
+          itemCount: 4,
+          showSearchBar: false,
+          showCategories: false,
+        ),
+      );
+    }
+
+    if (_hotelsLoadErrorKey != null && _hotels.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: ErrorStateWidget(
+            message: context.tr(_hotelsLoadErrorKey!),
+            onRetry: () => _loadHotels(forceRefresh: true),
+          ),
+        ),
+      );
+    }
+
+    if (_hotels.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(Icons.hotel_outlined,
+                    size: 64, color: AppColors.neutral400),
+                const SizedBox(height: 16),
+                Text(
+                  context.tr('hotels.noHotelsFound'),
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.charcoal),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.tr('hotels.noHotelsFoundDescription'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: AppColors.neutral600),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SliverList.separated(
+      itemCount: _hotelGroups.length,
+      itemBuilder: (_, gi) => _buildHotelGroupSection(_hotelGroups[gi], gi),
+      separatorBuilder: (_, __) => const SizedBox(height: 32),
+    );
+  }
+
+  Widget _buildHotelGroupSection(HotelGroup group, int index) {
+    final heading = context.tr('hotels.hotelsIn', args: {'place': group.name});
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                heading,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  height: 1.25,
+                  color: AppColors.charcoal,
+                ),
+              ),
+            ),
+            // Only a REGION group can be drilled into — a city group carries no
+            // id to send back as regionId.
+            if (group.canDrillDown)
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  Routes.hotelSearchResults,
+                  arguments: {
+                    'regionId': group.regionId,
+                    'regionName': group.name,
+                  },
+                ),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.neutral200),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.arrow_forward,
+                    size: 16,
+                    color: AppColors.charcoal,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 268,
+          child: ListView.separated(
+            // A different key namespace from 'home_rail_$index': a shared one
+            // would let the two segments restore each other's rail offsets.
+            key: PageStorageKey('home_hotel_rail_$index'),
+            scrollDirection: Axis.horizontal,
+            itemCount: group.hotels.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) {
+              final hotel = group.hotels[i];
+              return SizedBox(
+                width: 200,
+                child: CompactHotelCard(
+                  hotel: hotel,
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    Routes.hotelDetails,
+                    arguments: {
+                      'hotelId': hotel.hotelId,
+                      'hotelName': hotel.name,
+                    },
+                  ),
+                  onFavoriteToggle: () => _toggleHotelFavorite(hotel.hotelId),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The Apartments | Hotels switch.
+  ///
+  /// It is ALWAYS rendered. A control that disappears on its own reads as a
+  /// bug, and hiding it used to strand anyone standing in the Hotels segment
+  /// when a call failed: stepping back to Apartments made the switch vanish for
+  /// the rest of the session, with no way back to even read the reason. A
+  /// failure is explained inside the Hotels segment instead, with a retry.
+  Widget _buildSegmentedToggle() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        // neutral100 + a border, not ghostWhite: ghostWhite is a hair off the
+        // page background in light mode, so the rail read as nothing at all and
+        // the unselected half looked like a stray line of text.
+        color: AppColors.neutral100,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.neutral200),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _segmentTab(
+              _HomeSegment.apartments,
+              'hotels.toggleApartments',
+              Icons.home_work_outlined,
+            ),
+          ),
+          Expanded(
+            child: _segmentTab(
+              _HomeSegment.hotels,
+              'hotels.toggleHotels',
+              Icons.hotel_outlined,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _segmentTab(_HomeSegment target, String labelKey, IconData icon) {
+    final selected = _segment == target;
+    // The unselected half is the one that has to work harder: an icon, full
+    // charcoal text and a press ripple are what make it read as a control
+    // rather than a caption sitting next to the selected pill.
+    final foreground =
+        selected ? AppColors.brandCharcoal : AppColors.charcoal;
+
+    return Material(
+      type: MaterialType.transparency,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _selectSegment(target),
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primaryColor : AppColors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.10),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: foreground),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  context.tr(labelKey),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                    color: foreground,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _selectSegment(_HomeSegment target) {
+    if (_segment == target) return;
+    setState(() => _segment = target);
+    // Back to the top: the two segments have unrelated content heights, so a
+    // deep apartments offset would land mid-nowhere in the hotels list.
+    if (_scrollController.hasClients) _scrollController.jumpTo(0);
+    if (target == _HomeSegment.hotels && !_hotelsRequested) _loadHotels();
   }
 
   Widget _buildCityGroupSection(CityPropertyGroup group, int index) {

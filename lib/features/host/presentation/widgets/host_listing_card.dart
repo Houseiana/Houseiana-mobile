@@ -422,9 +422,8 @@ class HostListingCard extends StatelessWidget {
             icon: const Icon(Icons.edit_outlined, size: 16),
             label: Text(context.tr('host.cardEdit')),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brandCharcoal,
-              // dark-ok: label on the always-dark brand button
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.ctaBackground,
+              foregroundColor: AppColors.ctaForeground,
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 10),
               textStyle:

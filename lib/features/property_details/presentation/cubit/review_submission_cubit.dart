@@ -28,24 +28,36 @@ class ReviewSubmissionCubit extends Cubit<ReviewSubmissionState> {
       : _ratingsService = ratingsService ?? RatingsService(),
         super(ReviewSubmissionInitial());
 
-  /// Submits a review for a completed booking.
+  /// Submits a property review.
+  ///
+  /// Mirrors `AddPropertyRatingDto`: `guestId` (not userId), an INT rating 1–5,
+  /// and six optional category scores. There is no bookingId in the contract —
+  /// a review attaches to the property.
   Future<void> submitReview({
-    required String bookingId,
+    required String guestId,
     required String propertyId,
-    required String userId,
-    required double rating,
+    required int rating,
     required String comment,
-    List<String>? categories,
+    double? cleanliness,
+    double? accuracy,
+    double? checkIn,
+    double? communication,
+    double? location,
+    double? value,
   }) async {
     emit(ReviewSubmissionLoading());
     try {
       final result = await _ratingsService.submitReview(
-        bookingId: bookingId,
+        guestId: guestId,
         propertyId: propertyId,
-        userId: userId,
         rating: rating,
         comment: comment,
-        categories: categories,
+        cleanliness: cleanliness,
+        accuracy: accuracy,
+        checkIn: checkIn,
+        communication: communication,
+        location: location,
+        value: value,
       );
 
       if (result['success'] == true) {

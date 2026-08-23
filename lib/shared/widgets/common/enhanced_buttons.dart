@@ -39,8 +39,13 @@ class _PrimaryButtonState extends State<PrimaryButton> {
   @override
   Widget build(BuildContext context) {
     final isEnabled = widget.onPressed != null && !widget.isLoading;
-    final bgColor = widget.backgroundColor ?? AppColors.primaryColor;
-    final txtColor = widget.textColor ?? AppColors.charcoal;
+    // A disabled button keeps its plate, only dimmed, so it still reads as a
+    // button that is currently unavailable rather than as a line of text.
+    final isDisabled = widget.onPressed == null && !widget.isLoading;
+    final baseBg = widget.backgroundColor ?? AppColors.primaryColor;
+    final baseTxt = widget.textColor ?? AppColors.charcoal;
+    final bgColor = isDisabled ? baseBg.withValues(alpha: 0.45) : baseBg;
+    final txtColor = isDisabled ? baseTxt.withValues(alpha: 0.7) : baseTxt;
 
     return GestureDetector(
       onTapDown: isEnabled ? (_) => setState(() => _isPressed = true) : null,
@@ -65,7 +70,11 @@ class _PrimaryButtonState extends State<PrimaryButton> {
             boxShadow: isEnabled && !_isPressed
                 ? [
                     BoxShadow(
-                      color: bgColor.withValues(alpha: 0.3),
+                      // A light fill on a dark surface would halo if the lift
+                      // were tinted with it, so it stays black in dark mode.
+                      color: AppColors.isDark
+                          ? Colors.black.withValues(alpha: 0.4)
+                          : bgColor.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),

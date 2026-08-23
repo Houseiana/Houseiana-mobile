@@ -4,6 +4,7 @@ import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
+import 'package:houseiana_mobile_app/core/services/hotel_favorites_notifier.dart';
 import 'package:houseiana_mobile_app/core/services/fcm_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
@@ -347,6 +348,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   await sl<UserSession>().clear();
                                   // Hearts must not leak into the next account.
                                   sl<FavoritesNotifier>().clear();
+                                  sl<HotelFavoritesNotifier>().clear();
                                   if (!context.mounted) return;
                                   Navigator.pushNamedAndRemoveUntil(
                                     context,

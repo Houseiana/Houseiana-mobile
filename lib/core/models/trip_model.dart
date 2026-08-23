@@ -78,6 +78,18 @@ class TripModel extends Equatable {
   final DateTime? cancelledAt;
   final DateTime? paymentDueDate;
 
+  // Hotel-booking discriminator.
+  //
+  // `GET /users/{userId}/user-trips` answers `{ success, data: [...] }` — one
+  // flat list, so hotel stays and property stays arrive mixed together (the web
+  // trips page shows exactly that, a "Hotel" pill beside a "Property" pill).
+  // Which key carries the discriminator is NOT verified: probing it needs a
+  // signed-in account that has a hotel booking, and hotels are staging-only.
+  // So both fields are read through aliases and everything degrades to
+  // "property" when the backend sends nothing — today's behaviour, unchanged.
+  final String? hotelId;
+  final String? bookingKind;
+
   const TripModel({
     required this.id,
     required this.propertyId,
@@ -101,6 +113,8 @@ class TripModel extends Equatable {
     this.averageRating,
     this.cancelledAt,
     this.paymentDueDate,
+    this.hotelId,
+    this.bookingKind,
   });
 
   factory TripModel.fromJson(Map<String, dynamic> json) {
@@ -143,6 +157,11 @@ class TripModel extends Equatable {
           json['averageRating'] != null ? _toDouble(json['averageRating']) : null,
       cancelledAt: parseDate(json['cancelledAt']),
       paymentDueDate: parseDate(json['paymentDueDate']),
+      hotelId: (json['hotelId'] ??
+              (json['hotel'] is Map ? json['hotel']['id'] : null))
+          ?.toString(),
+      bookingKind:
+          (json['bookingType'] ?? json['type'] ?? json['kind'])?.toString(),
     );
   }
 
@@ -164,9 +183,22 @@ class TripModel extends Equatable {
         'amountPaid': amountPaid,
         'hostName': hostName,
         'hostId': hostId,
+        // Carried across the route boundary on purpose: the trip-details screen
+        // rebuilds a BookingModel from this map, and dropping the flag there
+        // would send a hotel stay to the property review form.
+        'hotelId': hotelId,
+        'bookingKind': bookingKind,
       };
 
   int get nights => checkOut.difference(checkIn).inDays;
+
+  /// True when this stay is a HOTEL booking rather than a property listing.
+  /// Falls back to false whenever the backend sends no discriminator, so an
+  /// unchanged payload keeps behaving exactly as it does today.
+  bool get isHotel =>
+      (hotelId != null && hotelId!.trim().isNotEmpty) ||
+      (bookingKind ?? '').toUpperCase() == 'HOTEL';
+
   bool get isUpcoming => status == TripStatus.upcoming;
   bool get isPast => status == TripStatus.past;
   bool get isCancelled => status == TripStatus.cancelled;

@@ -882,8 +882,8 @@ class _ErrorView extends StatelessWidget {
               icon: const Icon(Icons.arrow_back, size: 16),
               label: Text(context.tr('ownerProfile.goBack')),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brandCharcoal,
-                foregroundColor: AppColors.textLight,
+                backgroundColor: AppColors.ctaBackground,
+                foregroundColor: AppColors.ctaForeground,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

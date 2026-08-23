@@ -866,9 +866,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   icon: const Icon(Icons.download_rounded, size: 18),
                   label: Text(context.tr('booking.downloadQrCode')),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandCharcoal,
-                    // dark-ok: on the fixed-dark brandCharcoal button
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.ctaBackground,
+                    foregroundColor: AppColors.ctaForeground,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

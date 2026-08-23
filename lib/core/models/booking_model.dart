@@ -56,6 +56,13 @@ class BookingModel extends Equatable {
   /// `PaymentStatus` enum). Null when the endpoint sends no payment info.
   final String? paymentStatus;
 
+  // Hotel-booking discriminator, mirroring TripModel. The trips list rebuilds a
+  // BookingModel from TripModel.toJson() at the trip-details route boundary, so
+  // without these the flag would be silently lost there and a hotel stay would
+  // open the property review form.
+  final String? hotelId;
+  final String? bookingKind;
+
   const BookingModel({
     required this.id,
     required this.propertyId,
@@ -79,6 +86,8 @@ class BookingModel extends Equatable {
     this.notes,
     this.apiNights,
     this.paymentStatus,
+    this.hotelId,
+    this.bookingKind,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -123,6 +132,11 @@ class BookingModel extends Equatable {
           ? json['nights'] as int
           : int.tryParse('${json['nights'] ?? ''}'),
       paymentStatus: _parsePaymentStatus(json),
+      hotelId: (json['hotelId'] ??
+              (json['hotel'] is Map ? json['hotel']['id'] : null))
+          ?.toString(),
+      bookingKind:
+          (json['bookingKind'] ?? json['bookingType'] ?? json['type'])?.toString(),
     );
   }
 
@@ -155,7 +169,15 @@ class BookingModel extends Equatable {
         'unitName': unitName,
         'bookingCode': bookingCode,
         'paymentStatus': paymentStatus,
+        'hotelId': hotelId,
+        'bookingKind': bookingKind,
       };
+
+  /// True when this stay is a HOTEL booking. See [TripModel.isHotel] — the flag
+  /// degrades to false whenever the backend sends no discriminator.
+  bool get isHotel =>
+      (hotelId != null && hotelId!.trim().isNotEmpty) ||
+      (bookingKind ?? '').toUpperCase() == 'HOTEL';
 
   int get nights => checkOut.difference(checkIn).inDays;
 

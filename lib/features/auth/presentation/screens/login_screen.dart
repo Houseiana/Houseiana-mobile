@@ -296,8 +296,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     }
                                   },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.brandCharcoal,
-                              foregroundColor: AppColors.textLight,
+                              backgroundColor: AppColors.ctaBackground,
+                              foregroundColor: AppColors.ctaForeground,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(25),
                               ),

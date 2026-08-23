@@ -39,25 +39,41 @@ class RatingsService {
   }
 
   /// POST /api/ratings/property-by-guest
-  /// Submits a review for a completed booking.
+  ///
+  /// Body is `AddPropertyRatingDto`, and it is stricter than it looks:
+  /// * the key is **`guestId`**, not `userId`;
+  /// * **`rating` is an `int` 1–5**. Sending the UI's `double` made the API
+  ///   answer 400 "The JSON value could not be converted to System.Int32" on
+  ///   every single submission — which is why no review ever went through;
+  /// * there is **no `bookingId`** and no `categories` array. A review attaches
+  ///   to the property, and the six category scores are their own named fields.
   Future<Map<String, dynamic>> submitReview({
-    required String bookingId,
+    required String guestId,
     required String propertyId,
-    required String userId,
-    required double rating,
+    required int rating,
     required String comment,
-    List<String>? categories,
+    double? cleanliness,
+    double? accuracy,
+    double? checkIn,
+    double? communication,
+    double? location,
+    double? value,
   }) async {
     try {
       final response = await _dio.post(
         '/api/ratings/property-by-guest',
         data: {
-          'bookingId': bookingId,
+          'guestId': guestId,
           'propertyId': propertyId,
-          'userId': userId,
-          'rating': rating,
+          // Clamped, not just rounded: the DTO rejects anything outside 1–5.
+          'rating': rating.clamp(1, 5),
           'comment': comment,
-          if (categories != null) 'categories': categories,
+          if (cleanliness != null) 'cleanliness': cleanliness,
+          if (accuracy != null) 'accuracy': accuracy,
+          if (checkIn != null) 'checkIn': checkIn,
+          if (communication != null) 'communication': communication,
+          if (location != null) 'location': location,
+          if (value != null) 'value': value,
         },
       );
 
@@ -69,10 +85,9 @@ class RatingsService {
           'reviewId': data['reviewId']?.toString(),
         };
       }
-      return {
-        'success': false,
-        'message': data['message']?.toString() ?? 'Failed to submit review',
-      };
+      // A 200 that still reports success:false gets the same enrichment as the
+      // throwing path, so the guest never sees the bare generic line.
+      return {'success': false, 'message': _reviewErrorMessage(data)};
     } on DioException catch (e) {
       return _handleError(e);
     }
@@ -124,11 +139,22 @@ class RatingsService {
     return ServerException.msg(message);
   }
 
-  Map<String, dynamic> _handleError(DioException e) {
-    String message = 'Failed to submit review';
-    if (e.response?.data is Map<String, dynamic>) {
-      message = e.response?.data['message']?.toString() ?? message;
+  Map<String, dynamic> _handleError(DioException e) =>
+      {'success': false, 'message': _reviewErrorMessage(e.response?.data)};
+
+  /// Human reason for a rejected review.
+  ///
+  /// A validation failure puts the useful part in `errors`; `message` on its own
+  /// is only ever "One or more fields are invalid.", which tells the guest
+  /// nothing about what to change.
+  String _reviewErrorMessage(dynamic data) {
+    const fallback = 'Failed to submit review';
+    if (data is! Map) return fallback;
+    var message = data['message']?.toString() ?? fallback;
+    final errors = data['errors'];
+    if (errors is List && errors.isNotEmpty) {
+      message = '$message ${errors.map((e) => e.toString()).join(' ')}';
     }
-    return {'success': false, 'message': message};
+    return message;
   }
 }

@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
+import 'package:houseiana_mobile_app/core/services/hotel_favorites_notifier.dart';
 import 'package:houseiana_mobile_app/core/services/clerk_service.dart';
 import 'package:houseiana_mobile_app/core/services/fcm_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
@@ -113,6 +116,11 @@ class AuthInterceptor extends Interceptor {
   void _logout() {
     _clerkService.clearSession();
     _userSession.clear();
+    // Hearts are in-memory and would otherwise survive into whoever signs in
+    // next — the manual logout in profile_screen already clears them, and a
+    // forced 401 sign-out has to behave identically.
+    sl<FavoritesNotifier>().clear();
+    sl<HotelFavoritesNotifier>().clear();
     unawaited(FCMService.instance.onLogout());
     // Reset the whole stack to login. `removeUntil((r) => false)` is idempotent
     // here — repeated 401s each collapse to a single `[login]` stack rather

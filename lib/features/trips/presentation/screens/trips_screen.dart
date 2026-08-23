@@ -340,7 +340,8 @@ class _TripsScreenState extends State<TripsScreen>
     final isNeedToPay = trip.isNeedToPay;
     final rawTitle = trip.displayTitle;
     final propertyName = (rawTitle.isEmpty || rawTitle == 'Property')
-        ? context.tr('trips.propertyFallback')
+        ? context.tr(
+            trip.isHotel ? 'trips.hotelFallback' : 'trips.propertyFallback')
         : rawTitle;
     final imageUrl = trip.imageUrl;
     final checkIn = trip.formattedCheckIn;
@@ -411,6 +412,22 @@ class _TripsScreenState extends State<TripsScreen>
     }
 
     void bookAgain() {
+      if (trip.isHotel) {
+        final hotelId = trip.hotelId ?? '';
+        // A silent no-op button reads as a broken app; say why nothing happened.
+        if (hotelId.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.tr('hotels.hotelNotFound'))),
+          );
+          return;
+        }
+        Navigator.pushNamed(
+          context,
+          Routes.hotelDetails,
+          arguments: {'hotelId': hotelId},
+        );
+        return;
+      }
       if (trip.propertyId.isEmpty) return;
       Navigator.pushNamed(
         context,
@@ -490,9 +507,10 @@ class _TripsScreenState extends State<TripsScreen>
                         width: double.infinity,
                         color: AppColors.neutral100,
                       ),
-                      errorWidget: (context, url, error) => _imagePlaceholder(),
+                      errorWidget: (context, url, error) =>
+                          _imagePlaceholder(isHotel: trip.isHotel),
                     )
-                  : _imagePlaceholder(),
+                  : _imagePlaceholder(isHotel: trip.isHotel),
             ),
 
             Padding(
@@ -500,22 +518,29 @@ class _TripsScreenState extends State<TripsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Status badge
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _statusBadgeColor(trip).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      status,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: _statusBadgeColor(trip),
+                  // Stay kind + status. The kind pill mirrors the web trips
+                  // page, where hotel stays and property stays share one list.
+                  Row(
+                    children: [
+                      _buildTypePill(trip),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _statusBadgeColor(trip).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          status,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: _statusBadgeColor(trip),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
 
                   const SizedBox(height: 12),
@@ -664,6 +689,11 @@ class _TripsScreenState extends State<TripsScreen>
                     ),
                   ],
 
+                  // Cancelling is booking-id based: /booking-manager/{id}/cancel
+                  // handles hotel stays and property stays alike, so both kinds
+                  // get the button. "Message host" does NOT generalise — a hotel
+                  // has no host and therefore no GUEST_HOST thread to open — so
+                  // for a hotel the cancel button takes the whole row.
                   if (isUpcoming) ...[
                     const SizedBox(height: 16),
                     Row(
@@ -682,22 +712,24 @@ class _TripsScreenState extends State<TripsScreen>
                                 style: const TextStyle(fontSize: 14)),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: messageHost,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryColor,
-                              foregroundColor: AppColors.brandCharcoal,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                        if (!trip.isHotel) ...[
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: messageHost,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryColor,
+                                foregroundColor: AppColors.brandCharcoal,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
+                              child: Text(context.tr('trips.messageHost'),
+                                  style: const TextStyle(fontSize: 14)),
                             ),
-                            child: Text(context.tr('trips.messageHost'),
-                                style: const TextStyle(fontSize: 14)),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ] else if (isNeedToPay) ...[
@@ -829,13 +861,44 @@ class _TripsScreenState extends State<TripsScreen>
     }
   }
 
-  Widget _imagePlaceholder() {
+  Widget _imagePlaceholder({bool isHotel = false}) {
     return Container(
       height: 180,
       color: AppColors.ghostWhite,
       child: Center(
-        child: Icon(Icons.home_work_outlined,
+        child: Icon(isHotel ? Icons.hotel_outlined : Icons.home_work_outlined,
             size: 50, color: AppColors.neutral400),
+      ),
+    );
+  }
+
+  /// Marks a row as a hotel stay or a property stay. Both kinds arrive in the
+  /// same trips list, and the actions below diverge sharply between them, so the
+  /// distinction has to be visible before the guest taps anything.
+  Widget _buildTypePill(TripModel trip) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.neutral100,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: AppColors.neutral200),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(trip.isHotel ? Icons.hotel_outlined : Icons.home_work_outlined,
+              size: 12, color: AppColors.charcoal),
+          const SizedBox(width: 4),
+          Text(
+            context.tr(
+                trip.isHotel ? 'trips.badgeHotel' : 'trips.badgeProperty'),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppColors.charcoal,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -83,6 +83,62 @@ class AppRoutes {
           ),
           settings,
         );
+      // ==================== Hotels (guest) ====================
+      case Routes.hotelSearchResults:
+        return _buildRoute(
+          () => BlocProvider(
+            create: (_) => sl<HotelSearchCubit>(),
+            child: HotelSearchResultsScreen(),
+          ),
+          settings,
+        );
+      case Routes.hotelDetails:
+        final hotelArgs = settings.arguments as Map<String, dynamic>?;
+        final hotelId = _extractHotelId(settings.arguments);
+        return _buildRoute(
+          () => BlocProvider(
+            create: (_) => sl<HotelDetailsCubit>(param1: hotelId),
+            child: HotelDetailsScreen(
+              hotelId: hotelId,
+              initialCheckIn: hotelArgs?['checkIn']?.toString(),
+              initialCheckOut: hotelArgs?['checkOut']?.toString(),
+            ),
+          ),
+          settings,
+        );
+      case Routes.hotelBooking:
+        return _buildRoute(
+          () => BlocProvider(
+            create: (_) => sl<HotelBookingCubit>(),
+            child: HotelBookingScreen(),
+          ),
+          settings,
+        );
+      case Routes.hotelReviews:
+        final hotelReviewsArgs = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          () => HotelReviewsScreen(
+            hotelId: _extractHotelId(settings.arguments),
+            hotelName: hotelReviewsArgs?['hotelName']?.toString(),
+          ),
+          settings,
+        );
+      case Routes.hotelReviewCreate:
+        final hotelReviewArgs = settings.arguments as Map<String, dynamic>?;
+        final reviewHotelId = _extractHotelId(settings.arguments);
+        // The screen reads HotelReviewCubit off the context, so the provider
+        // has to live here — HotelReviewsScreen provides its own, this one does
+        // not.
+        return _buildRoute(
+          () => BlocProvider(
+            create: (_) => sl<HotelReviewCubit>(param1: reviewHotelId),
+            child: HotelReviewCreateScreen(
+              hotelId: reviewHotelId,
+              hotelName: hotelReviewArgs?['hotelName']?.toString(),
+            ),
+          ),
+          settings,
+        );
       case Routes.amenities:
         final args = settings.arguments as Map<String, dynamic>?;
         final categories = args?['categories'];
@@ -461,6 +517,22 @@ class AppRoutes {
       builder: (_) => page(),
       settings: settings,
     );
+  }
+
+  /// Same tolerance as [_extractPropertyId]: a hotel can be pushed as a bare id
+  /// string, as {'hotelId': …}, or as a whole {'hotel': {...}} map (a card
+  /// passing the row it already has, to avoid a round trip).
+  static String _extractHotelId(Object? arguments) {
+    if (arguments is String) return arguments;
+    if (arguments is Map) {
+      final direct = arguments['hotelId'] ?? arguments['id'];
+      if (direct != null && direct.toString().isNotEmpty) {
+        return direct.toString();
+      }
+      final hotel = arguments['hotel'];
+      if (hotel is Map) return (hotel['hotelId'] ?? hotel['id'] ?? '').toString();
+    }
+    return '';
   }
 
   static String _extractPropertyId(Object? arguments) {

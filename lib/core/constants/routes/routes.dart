@@ -115,6 +115,15 @@ import 'package:houseiana_mobile_app/features/booking/presentation/screens/payme
 import 'package:houseiana_mobile_app/features/booking/presentation/screens/payment_cancel_screen.dart';
 
 // Trips
+import 'package:houseiana_mobile_app/features/hotels/presentation/cubit/hotel_booking_cubit.dart';
+import 'package:houseiana_mobile_app/features/hotels/presentation/cubit/hotel_details_cubit.dart';
+import 'package:houseiana_mobile_app/features/hotels/presentation/cubit/hotel_review_cubit.dart';
+import 'package:houseiana_mobile_app/features/hotels/presentation/cubit/hotel_search_cubit.dart';
+import 'package:houseiana_mobile_app/features/hotels/presentation/screens/hotel_booking_screen.dart';
+import 'package:houseiana_mobile_app/features/hotels/presentation/screens/hotel_details_screen.dart';
+import 'package:houseiana_mobile_app/features/hotels/presentation/screens/hotel_review_create_screen.dart';
+import 'package:houseiana_mobile_app/features/hotels/presentation/screens/hotel_reviews_screen.dart';
+import 'package:houseiana_mobile_app/features/hotels/presentation/screens/hotel_search_results_screen.dart';
 import 'package:houseiana_mobile_app/features/trips/presentation/screens/trips_screen.dart';
 import 'package:houseiana_mobile_app/features/trips/presentation/screens/trip_details_screen.dart';
 
@@ -145,6 +154,13 @@ class Routes {
   static const String discover = '/discover';
   static const String recommendations = '/recommendations';
   static const String wishlists = '/wishlists';
+
+  // Hotels (guest)
+  static const String hotelSearchResults = '/hotel-search-results';
+  static const String hotelDetails = '/hotel-details';
+  static const String hotelBooking = '/hotel-booking';
+  static const String hotelReviews = '/hotel-reviews';
+  static const String hotelReviewCreate = '/hotel-review-create';
 
   // Property Details Sub-screens
   static const String amenities = '/amenities';

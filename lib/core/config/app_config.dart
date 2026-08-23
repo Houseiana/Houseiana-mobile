@@ -10,7 +10,7 @@ enum AppEnvironment {
 class AppConfig {
   AppConfig._();
 
-  static AppEnvironment environment = AppEnvironment.production;
+  static AppEnvironment environment = AppEnvironment.staging;
 
   // ── Backend API ──────────────────────────────────────────────────────────────
 
@@ -28,6 +28,22 @@ class AppConfig {
         // return 'https://houseiana-user-backend-production.up.railway.app';
     }
   }
+
+  // ── Hotels API ──────────────────────────────────────────────────────────────
+
+  /// Base URL of the guest **hotels** endpoints (`/api/hotel-search`, …).
+  ///
+  /// Pinned to the staging host in every environment on purpose: the hotel
+  /// routes are deployed to staging only today, and repointing the whole app
+  /// there would take payments, bookings and FCM device-token registration
+  /// with it. `initHotels()` therefore builds a **separate** Dio on this URL
+  /// while the shared client keeps talking to [backendApiUrl].
+  ///
+  /// Note there is no `/api` suffix here — every hotel path in `EndPoints`
+  /// already starts with `/api/`. When hotels ship to production, replace the
+  /// body with `backendApiUrl` and delete the extra Dio in `hotels_injection`.
+  static const String hotelsApiUrl =
+      'https://houseiana-api.jollyisland-881a1746.eastus.azurecontainerapps.io';
 
   // ── Web app (Next.js) ──────────────────────────────────────────────────────
 
@@ -61,6 +77,16 @@ class AppConfig {
   static bool get enableDebugLogging {
     return environment == AppEnvironment.development;
   }
+
+  /// Build-time kill switch for the guest hotels feature — the home
+  /// Apartments | Hotels toggle and everything behind it. Ship a build with no
+  /// hotels at all via `--dart-define=HOTELS_ENABLED=false`.
+  ///
+  /// Separate from `HotelService.available`, which is the *runtime* latch: it
+  /// flips off for the session the first time `/api/hotel-search` answers 404,
+  /// so a build that reaches a backend without hotels degrades on its own.
+  static const bool hotelsFeatureEnabled =
+      bool.fromEnvironment('HOTELS_ENABLED', defaultValue: true);
 
   // ── Google OAuth ────────────────────────────────────────────────────────────
 

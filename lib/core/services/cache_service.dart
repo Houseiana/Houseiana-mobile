@@ -177,3 +177,27 @@ class HomeCache {
   static const Duration favTtl = Duration(hours: 2);
   static const Duration categoriesTtl = Duration(hours: 24);
 }
+
+/// Cache keys for the home screen's Hotels segment.
+///
+/// A separate prefix from [HomeCache] on purpose: `UserService.toggleFavorite`
+/// invalidates `HomeCache.listPrefix` on every property favourite, and a hotel
+/// rail has no business being dropped by that (nor the reverse).
+class HotelCache {
+  HotelCache._();
+
+  /// Prefix covering every cached hotel list (one entry per region filter).
+  static const String listPrefix = 'hotel_list_';
+
+  /// Cache key for the hotel rails under a given region filter. `null` (the
+  /// unscoped search) maps to a stable literal key.
+  ///
+  /// [lang] buckets the entry per app language for the same reason as
+  /// [HomeCache.listKey]: hotel, city, region and amenity names all come back
+  /// backend-localized on the `lang` header, so one shared bucket would keep
+  /// serving the previous language for up to [listTtl] — even across a restart.
+  static String listKey(String lang, [int? regionId]) =>
+      '${listPrefix}v1_${lang}_${regionId ?? 'all'}';
+
+  static const Duration listTtl = Duration(hours: 2);
+}

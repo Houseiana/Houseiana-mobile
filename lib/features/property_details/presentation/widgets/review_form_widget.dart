@@ -137,10 +137,9 @@ class _ReviewFormWidgetState extends State<ReviewFormWidget> {
                       ? null
                       : () {
                           context.read<ReviewSubmissionCubit>().submitReview(
-                                bookingId: widget.bookingId,
+                                guestId: widget.userId,
                                 propertyId: widget.propertyId,
-                                userId: widget.userId,
-                                rating: _rating,
+                                rating: _rating.round(),
                                 comment: _commentController.text.trim(),
                               );
                         },

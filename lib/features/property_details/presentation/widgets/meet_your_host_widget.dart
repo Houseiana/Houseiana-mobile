@@ -220,9 +220,8 @@ class MeetYourHostWidget extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: onContactHost,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.brandCharcoal,
-                      // dark-ok: on the fixed-dark brandCharcoal button
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.ctaBackground,
+                      foregroundColor: AppColors.ctaForeground,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

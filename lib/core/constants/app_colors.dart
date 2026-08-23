@@ -22,6 +22,9 @@ class AppColorsLight {
   static const Color scaffoldBackground = Color(0xFFF5F5F5);
   static const Color cardBackground = Color(0xFFFFFFFF);
 
+  static const Color ctaBackground = Color(0xFF1D242B);
+  static const Color ctaForeground = Color(0xFFFFFFFF);
+
   static const Color textPrimary = Color(0xFF212121);
   static const Color textSecondary = Color(0xFF757575);
 
@@ -52,6 +55,12 @@ class AppColorsDark {
 
   static const Color scaffoldBackground = Color(0xFF15181C);
   static const Color cardBackground = Color(0xFF1D242B);
+
+  // The brand charcoal is the exact value of [cardBackground] here, so a dark
+  // filled button would vanish into the surface it sits on and read as plain
+  // text. The neutral CTA inverts to a near-white plate instead.
+  static const Color ctaBackground = Color(0xFFF4F6F8);
+  static const Color ctaForeground = Color(0xFF1D242B);
 
   static const Color textPrimary = Color(0xFFF4F6F8);
   static const Color textSecondary = Color(0xFFA6B0BB);
@@ -155,6 +164,18 @@ class AppColors {
       : AppColorsLight.scaffoldBackground;
   static Color get cardBackground =>
       _dark ? AppColorsDark.cardBackground : AppColorsLight.cardBackground;
+
+  /// Fill / label of a filled **neutral** call-to-action -- the dark button the
+  /// design uses next to the brand-yellow [primaryColor] one (block a date,
+  /// edit a listing, contact the host ...).
+  ///
+  /// Never use [brandCharcoal] for one of these: in dark mode it is the exact
+  /// value of [cardBackground], so the button disappears into the card it sits
+  /// on and looks like a line of text. This pair inverts instead.
+  static Color get ctaBackground =>
+      _dark ? AppColorsDark.ctaBackground : AppColorsLight.ctaBackground;
+  static Color get ctaForeground =>
+      _dark ? AppColorsDark.ctaForeground : AppColorsLight.ctaForeground;
 
   static Color get textPrimary =>
       _dark ? AppColorsDark.textPrimary : AppColorsLight.textPrimary;
