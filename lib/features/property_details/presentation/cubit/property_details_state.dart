@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:houseiana_mobile_app/core/models/property_model.dart';
-import 'package:houseiana_mobile_app/core/models/review_model.dart';
+import 'package:houseiana_mobile_app/core/models/property_ratings.dart';
 
 abstract class PropertyDetailsState extends Equatable {
   const PropertyDetailsState();
@@ -15,32 +15,27 @@ class PropertyDetailsLoading extends PropertyDetailsState {}
 
 class PropertyDetailsLoaded extends PropertyDetailsState {
   final PropertyModel property;
-  final List<ReviewModel> ratings;
-  final int ratingsPage;
-  final bool hasMoreRatings;
 
-  const PropertyDetailsLoaded({
-    required this.property,
-    this.ratings = const [],
-    this.ratingsPage = 1,
-    this.hasMoreRatings = false,
-  });
+  /// Reviews and their aggregates — see [PropertyRatings].
+  ///
+  /// `null` means "not answered yet": the page renders as soon as the property
+  /// lands and the ratings call finishes after it. `PropertyRatings.empty` is
+  /// the different, settled answer "this property has no reviews", which is why
+  /// the two are not collapsed into one empty value.
+  final PropertyRatings? ratings;
+
+  const PropertyDetailsLoaded({required this.property, this.ratings});
 
   @override
-  List<Object?> get props =>
-      [property, ratings, ratingsPage, hasMoreRatings];
+  List<Object?> get props => [property, ratings];
 
   PropertyDetailsLoaded copyWith({
     PropertyModel? property,
-    List<ReviewModel>? ratings,
-    int? ratingsPage,
-    bool? hasMoreRatings,
+    PropertyRatings? ratings,
   }) {
     return PropertyDetailsLoaded(
       property: property ?? this.property,
       ratings: ratings ?? this.ratings,
-      ratingsPage: ratingsPage ?? this.ratingsPage,
-      hasMoreRatings: hasMoreRatings ?? this.hasMoreRatings,
     );
   }
 }

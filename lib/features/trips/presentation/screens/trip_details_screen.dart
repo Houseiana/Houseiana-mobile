@@ -207,11 +207,9 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
     final title = _extractTitle(context);
     final location = _extractLocation();
     final guestsCount = _booking!.guests;
-    final currencyLabel =
-        (_booking?.currency != null && _booking!.currency!.isNotEmpty)
-            ? _booking!.currency!
-            : 'EGP';
-    final totalStr = Money.format(_booking!.totalPrice, currencyLabel);
+    final totalStr =
+        Money.format(_booking!.totalPrice, _booking!.currencyLabel);
+    final bookingReference = _booking!.reservationReference;
     final localizedStatus = _localizedStatus(context, _status);
 
     return Scaffold(
@@ -308,9 +306,8 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
             const SizedBox(height: 24),
 
             // Booking details
-            if (_bookingId.isNotEmpty)
-              _infoCard(context.tr('trips.bookingId'),
-                  '#${_bookingId.substring(0, _bookingId.length.clamp(0, 8)).toUpperCase()}'),
+            if (bookingReference.isNotEmpty)
+              _infoCard(context.tr('trips.bookingId'), bookingReference),
             _infoCard(context.tr('trips.checkIn'),
                 _formatDate(context, _booking!.checkIn)),
             _infoCard(context.tr('trips.checkOut'),

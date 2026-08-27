@@ -34,13 +34,18 @@ class ReviewModel extends Equatable {
           ? (json['property']['_id'] ?? json['property']['id'] ?? '').toString()
           : (json['property'] ?? json['propertyId'] ?? '').toString(),
       bookingId: json['bookingId'] as String?,
-      userId: json['user']?.toString() ?? json['userId']?.toString(),
-      userName: json['userName'] as String? ??
-          json['reviewerName'] as String? ??
-          json['guestName'] as String?,
-      userAvatar: json['userAvatar'] as String? ??
-          json['avatar'] as String? ??
-          json['reviewerAvatar'] as String?,
+      // `/api/ratings/property/{id}` names these `guestId` / `guestName` /
+      // `guestImage`; the other spellings are older payloads.
+      userId: json['user']?.toString() ??
+          json['userId']?.toString() ??
+          json['guestId']?.toString(),
+      userName: json['userName']?.toString() ??
+          json['reviewerName']?.toString() ??
+          json['guestName']?.toString(),
+      userAvatar: json['userAvatar']?.toString() ??
+          json['avatar']?.toString() ??
+          json['reviewerAvatar']?.toString() ??
+          json['guestImage']?.toString(),
       rating: _toDouble(json['rating'] ?? json['overall'] ?? 0),
       comment: json['comment'] as String? ??
           json['text'] as String? ??

@@ -119,6 +119,7 @@ class RoomTypeCard extends StatelessWidget {
                 _specChips(context),
                 ..._bedRows(context),
                 ..._amenities(context),
+                ..._services(context),
                 const SizedBox(height: 12),
                 // Sold-out rows stay on screen: a guest who scrolled this far
                 // should see what the room offers and that it is gone, not an
@@ -300,6 +301,75 @@ class RoomTypeCard extends StatelessWidget {
           if (extra > 0)
             _chip(context.tr('hotels.amenitiesMore', args: {'n': extra})),
         ],
+      ),
+    ];
+  }
+
+  /// Paid add-ons offered on this room type ("Extra Bed").
+  ///
+  /// They are NOT in any total the app prints — `POST /api/hotel-quote` only
+  /// ever prices `ratePlanId` + `rooms` — so the caption says so outright
+  /// rather than letting a guest read them as included and be surprised at the
+  /// desk.
+  ///
+  /// A service carries no currency of its own, so the amount is labelled with
+  /// the code this room's rate plans agree on, and printed bare when they
+  /// disagree (an EGP plan beside a QAR one really does happen here).
+  List<Widget> _services(BuildContext context) {
+    final services = roomType.services;
+    if (services.isEmpty) return const <Widget>[];
+
+    final currency = roomType.singleCurrencyCode ?? '';
+
+    return [
+      const SizedBox(height: 12),
+      Text(
+        context.tr('hotels.roomExtras'),
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: AppColors.charcoal,
+        ),
+      ),
+      const SizedBox(height: 6),
+      for (final service in services)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Row(
+            children: [
+              Icon(
+                Icons.add_circle_outline,
+                size: 16,
+                color: AppColors.neutral500,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  // Backend-localized already — shown, never keyed off.
+                  service.name,
+                  style: TextStyle(fontSize: 13, color: AppColors.neutral600),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                service.isFree
+                    ? context.tr('hotels.serviceFree')
+                    : Money.format(service.price, currency),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.charcoal,
+                ),
+              ),
+            ],
+          ),
+        ),
+      Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: Text(
+          context.tr('hotels.extrasNotIncluded'),
+          style: TextStyle(fontSize: 11, color: AppColors.neutral500),
+        ),
       ),
     ];
   }

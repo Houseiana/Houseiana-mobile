@@ -5,9 +5,9 @@ import 'package:houseiana_mobile_app/core/models/hotel/hotel_quote.dart';
 import 'package:houseiana_mobile_app/core/models/hotel/hotel_review.dart';
 import 'package:houseiana_mobile_app/core/models/hotel/hotel_summary.dart';
 
-/// The payloads below are VERBATIM from a live probe of the staging API on
-/// 2026-08-23 — not invented fixtures. If the backend shape changes, these are
-/// the tests that should fail first.
+/// The payloads below are VERBATIM from live probes of the staging API on
+/// 2026-08-23 and 2026-08-27 (children pricing) — not invented fixtures. If
+/// the backend shape changes, these are the tests that should fail first.
 void main() {
   group('HotelSummary', () {
     Map<String, dynamic> row({int nights = 0}) => {
@@ -376,6 +376,261 @@ void main() {
     });
   });
 
+group('HotelDetails policies, children policy and paid services', () {
+    // VERBATIM from a live /api/hotels/{id}/details probe on 2026-08-27, the
+    // first response seen with `policies`, `childrenPolicy` and `services`
+    // actually filled in. The earlier fixture above has them empty/null, which
+    // is still the common case — both shapes have to parse.
+    Map<String, dynamic> hotelJson() => {
+          'hotelId': 'e49a5b1a-dd23-4db6-a2b6-37d8b95acb2e',
+          'name': 'testing en name',
+          'starRating': 5,
+          'cityName': 'Hurghada',
+          'countryName': 'Egypt',
+          'checkInTime': '15:00',
+          'checkOutTime': '12:00',
+          'reviewScore': null,
+          'reviewCount': 0,
+          'nights': 0,
+          'roomTypes': [
+            {
+              'id': 'a52197d6-7f73-45ee-ba39-9d68162270f5',
+              'name': 'Standard room',
+              'roomCategory': 'Standard',
+              'baseOccupancy': 2,
+              'coverPhoto': null,
+              'photos': const [],
+              'availableUnits': null,
+              'ratePlans': [
+                {
+                  'id': '66f72b24-c30c-4666-aa84-0afa652d77ee',
+                  'boardBasis': 'Bed & Breakfast',
+                  'basePrice': 3000,
+                  'currencyCode': 'EGP',
+                  'cancellationPolicyType': 'FLEXIBLE',
+                  'freeCancellationHours': 24,
+                  // Null, not 0 — the newer payload omits the value entirely.
+                  'freeCancellationDays': null,
+                  'stayPrice': null,
+                  'serviceFee': null,
+                },
+                {
+                  'id': '6e85cc40-8818-4216-9613-e60382780f6d',
+                  'boardBasis': 'Room Only',
+                  'basePrice': 2000,
+                  'currencyCode': 'EGP',
+                  'freeCancellationHours': 48,
+                  'freeCancellationDays': null,
+                },
+              ],
+              'services': [
+                {'id': 22, 'name': 'Extra Bed', 'price': 90},
+              ],
+            },
+          ],
+          'policies': [
+            {'name': 'Pets Allowed', 'allowed': false},
+            {'name': 'ID Required at Check-in', 'allowed': true},
+            {'name': 'Parties / Events Allowed', 'allowed': true},
+            {'name': 'Visitors Allowed', 'allowed': false},
+            {'name': 'Married Couples Only', 'allowed': true},
+          ],
+          'childrenPolicy': {
+            'childrenAllowed': true,
+            'minChildAge': 0,
+            'maxChildAge': 12,
+            'rules': [
+              {
+                'minAge': 0,
+                'maxAge': 12,
+                'ordinal': 1,
+                'pricingMode': 'FixedAmount',
+                'value': 400,
+              },
+            ],
+          },
+          'services': [
+            {'id': 1, 'name': 'Airport Transfer', 'price': 10},
+          ],
+        };
+
+    test('parses every house rule with its own flag', () {
+      final hotel = HotelDetails.fromJson(hotelJson());
+
+      expect(hotel.policies.length, 5);
+      expect(hotel.policies.first.name, 'Pets Allowed');
+      // The flag says whether the hotel's STATEMENT holds — it is not a
+      // permission on the name, which is why the UI prints yes/no beside it.
+      expect(hotel.policies.first.allowed, isFalse);
+      expect(
+        hotel.policies
+            .firstWhere((p) => p.name == 'ID Required at Check-in')
+            .allowed,
+        isTrue,
+      );
+    });
+
+    test('an unstated flag is NOT read as permission granted', () {
+      final policy = HotelPolicy.fromJson({'name': 'Pets Allowed'});
+      expect(policy.allowed, isFalse);
+    });
+
+    test('drops nameless rules and tolerates a missing array', () {
+      expect(HotelPolicy.listFrom([{'allowed': true}]), isEmpty);
+      expect(HotelPolicy.listFrom(null), isEmpty);
+      final bare = HotelDetails.fromJson({'hotelId': 'x', 'name': 'x'});
+      expect(bare.policies, isEmpty);
+    });
+
+    test('parses the children policy and its age bands', () {
+      final policy = HotelDetails.fromJson(hotelJson()).childrenPolicy;
+
+      expect(policy, isNotNull);
+      expect(policy!.childrenAllowed, isTrue);
+      expect(policy.minChildAge, 0);
+      expect(policy.maxChildAge, 12);
+      expect(policy.hasAgeRange, isTrue);
+
+      final rule = policy.rules.single;
+      expect(rule.minAge, 0);
+      expect(rule.maxAge, 12);
+      expect(rule.ordinal, 1);
+      expect(rule.pricingMode, 'FixedAmount');
+      expect(rule.value, 400);
+      expect(rule.isFree, isFalse);
+      expect(rule.isPercentage, isFalse);
+    });
+
+    test('a NULL children policy means unknown, not "children banned"', () {
+      // The first hotel probed really does answer childrenPolicy:null. Coercing
+      // that into a default policy object would print "This hotel doesn't
+      // accept children" for a hotel that never said so.
+      final hotel = HotelDetails.fromJson({
+        ...hotelJson(),
+        'childrenPolicy': null,
+      });
+      expect(hotel.childrenPolicy, isNull);
+    });
+
+    test('age bands come back sorted by ordinal', () {
+      final policy = HotelChildrenPolicy.from({
+        'childrenAllowed': true,
+        'rules': [
+          {'minAge': 0, 'maxAge': 12, 'ordinal': 2, 'value': 200},
+          {'minAge': 0, 'maxAge': 12, 'ordinal': 1, 'value': 400},
+        ],
+      });
+      expect(policy!.rules.map((r) => r.ordinal), [1, 2]);
+      expect(policy.rules.map((r) => r.value), [400, 200]);
+    });
+
+    test('reads a percentage pricing mode and a free band', () {
+      expect(
+        HotelChildRule.fromJson({'pricingMode': 'Percentage', 'value': 50})
+            .isPercentage,
+        isTrue,
+      );
+      expect(
+        HotelChildRule.fromJson({'pricingMode': 'FixedAmount', 'value': 0})
+            .isFree,
+        isTrue,
+      );
+    });
+
+    test('a lone minChildAge of 0 is not an age range worth printing', () {
+      final policy = HotelChildrenPolicy.from({
+        'childrenAllowed': true,
+        'minChildAge': 0,
+        'maxChildAge': null,
+      });
+      expect(policy!.hasAgeRange, isFalse);
+    });
+
+    test('parses paid services at both the hotel and the room level', () {
+      final hotel = HotelDetails.fromJson(hotelJson());
+
+      expect(hotel.services.single.id, 1);
+      expect(hotel.services.single.name, 'Airport Transfer');
+      expect(hotel.services.single.price, 10);
+
+      final roomService = hotel.roomTypes.single.services.single;
+      expect(roomService.id, 22);
+      expect(roomService.name, 'Extra Bed');
+      expect(roomService.price, 90);
+    });
+
+    test('an empty services array parses to no add-ons', () {
+      // The other probed hotel answers services:[] at both levels.
+      final hotel = HotelDetails.fromJson({
+        ...hotelJson(),
+        'services': const [],
+      });
+      expect(hotel.services, isEmpty);
+    });
+
+    test('a zero-priced add-on is free, not a missing amount', () {
+      expect(
+        HotelExtraService.fromJson({'id': 1, 'name': 'Wake-up call'}).isFree,
+        isTrue,
+      );
+      expect(
+        HotelExtraService.fromJson({'id': 1, 'name': 'Extra Bed', 'price': 90})
+            .isFree,
+        isFalse,
+      );
+    });
+
+    test('a service is labelled with the currency the rate plans agree on', () {
+      final hotel = HotelDetails.fromJson(hotelJson());
+      // Every plan here quotes EGP, so the currency-less service price can be
+      // labelled honestly.
+      expect(hotel.singleCurrencyCode, 'EGP');
+      expect(hotel.roomTypes.single.singleCurrencyCode, 'EGP');
+      expect(hotel.hasMixedCurrencies, isFalse);
+    });
+
+    test('a mixed-currency hotel gives a service NO currency to borrow', () {
+      final hotel = HotelDetails.fromJson({
+        ...hotelJson(),
+        'roomTypes': [
+          {
+            'id': 'r1',
+            'name': 'EGP room',
+            'ratePlans': [
+              {'id': 'p1', 'basePrice': 1500, 'currencyCode': 'EGP'},
+            ],
+          },
+          {
+            'id': 'r2',
+            'name': 'QAR room',
+            'ratePlans': [
+              {'id': 'p2', 'basePrice': 1900, 'currencyCode': 'QAR'},
+            ],
+          },
+        ],
+      });
+      expect(hotel.hasMixedCurrencies, isTrue);
+      // Null → the screen prints the bare number instead of guessing a code.
+      expect(hotel.singleCurrencyCode, isNull);
+      // Each room still knows its own, so its add-ons stay labelled.
+      expect(hotel.roomTypes.first.singleCurrencyCode, 'EGP');
+      expect(hotel.roomTypes.last.singleCurrencyCode, 'QAR');
+    });
+
+    test('a room with no rate plans has no currency to lend its add-ons', () {
+      final room = HotelRoomType.fromJson({'id': 'x', 'name': 'x'});
+      expect(room.singleCurrencyCode, isNull);
+    });
+
+    test('a null freeCancellationDays still parses to no day window', () {
+      final plan =
+          HotelDetails.fromJson(hotelJson()).roomTypes.single.ratePlans.first;
+      expect(plan.freeCancellationDays, 0);
+      expect(plan.freeCancellationHours, 24);
+      expect(plan.hasFreeCancellation, isTrue);
+    });
+  });
+
   group('HotelQuote', () {
     test('parses the verified quote response', () {
       final quote = HotelQuote.fromJson({
@@ -391,6 +646,7 @@ void main() {
             'boardBasis': 'Room Only',
             'rooms': 2,
             'stayPricePerRoom': 3000.00,
+            'childrenTotalPerRoom': 0,
             'subtotal': 6000.00,
           },
         ],
@@ -430,6 +686,126 @@ void main() {
         HotelQuote.signatureOf('2026-09-10', '2026-09-12', [one]),
         isNot(HotelQuote.signatureOf('2026-09-11', '2026-09-12', [one])),
       );
+    });
+
+    test('the signature follows the party, because the party is priced', () {
+      const adultsOnly =
+          HotelSelection(ratePlanId: 'a', rooms: 1, adults: 2);
+      const withChild = HotelSelection(
+        ratePlanId: 'a',
+        rooms: 1,
+        adults: 2,
+        childrenAges: [5],
+      );
+      const moreAdults =
+          HotelSelection(ratePlanId: 'a', rooms: 1, adults: 3);
+
+      // A quote that came back for two adults must never be painted over a
+      // selection that has since gained a five-year-old.
+      expect(
+        HotelQuote.signatureOf('2026-09-10', '2026-09-12', [adultsOnly]),
+        isNot(HotelQuote.signatureOf('2026-09-10', '2026-09-12', [withChild])),
+      );
+      expect(
+        HotelQuote.signatureOf('2026-09-10', '2026-09-12', [adultsOnly]),
+        isNot(HotelQuote.signatureOf('2026-09-10', '2026-09-12', [moreAdults])),
+      );
+    });
+
+    test('the signature ignores age ORDER, exactly as the price does', () {
+      // Verified live: [9, 5] quotes the same total as [5, 9]. Treating the
+      // reorder as a new selection would throw away a perfectly good quote.
+      const ascending = HotelSelection(
+        ratePlanId: 'a',
+        rooms: 1,
+        adults: 2,
+        childrenAges: [5, 9],
+      );
+      const descending = HotelSelection(
+        ratePlanId: 'a',
+        rooms: 1,
+        adults: 2,
+        childrenAges: [9, 5],
+      );
+      expect(
+        HotelQuote.signatureOf('2026-09-10', '2026-09-12', [ascending]),
+        HotelQuote.signatureOf('2026-09-10', '2026-09-12', [descending]),
+      );
+    });
+
+    test('a selection derives its children count from the ages it carries', () {
+      // The backend refuses any mismatch with "childrenAges must contain
+      // exactly one age per child in every selection.", so the two can never
+      // be set independently.
+      const selection = HotelSelection(
+        ratePlanId: 'rp',
+        rooms: 2,
+        adults: 2,
+        childrenAges: [5, 9],
+      );
+      expect(selection.children, 2);
+
+      final body = selection.toJson();
+      expect(body['rooms'], 2);
+      expect(body['adults'], 2);
+      expect(body['children'], 2);
+      expect(body['childrenAges'], [5, 9]);
+    });
+
+    test('never quotes a room with no adult in it', () {
+      // "Every selection needs at least one adult and no negative children."
+      const selection = HotelSelection(ratePlanId: 'rp', rooms: 1, adults: 0);
+      expect(selection.toJson()['adults'], 1);
+      expect(selection.toJson()['childrenAges'], isEmpty);
+    });
+
+    test('a line says what the children policy added to each room', () {
+      // Verified live: 3 nights, 2 rooms, one 5-year-old per room, on a hotel
+      // charging 400/night for ages 0–12.
+      final quote = HotelQuote.fromJson({
+        'hotelId': 'e49a5b1a-dd23-4db6-a2b6-37d8b95acb2e',
+        'checkIn': '2026-09-10',
+        'checkOut': '2026-09-13',
+        'nights': 3,
+        'lines': [
+          {
+            'ratePlanId': '6e85cc40-8818-4216-9613-e60382780f6d',
+            'roomTypeName': 'Standard room',
+            'boardBasis': 'Room Only',
+            'rooms': 2,
+            'stayPricePerRoom': 6000.00,
+            'childrenTotalPerRoom': 1200.00,
+            'subtotal': 14400.00,
+          },
+        ],
+        'roomsSubtotal': 14400.00,
+        'serviceFee': 1440.00,
+        'total': 15840.00,
+        'currencyCode': 'EGP',
+      });
+
+      final line = quote.lines.single;
+      expect(line.childrenTotalPerRoom, 1200);
+      expect(line.hasChildrenCharge, isTrue);
+      expect(quote.hasChildrenCharge, isTrue);
+      // The children charge is ALREADY inside the subtotal, once per room —
+      // it is never a second amount to add on top.
+      expect(
+        line.subtotal,
+        (line.stayPricePerRoom + line.childrenTotalPerRoom) * line.rooms,
+      );
+      expect(quote.total, quote.roomsSubtotal + quote.serviceFee);
+    });
+
+    test('a line with no children key is simply a line with no children', () {
+      final quote = HotelQuote.fromJson({
+        'lines': [
+          {'ratePlanId': 'rp', 'rooms': 1, 'subtotal': 100.0},
+        ],
+      });
+      expect(quote.lines.single.childrenTotalPerRoom, 0);
+      expect(quote.lines.single.hasChildrenCharge, isFalse);
+      expect(quote.hasChildrenCharge, isFalse);
     });
   });
 
@@ -478,6 +854,45 @@ void main() {
       expect(body['guestId'], 'user_1');
       expect(body['checkIn'], '2026-09-10');
       expect((body['selections'] as List).single['leadGuests'], hasLength(2));
+    });
+
+    test('books the ages the quote was priced with', () {
+      // `/api/hotel-bookings/create` re-prices from childrenAges, so a booking
+      // that dropped them would charge a total the guest never saw.
+      final selection = HotelBookingSelection(
+        ratePlanId: 'rp',
+        rooms: 1,
+        adults: 2,
+        childrenAges: const [5, 9],
+        leadGuests: [guest()],
+      );
+      expect(selection.children, 2);
+      expect(selection.isValid, isTrue);
+
+      final body = selection.toJson();
+      expect(body['adults'], 2);
+      expect(body['children'], 2);
+      expect(body['childrenAges'], [5, 9]);
+    });
+
+    test('rejects a room with no adult, and a negative child age', () {
+      // Both are refused server-side: "Every selection needs at least one
+      // adult and no negative children." / "Child ages cannot be negative."
+      final noAdult = HotelBookingSelection(
+        ratePlanId: 'rp',
+        rooms: 1,
+        adults: 0,
+        leadGuests: [guest()],
+      );
+      expect(noAdult.isValid, isFalse);
+
+      final badAge = HotelBookingSelection(
+        ratePlanId: 'rp',
+        rooms: 1,
+        childrenAges: const [-1],
+        leadGuests: [guest()],
+      );
+      expect(badAge.isValid, isFalse);
     });
 
     test('an empty selection list is never a valid booking', () {

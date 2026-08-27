@@ -436,6 +436,43 @@ class _TripsScreenState extends State<TripsScreen>
       );
     }
 
+    // Web parity: the review action lives on the card itself, so a guest can
+    // rate a finished stay without opening trip details first. Hotel stays post
+    // to their own endpoint and use a six-category form, so they cannot share
+    // ReviewPropertyScreen (same split as the trip-details button).
+    void writeReview() {
+      if (trip.isHotel) {
+        final hotelId = trip.hotelId ?? '';
+        // isHotel can be true off `bookingKind` alone, with no id to address
+        // the hotel by — /api/hotels//reviews/create would 404.
+        if (hotelId.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.tr('hotels.hotelNotFound'))),
+          );
+          return;
+        }
+        Navigator.pushNamed(
+          context,
+          Routes.hotelReviewCreate,
+          arguments: {'hotelId': hotelId, 'hotelName': propertyName},
+        );
+        return;
+      }
+      if (trip.propertyId.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.tr('propertyDetails.propertyNotFound')),
+          ),
+        );
+        return;
+      }
+      Navigator.pushNamed(
+        context,
+        Routes.reviewProperty,
+        arguments: {'bookingId': trip.id, 'propertyId': trip.propertyId},
+      );
+    }
+
     Future<void> cancelInline() async {
       if (trip.id.isEmpty) return;
       final confirm = await showDialog<bool>(
@@ -628,15 +665,21 @@ class _TripsScreenState extends State<TripsScreen>
                     ],
                   ),
 
-                  const SizedBox(height: 8),
-
-                  Text(
-                    bookingId,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.neutral400,
+                  if (bookingId.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      bookingId,
+                      // The fallback is the raw booking id, which is longer
+                      // than a real reservation code — let it take a second
+                      // line rather than overflow the card.
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.neutral400,
+                      ),
                     ),
-                  ),
+                  ],
 
                   const SizedBox(height: 8),
 
@@ -786,6 +829,27 @@ class _TripsScreenState extends State<TripsScreen>
                             style: const TextStyle(fontSize: 14)),
                       ),
                     ),
+                    // Only a stay that actually happened can be reviewed —
+                    // cancelled trips keep "Book Again" alone (same gate the
+                    // trip-details screen uses: COMPLETED/PAST).
+                    if (isPast) ...[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: writeReview,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.charcoal,
+                            side: BorderSide(color: AppColors.neutral200),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(context.tr('trips.writeReview'),
+                              style: const TextStyle(fontSize: 14)),
+                        ),
+                      ),
+                    ],
                   ] else ...[
                     const SizedBox(height: 16),
                     SizedBox(

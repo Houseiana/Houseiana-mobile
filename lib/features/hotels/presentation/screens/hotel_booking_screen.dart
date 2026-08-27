@@ -46,7 +46,8 @@ const bool kHotelPaymentEnabled = true;
 /// | `checkIn`, `checkOut` | `yyyy-MM-dd` / ISO String / DateTime | **yes** |
 /// | `selections` | List of `{ratePlanId, rooms, roomTypeName, boardBasis}` | **yes** |
 /// | `quote` | [HotelQuote] or its JSON map | no (breakdown hidden without it) |
-/// | `adults`, `children` | int or String | no |
+/// | `adults` | int or String | no |
+/// | `childrenAges` | List of int — one age per child, as PRICED | no |
 ///
 /// A selection map may additionally carry `freeCancellationDays`,
 /// `freeCancellationHours` and `cancellationPolicyType`; the cancellation
@@ -75,7 +76,14 @@ class _HotelBookingScreenState extends State<HotelBookingScreen> {
   HotelQuote? _quote;
   List<_BookedRooms> _booked = const <_BookedRooms>[];
   int _adults = 0;
-  int _children = 0;
+
+  /// One age per child, exactly the list the quote on this screen was priced
+  /// with. The create endpoint takes `childrenAges` too and re-prices from it,
+  /// so the count is DERIVED from the ages rather than carried beside them —
+  /// a count without matching ages is refused outright.
+  List<int> _childrenAges = const <int>[];
+
+  int get _children => _childrenAges.length;
 
   /// Text controllers keyed by field, created on demand and seeded once from
   /// the cubit's form. The cubit stays the source of truth for validity; these
@@ -116,7 +124,8 @@ class _HotelBookingScreenState extends State<HotelBookingScreen> {
     _checkIn = _apiDay(args['checkIn']);
     _checkOut = _apiDay(args['checkOut']);
     _adults = asHotelInt(args['adults']);
-    _children = asHotelInt(args['children']);
+    // `children` also arrives, but only as the count these ages already carry.
+    _childrenAges = _readChildAges(args['childrenAges']);
 
     final quote = args['quote'];
     if (quote is HotelQuote) {
@@ -146,10 +155,25 @@ class _HotelBookingScreenState extends State<HotelBookingScreen> {
             // screen only knows the party as a whole, so it goes out
             // unchanged on every line.
             adults: _adults > 0 ? _adults : 1,
-            children: _children,
+            childrenAges: _childrenAges,
           ),
       ],
     );
+  }
+
+  /// Child ages as the details screen priced them.
+  ///
+  /// Tolerant of a list that has been through JSON (ages as strings), and
+  /// drops anything negative — the backend answers those with "Child ages
+  /// cannot be negative." and rejects the whole booking.
+  List<int> _readChildAges(dynamic raw) {
+    if (raw is! List) return const <int>[];
+    final ages = <int>[];
+    for (final entry in raw) {
+      final age = asHotelIntOrNull(entry);
+      if (age != null && age >= 0) ages.add(age);
+    }
+    return ages;
   }
 
   /// Accepts whatever the details screen hands over: a `DateTime`, an ISO
@@ -631,16 +655,7 @@ class _HotelBookingScreenState extends State<HotelBookingScreen> {
           onChanged: cubit.setSpecialRequests,
         ),
         const SizedBox(height: 12),
-        _field(
-          fieldKey: 'arrivalTime',
-          label: context.tr('hotels.arrivalTime'),
-          hint: context.tr('hotels.arrivalTimeHint'),
-          initialValue: state.arrivalTime,
-          icon: Icons.schedule_outlined,
-          // Free text, but "١٤:٠٠" reaches the hotel as unreadable digits.
-          inputFormatters: const [WesternDigitsInputFormatter()],
-          onChanged: cubit.setArrivalTime,
-        ),
+        _arrivalTimeField(state),
       ],
     );
   }
@@ -1203,6 +1218,193 @@ class _HotelBookingScreenState extends State<HotelBookingScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Hourly arrival slots, `HH:mm` — the exact shape the endpoint has always
+  /// taken, so picking instead of typing changes nothing about the payload.
+  static final List<String> _arrivalSlots = List.generate(
+    24,
+    (hour) => '${hour.toString().padLeft(2, '0')}:00',
+  );
+
+  /// The hour the sheet opens on when nothing is picked yet: check-in windows
+  /// start early afternoon, and a list parked at 00:00 reads as "there are no
+  /// afternoon options" until you scroll.
+  static const int _defaultArrivalSlotIndex = 14;
+
+  /// Arrival time is picked, never typed. As a free-text box it collected
+  /// "2 pm", "الظهر" and Arabic-Indic digits — none of which the hotel's front
+  /// desk can act on — and the guest had to guess the format from a hint.
+  Widget _arrivalTimeField(HotelBookingState state) {
+    final value = state.arrivalTime.trim();
+    final hasValue = value.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          context.tr('hotels.arrivalTime'),
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.neutral700,
+          ),
+        ),
+        const SizedBox(height: 6),
+        // Its own Material, or the tap ripple paints underneath the field.
+        Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: _openArrivalTimeSheet,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.neutral200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.schedule_outlined,
+                      size: 20, color: AppColors.neutral400),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      hasValue ? value : context.tr('hotels.arrivalTimeHint'),
+                      style: TextStyle(
+                        fontSize: hasValue ? 15 : 14,
+                        color: hasValue
+                            ? AppColors.charcoal
+                            : AppColors.neutral400,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.keyboard_arrow_down,
+                      size: 20, color: AppColors.neutral500),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Sheet of arrival slots. Returns the picked `HH:mm`, an empty string for
+  /// "not sure" (the field is optional, so clearing it has to stay one tap
+  /// away), or null when dismissed — which must leave the value untouched.
+  Future<void> _openArrivalTimeSheet() async {
+    final cubit = context.read<HotelBookingCubit>();
+    final current = cubit.state.arrivalTime.trim();
+
+    const tileExtent = 52.0;
+    final selectedIndex = _arrivalSlots.indexOf(current);
+    final focusIndex =
+        selectedIndex >= 0 ? selectedIndex : _defaultArrivalSlotIndex;
+    // One slot of headroom above the focused hour, so it does not sit flush
+    // against the divider and look like the top of the list.
+    final controller = ScrollController(
+      initialScrollOffset: ((focusIndex - 1) * tileExtent).clamp(
+        0.0,
+        (_arrivalSlots.length - 1) * tileExtent,
+      ),
+    );
+
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.cardBackground,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(sheetContext).size.height * 0.6,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          context.tr('hotels.arrivalTimeSheetTitle'),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.charcoal,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        icon: Icon(Icons.close,
+                            size: 20, color: AppColors.neutral500),
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(height: 1, color: AppColors.neutral200),
+                // Pinned above the scroller: undoing a pick should never mean
+                // scrolling back to the top of twenty-four hours.
+                _arrivalTile(
+                  sheetContext,
+                  value: '',
+                  label: context.tr('hotels.arrivalTimeNotSure'),
+                  selected: current.isEmpty,
+                ),
+                Divider(height: 1, color: AppColors.neutral200),
+                Flexible(
+                  child: ListView.builder(
+                    controller: controller,
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    itemExtent: tileExtent,
+                    itemCount: _arrivalSlots.length,
+                    itemBuilder: (_, index) => _arrivalTile(
+                      sheetContext,
+                      value: _arrivalSlots[index],
+                      label: _arrivalSlots[index],
+                      selected: _arrivalSlots[index] == current,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    controller.dispose();
+    if (picked == null || !mounted) return;
+    cubit.setArrivalTime(picked);
+  }
+
+  Widget _arrivalTile(
+    BuildContext sheetContext, {
+    required String value,
+    required String label,
+    required bool selected,
+  }) {
+    return ListTile(
+      dense: true,
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+          color: AppColors.charcoal,
+        ),
+      ),
+      trailing: selected
+          ? const Icon(Icons.check, size: 20, color: AppColors.primaryColor)
+          : null,
+      onTap: () => Navigator.pop(sheetContext, value),
     );
   }
 

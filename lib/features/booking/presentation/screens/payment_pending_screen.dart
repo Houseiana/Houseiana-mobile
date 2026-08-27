@@ -87,12 +87,8 @@ class _PaymentPendingScreenState extends State<PaymentPendingScreen> {
   }
 
   String get _displayReference {
-    final code = _booking?.confirmationCode;
-    if (code != null && code.isNotEmpty) return code;
-    final id = _booking?.id ?? '';
-    if (id.isEmpty) return '--';
-    final suffix = id.length <= 8 ? id : id.substring(id.length - 8);
-    return '#${suffix.toUpperCase()}';
+    final ref = _booking?.reservationReference ?? '';
+    return ref.isEmpty ? '--' : ref;
   }
 
   String get _displayAmount {

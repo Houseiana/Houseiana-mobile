@@ -34,6 +34,20 @@ class HotelDetailsState extends Equatable {
   /// booking endpoint takes several selections at once.
   final Map<String, int> selections;
 
+  /// Adults **in one room**. Never 0 — `/api/hotel-quote` refuses a selection
+  /// without an adult ("Every selection needs at least one adult and no
+  /// negative children.").
+  final int adults;
+
+  /// One entry per child sharing a room, `null` until the guest picks that
+  /// child's age.
+  ///
+  /// The age is a PRICING input — the hotel charges per age band — so a quote
+  /// may not go out while any entry is still unknown. Nulls are what makes
+  /// "the guest added a child but has not said how old" a state of its own
+  /// rather than a silent 0-year-old.
+  final List<int?> childAges;
+
   final HotelQuote? quote;
   final bool quoteLoading;
   final String? quoteErrorKey;
@@ -53,6 +67,8 @@ class HotelDetailsState extends Equatable {
     this.checkIn,
     this.checkOut,
     this.selections = const <String, int>{},
+    this.adults = 2,
+    this.childAges = const <int?>[],
     this.quote,
     this.quoteLoading = false,
     this.quoteErrorKey,
@@ -73,11 +89,33 @@ class HotelDetailsState extends Equatable {
   int get totalRooms =>
       selections.values.fold(0, (sum, rooms) => sum + (rooms > 0 ? rooms : 0));
 
-  /// The selection in the shape `/api/hotel-quote` and the booking endpoint take.
+  int get children => childAges.length;
+
+  /// Every child has an age, so the party is fully described and can be priced.
+  bool get childAgesComplete => childAges.every((age) => age != null);
+
+  /// The ages as the endpoints take them. Only meaningful once
+  /// [childAgesComplete] — a partial list would quote fewer children than the
+  /// guest asked for.
+  List<int> get resolvedChildAges =>
+      [for (final age in childAges) if (age != null) age];
+
+  /// Occupancy is complete enough to price: at least one adult and an age for
+  /// every child.
+  bool get occupancyIsPriceable => adults > 0 && childAgesComplete;
+
+  /// The selection in the shape `/api/hotel-quote` and the booking endpoint
+  /// take. Occupancy rides on EVERY line because both endpoints read it per
+  /// selection, and the stay section only knows the party as a whole.
   List<HotelSelection> get selectionList => [
         for (final entry in selections.entries)
           if (entry.value > 0)
-            HotelSelection(ratePlanId: entry.key, rooms: entry.value),
+            HotelSelection(
+              ratePlanId: entry.key,
+              rooms: entry.value,
+              adults: adults,
+              childrenAges: resolvedChildAges,
+            ),
       ];
 
   int roomsFor(String ratePlanId) => selections[ratePlanId] ?? 0;
@@ -121,6 +159,8 @@ class HotelDetailsState extends Equatable {
     DateTime? checkIn,
     DateTime? checkOut,
     Map<String, int>? selections,
+    int? adults,
+    List<int?>? childAges,
     HotelQuote? quote,
     bool? quoteLoading,
     String? quoteErrorKey,
@@ -141,6 +181,8 @@ class HotelDetailsState extends Equatable {
       checkIn: clearCheckIn ? null : (checkIn ?? this.checkIn),
       checkOut: clearCheckOut ? null : (checkOut ?? this.checkOut),
       selections: selections ?? this.selections,
+      adults: adults ?? this.adults,
+      childAges: childAges ?? this.childAges,
       quote: clearQuote ? null : (quote ?? this.quote),
       quoteLoading: quoteLoading ?? this.quoteLoading,
       quoteErrorKey:
@@ -160,6 +202,8 @@ class HotelDetailsState extends Equatable {
         checkIn,
         checkOut,
         selections,
+        adults,
+        childAges,
         quote,
         quoteLoading,
         quoteErrorKey,

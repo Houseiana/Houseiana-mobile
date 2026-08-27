@@ -51,15 +51,12 @@ class _PaymentFailedScreenState extends State<PaymentFailedScreen> {
     }
   }
 
-  /// Real booking reference shown as the transaction id (confirmation code when
-  /// the backend provides one, otherwise the last 8 chars of the booking id).
+  /// Real booking reference shown as the transaction id — see
+  /// [BookingModel.reservationReference]: backend code first, the booking id
+  /// itself as the fallback, never a locally shortened stand-in.
   String get _displayReference {
-    final code = _booking?.confirmationCode;
-    if (code != null && code.isNotEmpty) return code;
-    final id = _booking?.id ?? '';
-    if (id.isEmpty) return '--';
-    final suffix = id.length <= 8 ? id : id.substring(id.length - 8);
-    return '#${suffix.toUpperCase()}';
+    final ref = _booking?.reservationReference ?? '';
+    return ref.isEmpty ? '--' : ref;
   }
 
   String get _displayAmount {

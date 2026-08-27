@@ -10,6 +10,10 @@ import 'package:skeletonizer/skeletonizer.dart';
 /// response: one row per selected rate plan, the rooms subtotal, the service fee
 /// and the total.
 ///
+/// A line whose party includes children carries a `childrenTotalPerRoom` that
+/// is ALREADY inside its `subtotal`, so it is printed as an explanatory note
+/// under the line rather than as a row of its own — see [_childrenNote].
+///
 /// Nothing is computed here. Unlike the property `/availability` quote, hotel
 /// `roomsSubtotal` is NOT pre-discounted and there is no discount or cleaning
 /// fee to reconcile — `total` is a plain `roomsSubtotal + serviceFee`, so the
@@ -71,6 +75,10 @@ class HotelQuoteRows extends StatelessWidget {
     return [
       for (final line in q.lines) ...[
         _row(_lineLabel(context, line), money(line.subtotal)),
+        if (line.hasChildrenCharge) ...[
+          const SizedBox(height: 4),
+          _childrenNote(context, money(line.childrenTotalPerRoom)),
+        ],
         const SizedBox(height: 12),
       ],
       _row(context.tr('hotels.roomsSubtotal'), money(q.roomsSubtotal)),
@@ -79,6 +87,23 @@ class HotelQuoteRows extends StatelessWidget {
       Divider(height: 24, color: AppColors.neutral200),
       _row(context.tr('booking.totalUsd'), money(q.total), isTotal: true),
     ];
+  }
+
+  /// Why a line is higher than the room rate the guest picked.
+  ///
+  /// Deliberately a NOTE and not a row with its own amount:
+  /// `childrenTotalPerRoom` is already inside `subtotal` and is quoted PER
+  /// ROOM, so putting it in the value column would read as an amount still to
+  /// be added — and on a two-room booking it would not even be the amount
+  /// that was added.
+  Widget _childrenNote(BuildContext context, String amount) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: 12),
+      child: Text(
+        context.tr('hotels.quoteChildrenIncluded', args: {'amount': amount}),
+        style: TextStyle(fontSize: 12, color: AppColors.neutral500),
+      ),
+    );
   }
 
   String _lineLabel(BuildContext context, HotelQuoteLine line) {

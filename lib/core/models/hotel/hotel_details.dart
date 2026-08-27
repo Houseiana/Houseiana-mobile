@@ -46,6 +46,170 @@ class HotelBedConfig {
       : const <HotelBedConfig>[];
 }
 
+/// An add-on the guest can pay extra for: `{ id, name, price }`.
+///
+/// `GET /api/hotels/{id}/details` sends these twice — once at the hotel level
+/// (`services`, e.g. "Airport Transfer") and once per room type
+/// (`roomTypes[].services`, e.g. "Extra Bed").
+///
+/// **A service carries no currency of its own.** Currency in this API belongs
+/// to the RATE PLAN, so the amount is only safe to label with the code the
+/// surrounding plans agree on — [HotelRoomType.singleCurrencyCode] and
+/// [HotelDetails.singleCurrencyCode] answer null when they do not, and the UI
+/// then prints the bare number rather than guessing.
+///
+/// None of these are priced by `POST /api/hotel-quote`, which only ever takes
+/// `ratePlanId` + `rooms`. They are therefore NOT part of any total the app
+/// shows, and every surface that lists them has to say so.
+class HotelExtraService {
+  final int id;
+  final String name;
+  final double price;
+
+  const HotelExtraService({
+    required this.id,
+    required this.name,
+    this.price = 0,
+  });
+
+  /// A zero (or absent) price is an add-on at no charge, not a missing value.
+  bool get isFree => price <= 0;
+
+  factory HotelExtraService.fromJson(Map<String, dynamic> json) =>
+      HotelExtraService(
+        id: asHotelInt(json['id']),
+        name: asHotelString(json['name']),
+        price: asHotelDouble(json['price']) ?? 0,
+      );
+
+  static List<HotelExtraService> listFrom(dynamic raw) => raw is List
+      ? raw
+          .whereType<Map>()
+          .map((e) => HotelExtraService.fromJson(Map<String, dynamic>.from(e)))
+          .where((s) => s.name.isNotEmpty)
+          .toList()
+      : const <HotelExtraService>[];
+}
+
+/// One house rule: `{ name, allowed }` — `{"Pets Allowed", false}`.
+///
+/// The name is the hotel's own statement ("Pets Allowed", "ID Required at
+/// Check-in", "Married Couples Only") and arrives already localized, so it is
+/// shown as it came and never keyed off. [allowed] says whether that statement
+/// is TRUE for this hotel — it is not a permission on the name, which is why
+/// the UI renders a yes/no next to the sentence instead of the word "allowed"
+/// ("ID Required at Check-in — Not allowed" would invert the meaning).
+///
+/// A missing flag reads as false: a hotel that never said "pets are fine" must
+/// not be quoted as having said it.
+class HotelPolicy {
+  final String name;
+  final bool allowed;
+
+  const HotelPolicy({required this.name, this.allowed = false});
+
+  factory HotelPolicy.fromJson(Map<String, dynamic> json) => HotelPolicy(
+        name: asHotelString(json['name']),
+        allowed: json['allowed'] == true,
+      );
+
+  static List<HotelPolicy> listFrom(dynamic raw) => raw is List
+      ? raw
+          .whereType<Map>()
+          .map((e) => HotelPolicy.fromJson(Map<String, dynamic>.from(e)))
+          .where((p) => p.name.isNotEmpty)
+          .toList()
+      : const <HotelPolicy>[];
+}
+
+/// What one age band of children costs:
+/// `{ minAge, maxAge, ordinal, pricingMode, value }`.
+///
+/// `pricingMode` has only ever been observed as `FixedAmount`. [isPercentage]
+/// is a tolerant reader for the percentage variant rather than a verified
+/// value, and anything unrecognized falls back to a plain amount.
+///
+/// `ordinal` orders the bands. It is NOT confirmed to mean "the Nth child", so
+/// the UI leads with the age range and prints the ordinal only to tell two
+/// bands apart when a hotel sends more than one.
+///
+/// Whether the amount is per night or per stay is not in the contract, so no
+/// screen may claim either — "per child" is as far as the payload goes.
+class HotelChildRule {
+  final int minAge;
+  final int maxAge;
+  final int ordinal;
+  final String pricingMode;
+  final double value;
+
+  const HotelChildRule({
+    this.minAge = 0,
+    this.maxAge = 0,
+    this.ordinal = 0,
+    this.pricingMode = '',
+    this.value = 0,
+  });
+
+  bool get isFree => value <= 0;
+
+  bool get isPercentage => pricingMode.toLowerCase().contains('percent');
+
+  factory HotelChildRule.fromJson(Map<String, dynamic> json) => HotelChildRule(
+        minAge: asHotelInt(json['minAge']),
+        maxAge: asHotelInt(json['maxAge']),
+        ordinal: asHotelInt(json['ordinal']),
+        pricingMode: asHotelString(json['pricingMode']),
+        value: asHotelDouble(json['value']) ?? 0,
+      );
+
+  /// Sorted by `ordinal` so the bands print in the order the hotel entered
+  /// them, not in whatever order the array happened to arrive in.
+  static List<HotelChildRule> listFrom(dynamic raw) => raw is List
+      ? (raw
+          .whereType<Map>()
+          .map((e) => HotelChildRule.fromJson(Map<String, dynamic>.from(e)))
+          .toList()
+        ..sort((a, b) => a.ordinal.compareTo(b.ordinal)))
+      : const <HotelChildRule>[];
+}
+
+/// `childrenPolicy` — the hotel's stance on children plus its per-age-band
+/// charges.
+///
+/// **Null on hotels that never filled it in**, which means UNKNOWN and not
+/// "children are banned". The section simply does not render, the same way a
+/// null `availableUnits` means unknown stock rather than sold out.
+class HotelChildrenPolicy {
+  final bool childrenAllowed;
+  final int? minChildAge;
+  final int? maxChildAge;
+  final List<HotelChildRule> rules;
+
+  const HotelChildrenPolicy({
+    this.childrenAllowed = false,
+    this.minChildAge,
+    this.maxChildAge,
+    this.rules = const <HotelChildRule>[],
+  });
+
+  /// A band worth printing needs an upper bound — `maxChildAge` alone is enough
+  /// ("up to 12"), but a lone `minChildAge` of 0 says nothing.
+  bool get hasAgeRange => maxChildAge != null && maxChildAge! > 0;
+
+  factory HotelChildrenPolicy.fromJson(Map<String, dynamic> json) =>
+      HotelChildrenPolicy(
+        childrenAllowed: json['childrenAllowed'] == true,
+        minChildAge: asHotelIntOrNull(json['minChildAge']),
+        maxChildAge: asHotelIntOrNull(json['maxChildAge']),
+        rules: HotelChildRule.listFrom(json['rules']),
+      );
+
+  /// Null-safe entry point — the key is absent or null on most hotels.
+  static HotelChildrenPolicy? from(dynamic raw) => raw is Map
+      ? HotelChildrenPolicy.fromJson(Map<String, dynamic>.from(raw))
+      : null;
+}
+
 /// A bookable rate on a room type. This is the unit the quote and the booking
 /// both address — `ratePlanId`, never the room-type id.
 class HotelRatePlan {
@@ -142,6 +306,10 @@ class HotelRoomType {
   final List<HotelAmenity> amenities;
   final List<HotelRatePlan> ratePlans;
 
+  /// Paid add-ons offered on THIS room type ("Extra Bed"). Never priced by
+  /// the quote — see [HotelExtraService].
+  final List<HotelExtraService> services;
+
   const HotelRoomType({
     required this.id,
     required this.name,
@@ -156,6 +324,7 @@ class HotelRoomType {
     this.beds = const <HotelBedConfig>[],
     this.amenities = const <HotelAmenity>[],
     this.ratePlans = const <HotelRatePlan>[],
+    this.services = const <HotelExtraService>[],
   });
 
   /// Only a stock the backend actually reported as zero is sold out. An unknown
@@ -181,6 +350,14 @@ class HotelRoomType {
     return urls;
   }
 
+  /// The one currency every rate plan on this room quotes, or null when they
+  /// disagree. A service fee arrives without a currency of its own, so this is
+  /// the only code that can honestly be printed next to one.
+  String? get singleCurrencyCode {
+    final codes = <String>{for (final plan in ratePlans) plan.currencyCode};
+    return codes.length == 1 ? codes.first : null;
+  }
+
   HotelRatePlan? get cheapestRatePlan {
     if (ratePlans.isEmpty) return null;
     final sorted = [...ratePlans]..sort((a, b) {
@@ -204,6 +381,7 @@ class HotelRoomType {
         beds: HotelBedConfig.listFrom(json['beds']),
         amenities: HotelAmenity.listFrom(json['amenities']),
         ratePlans: HotelRatePlan.listFrom(json['ratePlans']),
+        services: HotelExtraService.listFrom(json['services']),
       );
 }
 
@@ -230,6 +408,15 @@ class HotelDetails {
   final List<HotelAmenity> amenities;
   final List<HotelRoomType> roomTypes;
 
+  /// The hotel's own house rules (`policies`) — yes/no statements, localized.
+  final List<HotelPolicy> policies;
+
+  /// Paid add-ons offered by the hotel itself ("Airport Transfer").
+  final List<HotelExtraService> services;
+
+  /// Null when the hotel never filled it in — UNKNOWN, not "no children".
+  final HotelChildrenPolicy? childrenPolicy;
+
   const HotelDetails({
     required this.hotelId,
     required this.name,
@@ -249,6 +436,9 @@ class HotelDetails {
     this.photos = const <HotelPhoto>[],
     this.amenities = const <HotelAmenity>[],
     this.roomTypes = const <HotelRoomType>[],
+    this.policies = const <HotelPolicy>[],
+    this.services = const <HotelExtraService>[],
+    this.childrenPolicy,
   });
 
   /// Every gallery image, cover first, de-duplicated.
@@ -277,6 +467,15 @@ class HotelDetails {
   /// print a single hotel-level "from" price, because adding EGP to QAR is wrong.
   bool get hasMixedCurrencies =>
       allRatePlans.map((p) => p.currencyCode).toSet().length > 1;
+
+  /// The one currency every rate plan in this hotel quotes, or null when they
+  /// disagree — the inverse of [hasMixedCurrencies], and the only code that may
+  /// be printed next to a currency-less amount such as a service fee or a
+  /// children's charge.
+  String? get singleCurrencyCode {
+    final codes = <String>{for (final plan in allRatePlans) plan.currencyCode};
+    return codes.length == 1 ? codes.first : null;
+  }
 
   HotelRatePlan? get cheapestRatePlan {
     final plans = allRatePlans;
@@ -312,6 +511,9 @@ class HotelDetails {
                 .where((r) => r.id.isNotEmpty)
                 .toList()
             : const <HotelRoomType>[],
+        policies: HotelPolicy.listFrom(json['policies']),
+        services: HotelExtraService.listFrom(json['services']),
+        childrenPolicy: HotelChildrenPolicy.from(json['childrenPolicy']),
       );
 }
 

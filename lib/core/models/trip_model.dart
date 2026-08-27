@@ -70,6 +70,9 @@ class TripModel extends Equatable {
   final String? propertyCoverPhoto;
   final String? currency;
   final String? confirmationCode;
+  /// Real reservation reference when the backend sends one (`bookingCode`),
+  /// preferred over `confirmationCode` — mirrors [BookingModel].
+  final String? bookingCode;
   final String? paymentStatus;
   final double? amountPaid;
   final String? hostName;
@@ -106,6 +109,7 @@ class TripModel extends Equatable {
     this.propertyCoverPhoto,
     this.currency,
     this.confirmationCode,
+    this.bookingCode,
     this.paymentStatus,
     this.amountPaid,
     this.hostName,
@@ -149,6 +153,7 @@ class TripModel extends Equatable {
       propertyCoverPhoto: json['propertyCoverPhoto'] as String?,
       currency: json['currency'] as String?,
       confirmationCode: json['confirmationCode'] as String?,
+      bookingCode: json['bookingCode'] as String?,
       paymentStatus: json['paymentStatus'] as String?,
       amountPaid: json['amountPaid'] != null ? _toDouble(json['amountPaid']) : null,
       hostName: json['hostName'] as String?,
@@ -179,6 +184,7 @@ class TripModel extends Equatable {
         'propertyCoverPhoto': imageUrl,
         'currency': currency,
         'confirmationCode': confirmationCode,
+        'bookingCode': bookingCode,
         'paymentStatus': paymentStatus,
         'amountPaid': amountPaid,
         'hostName': hostName,
@@ -227,13 +233,19 @@ class TripModel extends Equatable {
   String get formattedCheckIn => _formatDate(checkIn);
   String get formattedCheckOut => _formatDate(checkOut);
 
+  /// Reservation reference for the trip card — the mirror of
+  /// [BookingModel.reservationReference], so the list, the trip details and
+  /// the booking confirmation all quote the same number.
+  ///
+  /// It used to wrap whatever it had in `#HOU-` and cut it to six characters,
+  /// which mangled a real backend `confirmationCode` into something the guest
+  /// could not quote back to support.
   String get bookingIdFormatted {
-    final code =
-        (confirmationCode != null && confirmationCode!.isNotEmpty)
-            ? confirmationCode!
-            : id;
-    if (code.isEmpty) return '';
-    return '#HOU-${code.substring(0, code.length.clamp(0, 6))}';
+    if (bookingCode != null && bookingCode!.isNotEmpty) return bookingCode!;
+    if (confirmationCode != null && confirmationCode!.isNotEmpty) {
+      return confirmationCode!;
+    }
+    return id.isEmpty ? '' : '#$id';
   }
 
   @override

@@ -74,12 +74,8 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen>
   bool _descriptionExpanded = false;
   bool _didStart = false;
 
-  /// Party size for the booking. It is NOT a details-endpoint filter (that one
-  /// only takes dates) — it exists because /api/hotel-bookings/create takes
-  /// `adults`/`children` per selection, and without asking, every hotel booking
-  /// in the app would go out as a single adult.
-  int _adults = 2;
-  int _children = 0;
+  /// Ages offered when the hotel published no children policy to bound them.
+  static const int _defaultMaxChildAge = 17;
 
   @override
   void initState() {
@@ -198,8 +194,16 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen>
                   _SectionDivider(),
                   _buildAmenitiesSection(hotel),
                 ],
+                if (hotel.services.isNotEmpty) ...[
+                  _SectionDivider(),
+                  _buildServicesSection(hotel),
+                ],
                 _SectionDivider(),
                 _buildThingsToKnowSection(state, hotel),
+                if (hotel.childrenPolicy != null) ...[
+                  _SectionDivider(),
+                  _buildChildrenPolicySection(hotel, hotel.childrenPolicy!),
+                ],
                 _SectionDivider(),
                 _buildLocationSection(hotel),
                 _SectionDivider(),
@@ -597,43 +601,230 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen>
                 context.read<HotelDetailsCubit>().setDates(checkIn, checkOut),
           ),
           const SizedBox(height: 12),
-          _buildOccupancyRow(),
+          _buildOccupancyRow(state),
         ],
       ),
     );
   }
 
-  /// Adults / children steppers. Deliberately not wired into the details
-  /// request: the endpoint ignores occupancy. It rides along to the booking,
-  /// which is the only place the backend actually reads it.
-  Widget _buildOccupancyRow() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.neutral200),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          _occupancyStepper(
-            label: context.tr('hotels.adultsLabel'),
-            value: _adults,
-            // At least one named occupant has to exist per booking.
-            min: 1,
-            max: 20,
-            onChanged: (value) => setState(() => _adults = value),
+  /// Adults / children steppers, plus one age picker per child.
+  ///
+  /// Occupancy used to be display-only here — the details endpoint ignores it
+  /// and only the booking read it. `/api/hotel-quote` now PRICES it: the
+  /// hotel's children policy charges per age band, per room. So it lives in
+  /// the cubit rather than in `setState`, every control re-quotes, and a child
+  /// whose age has not been given holds the total back instead of being
+  /// quietly priced as an infant.
+  Widget _buildOccupancyRow(HotelDetailsState state) {
+    final cubit = context.read<HotelDetailsCubit>();
+    final policy = state.hotel?.childrenPolicy;
+    // Only an explicit "no" bans children. A null policy means the hotel never
+    // answered, which is unknown — the same way a null availableUnits is
+    // unknown stock and not sold out.
+    final childrenBanned = policy != null && !policy.childrenAllowed;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.neutral200),
+            borderRadius: BorderRadius.circular(12),
           ),
-          Divider(height: 1, color: AppColors.neutral200),
-          _occupancyStepper(
-            label: context.tr('hotels.childrenLabel'),
-            value: _children,
-            min: 0,
-            max: 20,
-            onChanged: (value) => setState(() => _children = value),
+          child: Column(
+            children: [
+              _occupancyStepper(
+                label: context.tr('hotels.adultsLabel'),
+                value: state.adults,
+                // The quote refuses a selection with no adult in it.
+                min: 1,
+                max: HotelDetailsCubit.maxAdultsPerRoom,
+                onChanged: cubit.setAdults,
+              ),
+              Divider(height: 1, color: AppColors.neutral200),
+              _occupancyStepper(
+                label: context.tr('hotels.childrenLabel'),
+                value: state.children,
+                min: 0,
+                // A hotel that says it takes no children keeps the stepper
+                // pinned at zero rather than pricing a stay its front desk
+                // will turn away.
+                max: childrenBanned
+                    ? 0
+                    : HotelDetailsCubit.maxChildrenPerRoom,
+                onChanged: cubit.setChildren,
+              ),
+              for (var i = 0; i < state.childAges.length; i++) ...[
+                Divider(height: 1, color: AppColors.neutral200),
+                _childAgeRow(i, state.childAges[i], policy),
+              ],
+            ],
           ),
-        ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(
+            context.tr('hotels.occupancyPerRoomNote'),
+            style: TextStyle(fontSize: 12, color: AppColors.neutral500),
+          ),
+        ),
+        if (state.children > 0 && !state.childAgesComplete)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline,
+                    size: 15, color: AppColors.error),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    context.tr('hotels.childAgeRequired'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.error,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// One child's age — required, and deliberately empty to begin with.
+  ///
+  /// Defaulting it would quote an age band the guest never chose, and the two
+  /// bands a hotel charges most differently are exactly the ones at the edges
+  /// (an infant and a near-adult).
+  Widget _childAgeRow(int index, int? age, HotelChildrenPolicy? policy) {
+    final hasAge = age != null;
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: () => _openChildAgeSheet(index, age, policy),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 13),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  context.tr('hotels.childAgeLabel', args: {'n': index + 1}),
+                  style: TextStyle(fontSize: 14, color: AppColors.neutral700),
+                ),
+              ),
+              Text(
+                hasAge
+                    ? _childAgeText(age)
+                    : context.tr('hotels.childAgeSelect'),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: hasAge ? AppColors.charcoal : AppColors.error,
+                ),
+              ),
+              const SizedBox(width: 2),
+              Icon(Icons.keyboard_arrow_down,
+                  size: 20, color: AppColors.neutral400),
+            ],
+          ),
+        ),
       ),
     );
+  }
+
+  /// Four buckets, because Arabic counts years in four: one, two, 3–10 and
+  /// 11-plus. English collapses them to two and reads the same either way.
+  String _childAgeText(int age) {
+    if (age <= 0) return context.tr('hotels.childUnderOne');
+    final String key;
+    if (age == 1) {
+      key = 'hotels.childAgeYearSingular';
+    } else if (age == 2) {
+      key = 'hotels.childAgeYearsDual';
+    } else if (age <= 10) {
+      key = 'hotels.childAgeYears';
+    } else {
+      key = 'hotels.childAgeYearsMany';
+    }
+    return context.tr(key, args: {'n': age});
+  }
+
+  /// The hotel's own upper bound when it published one: a guest older than
+  /// `maxChildAge` is not a child to this hotel, and offering the age here
+  /// would let them be declared as one and priced at nothing.
+  Future<void> _openChildAgeSheet(
+    int index,
+    int? current,
+    HotelChildrenPolicy? policy,
+  ) async {
+    final bound = policy?.maxChildAge ?? 0;
+    final maxAge = bound > 0 ? bound : _defaultMaxChildAge;
+
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: AppColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+              child: Text(
+                context.tr('hotels.childAgeSheetTitle',
+                    args: {'n': index + 1}),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.charcoal,
+                ),
+              ),
+            ),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.only(bottom: 8),
+                itemCount: maxAge + 1,
+                itemBuilder: (listContext, age) {
+                  final selected = age == current;
+                  // Its own Material, or the row's ink splash paints under
+                  // the sheet's background instead of on top of it.
+                  return Material(
+                    type: MaterialType.transparency,
+                    child: ListTile(
+                      title: Text(
+                        _childAgeText(age),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight:
+                              selected ? FontWeight.w700 : FontWeight.w400,
+                          color: AppColors.charcoal,
+                        ),
+                      ),
+                      trailing: selected
+                          ? const Icon(Icons.check,
+                              size: 20, color: AppColors.success)
+                          : null,
+                      onTap: () => Navigator.pop(sheetContext, age),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (picked == null || !mounted) return;
+    context.read<HotelDetailsCubit>().setChildAge(index, picked);
   }
 
   Widget _occupancyStepper({
@@ -958,10 +1149,12 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen>
 
   /// Deliberately NOT `ThingsToKnowWidget`.
   ///
-  /// That widget defaults the house rules and the safety kit to a property's
-  /// values (no smoking / no pets / smoke alarm installed …), and the hotels
-  /// contract returns none of them — reusing it would print rules this hotel
-  /// never stated. Only the three facts the payload actually carries are shown.
+  /// That widget DEFAULTS the house rules and the safety kit to a property's
+  /// values (no smoking / no pets / smoke alarm installed …). Hotels state
+  /// their own rules in `policies`, so reusing it would print a fallback rule
+  /// this hotel never agreed to. Everything below comes from the payload: the
+  /// check-in window, the selected plan's cancellation terms, and each rule
+  /// the hotel actually sent.
   Widget _buildThingsToKnowSection(
       HotelDetailsState state, HotelDetails hotel) {
     final plan = state.selectedPlans.isNotEmpty
@@ -1008,10 +1201,300 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen>
                 ),
               ),
           ],
+          if (hotel.policies.isNotEmpty) ...[
+            _SubSectionTitle(context.tr('hotels.houseRules')),
+            const SizedBox(height: 12),
+            for (final policy in hotel.policies) _buildPolicyRow(policy),
+          ],
         ],
       ),
     );
   }
+
+  /// One house rule.
+  ///
+  /// The trailing word is a plain yes/no, never "allowed" / "not allowed": the
+  /// backend sends the hotel's own statement ("Pets Allowed", "ID Required at
+  /// Check-in", "Married Couples Only") and `allowed` says whether that
+  /// statement holds. Reading the flag as a permission on the name would invert
+  /// half the catalogue — "ID Required at Check-in · Not allowed" says the
+  /// opposite of what the hotel meant.
+  Widget _buildPolicyRow(HotelPolicy policy) {
+    final yes = policy.allowed;
+    final color = yes ? AppColors.success : AppColors.error;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            yes ? Icons.check_circle_outline : Icons.cancel_outlined,
+            size: 20,
+            color: color,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              // Backend-localized already — shown, never keyed off.
+              policy.name,
+              style: TextStyle(
+                  fontSize: 14, color: AppColors.charcoal, height: 1.4),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            context.tr(yes ? 'hotels.policyYes' : 'hotels.policyNo'),
+            style: TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w600, color: color),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Paid add-ons the hotel itself offers ("Airport Transfer").
+  ///
+  /// Its own section rather than more amenity rows on purpose: an amenity is
+  /// part of what the room already costs and these are not. `POST
+  /// /api/hotel-quote` prices only `ratePlanId` + `rooms`, so nothing here
+  /// reaches the total on the bottom bar — the caption says that out loud
+  /// instead of letting the guest discover it at the desk.
+  Widget _buildServicesSection(HotelDetails hotel) {
+    // A service arrives with no currency of its own. Only the code every rate
+    // plan in the hotel agrees on may be printed beside it; a mixed-currency
+    // hotel gets the bare number rather than a guess.
+    final currency = hotel.singleCurrencyCode ?? '';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionTitle(context.tr('hotels.servicesTitle')),
+          const SizedBox(height: 14),
+          for (final service in hotel.services)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.ghostWhite,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(_serviceIcon(service.name),
+                        size: 20, color: AppColors.charcoal),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      // Backend-localized already — shown, never keyed off.
+                      service.name,
+                      style:
+                          TextStyle(fontSize: 14, color: AppColors.neutral700),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    service.isFree
+                        ? context.tr('hotels.serviceFree')
+                        : Money.format(service.price, currency),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.charcoal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Text(
+            context.tr('hotels.extrasNotIncluded'),
+            style: TextStyle(fontSize: 12, color: AppColors.neutral500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Icon for a service NAME. Like [_amenityIcon] this only ever upgrades the
+  /// generic fallback for the English catalogue — names arrive localized, so it
+  /// must never gate whether the row renders.
+  IconData _serviceIcon(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('transfer') ||
+        lower.contains('airport') ||
+        lower.contains('shuttle')) {
+      return Icons.airport_shuttle_outlined;
+    }
+    if (lower.contains('bed') ||
+        lower.contains('cot') ||
+        lower.contains('crib')) {
+      return Icons.bed_outlined;
+    }
+    if (lower.contains('breakfast') ||
+        lower.contains('meal') ||
+        lower.contains('lunch') ||
+        lower.contains('dinner')) {
+      return Icons.restaurant_outlined;
+    }
+    if (lower.contains('laundry') || lower.contains('washing')) {
+      return Icons.local_laundry_service_outlined;
+    }
+    if (lower.contains('spa') || lower.contains('massage')) {
+      return Icons.spa_outlined;
+    }
+    if (lower.contains('parking')) return Icons.local_parking_outlined;
+    if (lower.contains('tour') ||
+        lower.contains('trip') ||
+        lower.contains('excursion')) {
+      return Icons.map_outlined;
+    }
+    if (lower.contains('late') || lower.contains('early')) {
+      return Icons.schedule_outlined;
+    }
+    return Icons.room_service_outlined;
+  }
+
+  /// The hotel's stance on children plus what each age band is charged.
+  ///
+  /// Rendered only when `childrenPolicy` is present: a null one means the hotel
+  /// never answered the question, which is UNKNOWN and not "no children" — the
+  /// same reading a null `availableUnits` gets.
+  ///
+  /// Unlike [_buildServicesSection] these charges are NOT excluded from the
+  /// total: `POST /api/hotel-quote` prices the hotel's children policy per room
+  /// from the ages in the selection. Never copy the 'charged separately'
+  /// caption onto this section.
+  Widget _buildChildrenPolicySection(
+      HotelDetails hotel, HotelChildrenPolicy policy) {
+    final allowed = policy.childrenAllowed;
+    final currency = hotel.singleCurrencyCode ?? '';
+    // `ordinal` is not confirmed to mean "the Nth child", so it is printed only
+    // when there are two bands to tell apart — never as the label itself.
+    final showOrdinal = policy.rules.length > 1;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionTitle(context.tr('hotels.childrenPolicyTitle')),
+          const SizedBox(height: 14),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                allowed ? Icons.child_care_outlined : Icons.block_outlined,
+                size: 20,
+                color: allowed ? AppColors.success : AppColors.error,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  context.tr(allowed
+                      ? 'hotels.childrenWelcome'
+                      : 'hotels.childrenNotAllowed'),
+                  style: TextStyle(
+                      fontSize: 14, color: AppColors.charcoal, height: 1.4),
+                ),
+              ),
+            ],
+          ),
+          if (allowed && policy.hasAgeRange)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 32, top: 4),
+              child: Text(
+                _childAgeBandLabel(policy),
+                style: TextStyle(fontSize: 12, color: AppColors.neutral500),
+              ),
+            ),
+          // Charges only mean anything to a guest the hotel will actually take.
+          if (allowed && policy.rules.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _SubSectionTitle(context.tr('hotels.childrenChargesTitle')),
+            const SizedBox(height: 10),
+            for (final rule in policy.rules)
+              _buildChildRuleRow(rule, currency, showOrdinal),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _childAgeBandLabel(HotelChildrenPolicy policy) {
+    final max = policy.maxChildAge ?? 0;
+    final min = policy.minChildAge ?? 0;
+    // A `minChildAge` of 0 adds nothing to "up to 12".
+    return min > 0
+        ? context.tr('hotels.childrenAgeBand', args: {'min': min, 'max': max})
+        : context.tr('hotels.childrenAgeBandMax', args: {'max': max});
+  }
+
+  /// One age band and what it costs.
+  ///
+  /// The payload says nothing about whether the amount is charged per night or
+  /// per stay, so the caption stops at "per child" instead of inventing the
+  /// rest. `pricingMode` has only been seen as `FixedAmount`; a percentage mode
+  /// is read tolerantly and anything else falls back to a plain amount.
+  Widget _buildChildRuleRow(
+      HotelChildRule rule, String currency, bool showOrdinal) {
+    final ages = context.tr(
+      'hotels.childRuleAges',
+      args: {'min': rule.minAge, 'max': rule.maxAge},
+    );
+    final ordinal =
+        context.tr('hotels.childRuleOrdinal', args: {'n': rule.ordinal});
+    final label = showOrdinal ? '$ordinal · $ages' : ages;
+
+    final String amount;
+    if (rule.isFree) {
+      amount = context.tr('hotels.childRuleFree');
+    } else if (rule.isPercentage) {
+      amount = context.tr('hotels.childRulePercent',
+          args: {'value': Money.amountOnly(rule.value)});
+    } else {
+      amount = Money.format(rule.value, currency);
+    }
+
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: 32, bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 14, color: AppColors.neutral700),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                amount,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.charcoal,
+                ),
+              ),
+              if (!rule.isFree)
+                Text(
+                  context.tr('hotels.childRulePerChild'),
+                  style: TextStyle(fontSize: 11, color: AppColors.neutral500),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
 
   /// Same precedence the room card uses, so the policy named next to the price
   /// and the one named here can never disagree.
@@ -1461,6 +1944,15 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen>
       _showMessage(context.tr('hotels.selectRoomFirst'));
       return;
     }
+    // A child with no age stops the quote from ever being requested, so the
+    // "no quote yet" branch below would retry forever and show nothing. Name
+    // the missing step instead.
+    if (!state.childAgesComplete) {
+      await _scrollTo(_datesSectionKey);
+      if (!mounted) return;
+      _showMessage(context.tr('hotels.childAgeRequired'));
+      return;
+    }
     final quote = state.quote;
     if (quote == null) {
       // Nothing may reach the booking screen without a priced quote — the guest
@@ -1490,9 +1982,14 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen>
         'checkIn': HotelService.apiDate(state.checkIn!),
         'checkOut': HotelService.apiDate(state.checkOut!),
         // Party size, chosen in the stay section. Sent per selection because
-        // that is the shape /api/hotel-bookings/create takes.
-        'adults': _adults,
-        'children': _children,
+        // that is the shape /api/hotel-bookings/create takes — and per ROOM,
+        // which is how both endpoints read it.
+        'adults': state.adults,
+        'children': state.children,
+        // The ages the quote above was PRICED with. The booking endpoint
+        // re-prices from the same list, so leaving them behind would charge a
+        // total the guest never saw.
+        'childrenAges': state.resolvedChildAges,
         'selections': [
           for (final selected in state.selectedPlans)
             {
@@ -1697,6 +2194,26 @@ class _SectionTitle extends StatelessWidget {
       text,
       style: TextStyle(
         fontSize: 17,
+        fontWeight: FontWeight.w700,
+        color: AppColors.charcoal,
+      ),
+    );
+  }
+}
+
+/// A heading INSIDE a section — house rules under "Things to know", the
+/// charges list under "Children".
+class _SubSectionTitle extends StatelessWidget {
+  final String text;
+
+  _SubSectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 14,
         fontWeight: FontWeight.w700,
         color: AppColors.charcoal,
       ),

@@ -167,7 +167,13 @@ class BookingModel extends Equatable {
         'message': message,
         'propertyTitle': propertyTitle,
         'unitName': unitName,
+        // The trip-details screen rebuilds a BookingModel straight from this
+        // map (no re-fetch), so the reference and the currency have to travel
+        // with it — dropping them made the same booking show a different code
+        // and a default currency one screen later.
         'bookingCode': bookingCode,
+        'confirmationCode': confirmationCode,
+        'currency': currency,
         'paymentStatus': paymentStatus,
         'hotelId': hotelId,
         'bookingKind': bookingKind,
@@ -235,6 +241,27 @@ class BookingModel extends Equatable {
     }
     if (id.isEmpty) return '';
     return 'R-${id.substring(0, id.length.clamp(0, 4)).toUpperCase()}';
+  }
+
+  /// Reservation reference shown to the **guest** (confirmation, payment
+  /// status and trip screens).
+  ///
+  /// Only ever a value the backend actually sent: the real `bookingCode`,
+  /// then `confirmationCode`, and finally the booking id itself prefixed with
+  /// `#` — the same order the web booking-success card uses. Empty when the
+  /// booking carries no identifier at all, and callers then hide the row
+  /// instead of printing a placeholder.
+  ///
+  /// Deliberately NOT [bookingCodeFormatted] / [bookingRefShort]: their
+  /// id-derived `R-XXXX` and `#XXXXXXXX` shortenings read like a reservation
+  /// number the guest could quote to support, but they are invented on the
+  /// device and match nothing in the backend.
+  String get reservationReference {
+    if (bookingCode != null && bookingCode!.isNotEmpty) return bookingCode!;
+    if (confirmationCode != null && confirmationCode!.isNotEmpty) {
+      return confirmationCode!;
+    }
+    return id.isEmpty ? '' : '#$id';
   }
 
   /// Property/unit name for host booking cards. Prefers the flat `unitName`

@@ -4,6 +4,7 @@ import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/models/country_option.dart';
 import 'package:houseiana_mobile_app/core/models/nightly_price_model.dart';
 import 'package:houseiana_mobile_app/core/models/property_model.dart';
+import 'package:houseiana_mobile_app/core/models/property_ratings.dart';
 import 'package:houseiana_mobile_app/core/models/region_category_model.dart';
 import 'package:houseiana_mobile_app/core/models/region_village_model.dart';
 import 'package:houseiana_mobile_app/core/models/review_model.dart';
@@ -576,17 +577,16 @@ class PropertyService {
     }
   }
 
-  Future<List<ReviewModel>> getRatingsPaginated(
-    String propertyId, {
-    int page = 1,
-    int limit = 10,
-  }) async {
+  /// Every review for a property **plus** the aggregates the reviews block
+  /// draws its category bars from — see [PropertyRatings].
+  ///
+  /// Deliberately unpaged: the route takes `propertyId` and nothing else, so
+  /// the `page`/`limit` this used to send were dropped on the floor and the
+  /// "has more" they implied was fiction.
+  Future<PropertyRatings> getPropertyRatings(String propertyId) async {
     try {
-      final response = await _api.get(
-        EndPoints.propertyRatings(propertyId),
-        queryParameters: {'page': page, 'limit': limit},
-      );
-      return _parseReviewList(response);
+      final response = await _api.get(EndPoints.propertyRatings(propertyId));
+      return PropertyRatings.fromJson(response);
     } catch (e) {
       throw ServerException.msg(e.toString());
     }

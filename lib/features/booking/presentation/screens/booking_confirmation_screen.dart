@@ -5,6 +5,7 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/models/booking_model.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
+import 'package:houseiana_mobile_app/core/utils/money.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 
@@ -80,21 +81,22 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
         : context.tr('booking.guestsSuffixPlural', args: {'n': g});
   }
 
+  /// The paid amount in the booking's own currency. It used to hard-code a `$`
+  /// prefix on top of a `totalPaidValue` string that already carried a
+  /// currency, so an EGP stay was announced as "دولار أمريكي $3300".
   String get _displayTotal {
-    if (_booking == null) return '--';
-    return '\$${_booking!.totalPrice.toStringAsFixed(0)}';
+    final b = _booking;
+    if (b == null) return '--';
+    return Money.format(b.totalPrice, b.currencyLabel);
   }
 
-  String get _displayBookingId {
-    final id = _booking?.id ?? '';
-    if (id.isEmpty) return '#HOU-000000';
-    final suffix = id.length <= 8 ? id : id.substring(id.length - 8);
-    return '#${suffix.toUpperCase()}';
-  }
+  /// Empty when the backend sent no reference at all — the row is then hidden
+  /// rather than filled with a device-invented number.
+  String get _displayBookingId => _booking?.reservationReference ?? '';
 
   String get _bookingSummaryText {
     return context.tr('booking.bookingSummaryTemplate', args: {
-      'bookingId': _displayBookingId,
+      'bookingId': _displayBookingId.isEmpty ? '--' : _displayBookingId,
       'property': _displayPropertyName,
       'checkIn': _displayCheckIn,
       'checkOut': _displayCheckOut,
@@ -180,9 +182,10 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _ReceiptRow(
-                    label: context.tr('booking.bookingId'),
-                    value: _displayBookingId),
+                if (_displayBookingId.isNotEmpty)
+                  _ReceiptRow(
+                      label: context.tr('booking.bookingId'),
+                      value: _displayBookingId),
                 _ReceiptRow(
                     label: context.tr('booking.property'),
                     value: _displayPropertyName),
@@ -197,8 +200,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                     value: _displayGuests),
                 _ReceiptRow(
                   label: context.tr('booking.totalPaid'),
-                  value: context.tr('booking.totalPaidValue',
-                      args: {'amount': _displayTotal}),
+                  value: _displayTotal,
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
@@ -299,12 +301,14 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                                   label: context.tr('booking.property'),
                                   value: _displayPropertyName,
                                 ),
-                                const SizedBox(height: 16),
-                                _buildDetailRow(
-                                  icon: Icons.confirmation_number_outlined,
-                                  label: context.tr('booking.bookingId'),
-                                  value: _displayBookingId,
-                                ),
+                                if (_displayBookingId.isNotEmpty) ...[
+                                  const SizedBox(height: 16),
+                                  _buildDetailRow(
+                                    icon: Icons.confirmation_number_outlined,
+                                    label: context.tr('booking.bookingId'),
+                                    value: _displayBookingId,
+                                  ),
+                                ],
                                 const SizedBox(height: 16),
                                 _buildDetailRow(
                                   icon: Icons.calendar_today,
@@ -343,8 +347,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                                         ),
                                       ),
                                       Text(
-                                        context.tr('booking.totalPaidValue',
-                                            args: {'amount': _displayTotal}),
+                                        _displayTotal,
                                         style: TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.w700,

@@ -118,17 +118,26 @@ class EndPoints {
   static String hotelDetails(String id) => '/api/hotels/$id/details';
 
   // POST /api/hotel-quote
-  //   body: { checkIn, checkOut, selections: [{ ratePlanId, rooms }] }
+  //   body: { checkIn, checkOut, selections: [{ ratePlanId, rooms, adults,
+  //           children, childrenAges }] }
   //   No auth required. Dates are plain yyyy-MM-dd — never toIso8601String().
+  //   OCCUPANCY IS PRICED, and it describes ONE room: a line comes back as
+  //   subtotal = (stayPricePerRoom + childrenTotalPerRoom) * rooms, where
+  //   childrenTotalPerRoom applies the hotel's `childrenPolicy` age bands.
+  //   HARD RULES (HTTP 200 + success:false): childrenAges.length must equal
+  //   children in EVERY selection, every selection needs >= 1 adult, and no
+  //   age may be negative. Age ORDER does not affect the price.
   static const String hotelQuote = '/api/hotel-quote';
 
   // POST /api/hotel-bookings/create
   //   body: { guestId, checkIn, checkOut,
-  //           selections: [{ ratePlanId, rooms, adults, children,
+  //           selections: [{ ratePlanId, rooms, adults, children, childrenAges,
   //                          leadGuests: [{ firstName, lastName, phone }] }],
   //           specialRequests, arrivalTime }
   //   HARD RULE: leadGuests.length MUST equal rooms for EVERY selection, or the
-  //   backend rejects the whole request.
+  //   backend rejects the whole request. It takes the same childrenAges the
+  //   quote does — book with the occupancy that was PRICED, or the guest pays
+  //   a total they never saw.
   static const String createHotelBooking = '/api/hotel-bookings/create';
 
   // GET  /api/hotels/{hotelId}/reviews?page=&limit=  → data is an ARRAY

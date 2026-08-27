@@ -2,7 +2,8 @@ import 'package:houseiana_mobile_app/core/models/hotel/hotel_summary.dart';
 
 /// Models for `POST /api/hotel-bookings/create`.
 ///
-/// Body: `{ guestId, checkIn, checkOut, selections: [...], specialRequests,
+/// Body: `{ guestId, checkIn, checkOut, selections: [{ ratePlanId, rooms,
+///          adults, children, childrenAges, leadGuests }], specialRequests,
 ///          arrivalTime }`
 
 /// One named occupant. The backend needs exactly one of these per booked room.
@@ -47,39 +48,59 @@ class HotelLeadGuest {
 class HotelBookingSelection {
   final String ratePlanId;
   final int rooms;
+
+  /// Adults **in one room**, not across the selection — the booking endpoint
+  /// reads occupancy exactly the way `/api/hotel-quote` does.
   final int adults;
-  final int children;
+
+  /// One age per child sharing one room, e.g. `[5, 9]`.
+  ///
+  /// `POST /api/hotel-bookings/create` takes `childrenAges` alongside `children`
+  /// and enforces the same rule the quote does, so [children] is DERIVED from
+  /// this list. It has to carry the ages the QUOTE was priced with: booking an
+  /// occupancy the guest never saw priced is how they get charged a total that
+  /// was never on screen.
+  final List<int> childrenAges;
+
   final List<HotelLeadGuest> leadGuests;
 
   const HotelBookingSelection({
     required this.ratePlanId,
     this.rooms = 1,
     this.adults = 1,
-    this.children = 0,
+    this.childrenAges = const <int>[],
     this.leadGuests = const <HotelLeadGuest>[],
   });
 
-  /// HARD backend rule, enforced server-side with
-  /// "Every selection must provide one lead guest per room
-  /// (leadGuests count must equal rooms)." Checking it here keeps the whole
-  /// request off the wire when the form is incomplete.
+  int get children => childrenAges.length;
+
+  /// HARD backend rules, all enforced server-side:
+  ///  * "Every selection must provide one lead guest per room (leadGuests count
+  ///    must equal rooms)."
+  ///  * "Every selection needs at least one adult and no negative children."
+  ///  * "Child ages cannot be negative."
+  ///
+  /// Checking them here keeps the whole request off the wire when the form is
+  /// incomplete.
   bool get isValid =>
       ratePlanId.isNotEmpty &&
       rooms > 0 &&
+      adults > 0 &&
+      childrenAges.every((age) => age >= 0) &&
       leadGuests.length == rooms &&
       leadGuests.every((g) => g.isComplete);
 
   HotelBookingSelection copyWith({
     int? rooms,
     int? adults,
-    int? children,
+    List<int>? childrenAges,
     List<HotelLeadGuest>? leadGuests,
   }) =>
       HotelBookingSelection(
         ratePlanId: ratePlanId,
         rooms: rooms ?? this.rooms,
         adults: adults ?? this.adults,
-        children: children ?? this.children,
+        childrenAges: childrenAges ?? this.childrenAges,
         leadGuests: leadGuests ?? this.leadGuests,
       );
 
@@ -88,6 +109,7 @@ class HotelBookingSelection {
         'rooms': rooms,
         'adults': adults,
         'children': children,
+        'childrenAges': childrenAges,
         'leadGuests': [for (final g in leadGuests) g.toJson()],
       };
 }

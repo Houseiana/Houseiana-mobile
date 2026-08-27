@@ -151,15 +151,10 @@ class AppRoutes {
         );
       case Routes.reviews:
         final args = settings.arguments as Map<String, dynamic>?;
+        // No cubit: the screen fetches the property's ratings itself from the
+        // id, which is the only thing this route can be sure of.
         return _buildRoute(
-          () => BlocProvider(
-            create: (_) => sl<PropertyDetailsCubit>(),
-            child: ReviewsScreen(
-              propertyId: args?['propertyId']?.toString(),
-              averageRating: (args?['averageRating'] as num?)?.toDouble() ?? 0,
-              totalReviews: (args?['totalReviews'] as num?)?.toInt() ?? 0,
-            ),
-          ),
+          () => ReviewsScreen(propertyId: args?['propertyId']?.toString()),
           settings,
         );
       case Routes.locationMap:

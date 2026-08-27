@@ -208,6 +208,11 @@ class HotelService {
   ///
   /// Needs no authentication (verified anonymously), but still goes through the
   /// auth interceptor, which simply omits the header when there is no token.
+  ///
+  /// Every selection carries the occupancy of ONE room, and the endpoint prices
+  /// it: children are charged through the hotel's age bands and come back as
+  /// `childrenTotalPerRoom`. [HotelSelection] derives `children` from
+  /// `childrenAges` so the mismatch the backend refuses cannot be built.
   Future<HotelQuote> getQuote({
     required String checkIn,
     required String checkOut,

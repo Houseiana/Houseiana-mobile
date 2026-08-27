@@ -28,6 +28,12 @@ class HotelDetailsCubit extends Cubit<HotelDetailsState> {
   /// list lives on its own screen.
   static const int reviewsPreviewLimit = 5;
 
+  /// Occupancy caps. Both describe ONE room, which is how the quote and the
+  /// booking read them — 20 adults or 10 children in a single room is already
+  /// far past anything a hotel would honour, and the backend re-validates.
+  static const int maxAdultsPerRoom = 20;
+  static const int maxChildrenPerRoom = 10;
+
   HotelDetailsCubit(this._service, this._session, this.hotelId)
       : super(const HotelDetailsState(loading: true));
 
@@ -193,6 +199,56 @@ class HotelDetailsCubit extends Cubit<HotelDetailsState> {
     ));
   }
 
+  /// Adults sharing ONE room.
+  ///
+  /// Occupancy stopped being display-only the day the quote started pricing
+  /// it, so every change re-prices the stay rather than waiting for the
+  /// booking screen to reveal a different total.
+  void setAdults(int adults) {
+    final next = adults.clamp(1, maxAdultsPerRoom);
+    if (next == state.adults) return;
+    _emitOccupancy(adults: next);
+  }
+
+  /// Children sharing ONE room.
+  ///
+  /// Ages already picked survive a change to the count; a child added at the
+  /// end starts with NO age, and that null is what holds the quote back until
+  /// the guest supplies one.
+  void setChildren(int children) {
+    final next = children.clamp(0, maxChildrenPerRoom);
+    if (next == state.childAges.length) return;
+    _emitOccupancy(childAges: [
+      for (var i = 0; i < next; i++)
+        i < state.childAges.length ? state.childAges[i] : null,
+    ]);
+  }
+
+  /// One child's age. Null puts that child back to "age not given", which is
+  /// the state a fresh child starts in.
+  void setChildAge(int index, int? age) {
+    if (index < 0 || index >= state.childAges.length) return;
+    final next = age == null ? null : (age < 0 ? 0 : age);
+    if (next == state.childAges[index]) return;
+    final ages = [...state.childAges];
+    ages[index] = next;
+    _emitOccupancy(childAges: ages);
+  }
+
+  /// Drops the priced total the moment the party changes, then re-prices.
+  /// Keeping the old quote on screen for even one frame would show a total
+  /// that belongs to a different party.
+  void _emitOccupancy({int? adults, List<int?>? childAges}) {
+    emit(state.copyWith(
+      adults: adults,
+      childAges: childAges,
+      clearQuote: true,
+      quoteLoading: false,
+      clearQuoteError: true,
+    ));
+    refreshQuote();
+  }
+
   /// Prices the current selection through `POST /api/hotel-quote`.
   ///
   /// The quote is the only thing that may state a total: rate-plan prices are
@@ -202,6 +258,20 @@ class HotelDetailsCubit extends Cubit<HotelDetailsState> {
   Future<void> refreshQuote() async {
     if (!state.hasDates || !state.hasSelection) {
       emit(state.copyWith(clearQuote: true, quoteLoading: false));
+      return;
+    }
+    // A child with no age yet is not a party the backend can price. Sending
+    // the selection anyway is refused outright ("childrenAges must contain
+    // exactly one age per child in every selection."), and quietly dropping
+    // the child would quote a stay the guest is not taking. Not an error
+    // state: the stay section asks for the age, this only keeps a total that
+    // no longer describes the party off the screen.
+    if (!state.occupancyIsPriceable) {
+      emit(state.copyWith(
+        clearQuote: true,
+        quoteLoading: false,
+        clearQuoteError: true,
+      ));
       return;
     }
 

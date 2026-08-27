@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
+import 'package:houseiana_mobile_app/core/models/property_ratings.dart';
 import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/cubit/property_details_state.dart';
 
@@ -57,29 +59,32 @@ class PropertyDetailsCubit extends Cubit<PropertyDetailsState> {
     }
   }
 
-  Future<void> loadRatings(String propertyId, {bool loadMore = false}) async {
-    final current = state;
-    if (current is! PropertyDetailsLoaded) return;
+  /// Loads the reviews block for a property: the rows plus the aggregates the
+  /// category bars are drawn from.
+  ///
+  /// A failure here deliberately does **not** emit [PropertyDetailsError]. This
+  /// is a secondary call that lands after the page is already on screen, and
+  /// letting it fail used to swap a perfectly good listing for a full-screen
+  /// error. The page keeps its content and simply shows no reviews.
+  Future<void> loadRatings(String propertyId) async {
+    if (state is! PropertyDetailsLoaded) return;
 
-    final nextPage = loadMore ? current.ratingsPage + 1 : 1;
-    const limit = 10;
-
+    PropertyRatings ratings;
     try {
-      final allRatings = await _propertyService.getRatingsPaginated(
-        propertyId,
-        page: nextPage,
-        limit: limit,
-      );
-      final hasMore = allRatings.length >= limit;
-      final ratings =
-          loadMore ? [...current.ratings, ...allRatings] : allRatings;
-      emit(current.copyWith(
-        ratings: ratings,
-        ratingsPage: nextPage,
-        hasMoreRatings: hasMore,
-      ));
+      ratings = await _propertyService.getPropertyRatings(propertyId);
     } catch (e) {
-      emit(PropertyDetailsError(message: e.toString()));
+      if (kDebugMode) debugPrint('[PropertyRatings] load failed: $e');
+      // Settled as "none" rather than left pending, so the section stops
+      // waiting on a call that has already failed.
+      ratings = PropertyRatings.empty;
     }
+
+    if (isClosed) return;
+    // Re-read: the guest may have navigated the cubit elsewhere while this was
+    // in flight, and the ratings belong to the property that was loaded then.
+    final latest = state;
+    if (latest is! PropertyDetailsLoaded) return;
+    if (latest.property.id != propertyId) return;
+    emit(latest.copyWith(ratings: ratings));
   }
 }

@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:houseiana_mobile_app/core/constants/app_colors.dart';
 import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
+import 'package:houseiana_mobile_app/core/models/property_ratings.dart';
 import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
@@ -21,6 +22,7 @@ import 'package:houseiana_mobile_app/features/property_details/presentation/scre
 import 'package:houseiana_mobile_app/features/property_details/presentation/screens/reviews_screen.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/hosted_by_widget.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/price_details_section.dart';
+import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/property_reviews_section.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/things_to_know_widget.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
@@ -477,8 +479,15 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       final title = _getTitle(property);
       final location = _getLocation(property);
       final price = _getPrice(property);
-      final rating = _getRating(property);
-      final reviewCount = _getReviewCount(property);
+      final ratings = state.ratings;
+      // Once `/api/ratings/property/{id}` has answered it is the authority on
+      // the score and the count: the star on the property payload is a cached
+      // aggregate and can disagree with the reviews listed further down.
+      final hasRatingSummary = (ratings?.totalRatings ?? 0) > 0;
+      final rating =
+          hasRatingSummary ? ratings!.averageRating : _getRating(property);
+      final reviewCount =
+          hasRatingSummary ? ratings!.totalRatings : _getReviewCount(property);
       final bedrooms = _getBedrooms(property);
       final beds = _getBeds(property);
       final bathrooms = _getBathrooms(property);
@@ -496,7 +505,6 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
       final checkOutTime = _getCheckOutTime(property);
       final rules = _getRules(property);
       final cancellationPolicy = _getCancellationPolicy(context, property);
-      final ratings = state.ratings;
 
       return BlocProvider<NightlyPricesCubit>.value(
         value: _ensureStayCubit(state.property.id),
@@ -573,10 +581,12 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     ),
                     _SectionDivider(),
                     _buildLocationSection(property, location),
-                    if (ratings.isNotEmpty || reviewCount > 0) ...[
+                    if (ratings != null && !ratings.isEmpty) ...[
                       _SectionDivider(),
-                      // _buildReviewsSection(
-                      //     ratings, reviewCount, rating, hasMoreRatings, property),
+                      PropertyReviewsSection(
+                        ratings: ratings,
+                        onShowAll: () => _openAllReviews(ratings, property),
+                      ),
                     ],
                     const SizedBox(height: 100),
                   ],
@@ -1385,237 +1395,6 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     );
   }
 
-  // ignore: unused_element
-  Widget _buildReviewsSection(
-    List<Map<String, dynamic>> ratings,
-    int reviewCount,
-    double rating,
-    bool hasMoreRatings,
-    Map<String, dynamic> property,
-  ) {
-    final displayedReviews =
-        ratings.length > 3 ? ratings.sublist(0, 3) : ratings;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  context.tr('propertyDetails.reviewsSection'),
-                  style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.charcoal),
-                ),
-              ),
-              if (ratings.length > 3)
-                GestureDetector(
-                  onTap: () => _openAllReviews(property),
-                  child: Text(
-                    context.tr('propertyDetails.seeAll'),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.charcoal,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(20),
-            // Brand-yellow tint rather than a pinned cream: this panel wraps
-            // brightness-aware text, which would go near-white on cream.
-            decoration: BoxDecoration(
-              color: AppColors.primaryColor.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                  color: AppColors.primaryColor.withValues(alpha: 0.35)),
-            ),
-            child: Row(
-              children: [
-                Column(
-                  children: [
-                    Text(
-                      rating > 0 ? rating.toStringAsFixed(1) : '--',
-                      style: TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.charcoal,
-                      ),
-                    ),
-                    Row(
-                      children: List.generate(
-                        5,
-                        (i) => Icon(
-                          Icons.star,
-                          size: 16,
-                          color: i < rating.round()
-                              ? AppColors.bioYellow
-                              : AppColors.neutral200,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      reviewCount == 1
-                          ? context.tr('propertyDetails.reviewSingular',
-                              args: {'n': reviewCount})
-                          : context.tr('propertyDetails.reviewPlural',
-                              args: {'n': reviewCount}),
-                      style:
-                          TextStyle(fontSize: 12, color: AppColors.neutral500),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...displayedReviews.map((r) {
-            final guestName = (r['guestName'] ??
-                    r['userName'] ??
-                    r['name'] ??
-                    context.tr('propertyDetails.guestFallback'))
-                .toString();
-            final comment =
-                (r['comment'] ?? r['review'] ?? r['text'] ?? '').toString();
-            final ratingVal =
-                ((r['rating'] ?? r['overallRating'] ?? 5) as num).toInt();
-            final date = _formatDate(r['createdAt'] ?? r['date'] ?? '');
-            return _buildReviewCard(
-                name: guestName,
-                date: date,
-                rating: ratingVal,
-                comment: comment);
-          }),
-          if (hasMoreRatings)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () {
-                    final state = context.read<PropertyDetailsCubit>().state;
-                    if (state is PropertyDetailsLoaded) {
-                      final propertyId = state.property.id;
-                      if (propertyId.isNotEmpty) {
-                        context
-                            .read<PropertyDetailsCubit>()
-                            .loadRatings(propertyId, loadMore: true);
-                      }
-                    }
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.charcoal,
-                    side: BorderSide(color: AppColors.charcoal),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text(
-                    context.tr('propertyDetails.showAllReviews',
-                        args: {'n': reviewCount}),
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  String _formatDate(String dateStr) {
-    if (dateStr.isEmpty) return '';
-    try {
-      final dt = DateTime.parse(dateStr);
-      final months = context.tr('common.monthsShort').split(',');
-      return '${months[dt.month - 1]} ${dt.year}';
-    } catch (_) {
-      return dateStr;
-    }
-  }
-
-  Widget _buildReviewCard({
-    required String name,
-    required String date,
-    required int rating,
-    required String comment,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.neutral200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: AppColors.ghostWhite,
-                child: Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : 'G',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w700, color: AppColors.charcoal),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.charcoal),
-                    ),
-                    if (date.isNotEmpty)
-                      Text(
-                        date,
-                        style: TextStyle(
-                            fontSize: 12, color: AppColors.neutral400),
-                      ),
-                  ],
-                ),
-              ),
-              Row(
-                children: List.generate(
-                  rating.clamp(0, 5),
-                  (_) => const Icon(Icons.star,
-                      size: 12, color: AppColors.bioYellow),
-                ),
-              ),
-            ],
-          ),
-          if (comment.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              comment,
-              style: TextStyle(
-                  fontSize: 13, color: AppColors.neutral500, height: 1.6),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
   /// The booking card — dates, inline calendar and price breakdown; see
   /// [PriceDetailsSection]. It lives here rather than in the bottom bar because
   /// it only has numbers once the guest picks dates, which they now do without
@@ -2029,15 +1808,14 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     }
   }
 
-  void _openAllReviews(Map<String, dynamic> property) {
+  /// Opens the all-reviews screen with the ratings this page already has, so
+  /// it renders instantly instead of re-fetching what is on screen.
+  void _openAllReviews(PropertyRatings ratings, Map<String, dynamic> property) {
     final propertyId = (property['id'] ?? property['_id'] ?? '').toString();
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: context.read<PropertyDetailsCubit>(),
-          child: ReviewsScreen(propertyId: propertyId),
-        ),
+        builder: (_) => ReviewsScreen(propertyId: propertyId, ratings: ratings),
       ),
     );
   }
