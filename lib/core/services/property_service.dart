@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:houseiana_mobile_app/core/constants/errors/exceptions.dart';
 import 'package:houseiana_mobile_app/core/models/country_option.dart';
+import 'package:houseiana_mobile_app/core/models/nearby_place.dart';
 import 'package:houseiana_mobile_app/core/models/nightly_price_model.dart';
 import 'package:houseiana_mobile_app/core/models/property_model.dart';
 import 'package:houseiana_mobile_app/core/models/property_ratings.dart';
@@ -563,6 +564,71 @@ class PropertyService {
           .map(RegionVillage.fromJson)
           .where((v) => v.id > 0 && v.name.isNotEmpty)
           .toList();
+    } catch (e) {
+      throw ServerException.msg(e.toString());
+    }
+  }
+
+  /// Loads the "Your day here" categories from
+  /// `GET /api/Lookups/NearbyCategories` → `{ success, data: [{ id, name }] }`
+  /// (ids 1..7: coffee, breakfast, shopping, gifts, family, entertainment,
+  /// essentials).
+  ///
+  /// **Hotels call this too.** `/api/HotelManagementLookup/NearbyCategories`
+  /// returns the identical seven rows — the two stay kinds share one category
+  /// id space — so hotels reuse this rather than fetching and caching a second
+  /// copy of the same list.
+  ///
+  /// Localizes via the `lang` QUERY param only (header ignored), same as
+  /// [getRegionCategories]. The returned `name` is a bare slug and never the
+  /// copy the chips show; the UI keys its labels off the stable id and only
+  /// falls back to this name for an id it does not know.
+  Future<List<NearbyCategory>> getNearbyCategories({bool force = false}) async {
+    final lang = _lookups.activeLang;
+    try {
+      final response = await _lookups.getOrFetch(
+        '${EndPoints.nearbyCategoriesLookup}?lang=$lang',
+        () => _api.get(
+          EndPoints.nearbyCategoriesLookup,
+          queryParameters: {'lang': lang},
+        ),
+        force: force,
+      );
+      return _extractList(response)
+          .map(NearbyCategory.fromJson)
+          .where((c) => c.id > 0)
+          .toList();
+    } catch (e) {
+      throw ServerException.msg(e.toString());
+    }
+  }
+
+  /// `GET /api/property-search/{propertyId}/nearby-places?categoryId={id}` —
+  /// the places filed under one category.
+  ///
+  /// [categoryId] is not optional despite what Swagger says: the endpoint
+  /// answers `404 "Category not found."` when it is missing, `0`, or outside
+  /// the lookup's range. A category with no places is a normal empty list.
+  ///
+  /// Unlike the hotel twin, these rows are NOT server-localized — `name` and
+  /// `nameAR` both come back and `priceLevel`/`timeOfDay` stay stable enums.
+  Future<List<NearbyPlace>> getPropertyNearbyPlaces(
+    String propertyId, {
+    required int categoryId,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final response = await _api.get(
+        EndPoints.propertyNearbyPlaces(propertyId),
+        queryParameters: {'categoryId': categoryId},
+        cancelToken: cancelToken,
+      );
+      // Through listFrom, not a bare map(): it is the one place the row
+      // guards live (a nameless row would otherwise render as a blank card
+      // here while the details payload correctly filtered it out).
+      return NearbyPlace.listFrom(_extractList(response));
+    } on RequestCancelledException {
+      rethrow;
     } catch (e) {
       throw ServerException.msg(e.toString());
     }

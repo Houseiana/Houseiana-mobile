@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:houseiana_mobile_app/core/utils/stay_ids.dart';
 
 enum BookingStatus {
   pending('PENDING'),
@@ -97,6 +98,8 @@ class BookingModel extends Equatable {
           PropertySummary.fromJson(json['property'] as Map<String, dynamic>);
     }
 
+    final hotelIdValue = extractHotelId(json);
+
     return BookingModel(
       id: json['_id'] ?? json['id'] ?? json['bookingId'] ?? '',
       propertyId: json['property'] is Map
@@ -132,9 +135,9 @@ class BookingModel extends Equatable {
           ? json['nights'] as int
           : int.tryParse('${json['nights'] ?? ''}'),
       paymentStatus: _parsePaymentStatus(json),
-      hotelId: (json['hotelId'] ??
-              (json['hotel'] is Map ? json['hotel']['id'] : null))
-          ?.toString(),
+      // Same reason as TripModel: the booking DTOs do not commit to a key for
+      // the hotel entity, so the row is scanned rather than guessed at.
+      hotelId: hotelIdValue.isEmpty ? null : hotelIdValue,
       bookingKind:
           (json['bookingKind'] ?? json['bookingType'] ?? json['type'])?.toString(),
     );
@@ -175,7 +178,7 @@ class BookingModel extends Equatable {
         'confirmationCode': confirmationCode,
         'currency': currency,
         'paymentStatus': paymentStatus,
-        'hotelId': hotelId,
+        'hotelId': resolvedHotelId.isEmpty ? hotelId : resolvedHotelId,
         'bookingKind': bookingKind,
       };
 
@@ -184,6 +187,16 @@ class BookingModel extends Equatable {
   bool get isHotel =>
       (hotelId != null && hotelId!.trim().isNotEmpty) ||
       (bookingKind ?? '').toUpperCase() == 'HOTEL';
+
+  /// The id the hotel endpoints address this stay by. See
+  /// [TripModel.resolvedHotelId] — a hotel row that declares no hotel id falls
+  /// back to the property column, which the unified DTO reuses for the stay.
+  String get resolvedHotelId {
+    final declared = (hotelId ?? '').trim();
+    if (declared.isNotEmpty) return declared;
+    if (!isHotel) return '';
+    return propertyId.trim();
+  }
 
   int get nights => checkOut.difference(checkIn).inDays;
 

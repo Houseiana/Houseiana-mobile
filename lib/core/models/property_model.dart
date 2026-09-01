@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:houseiana_mobile_app/core/models/nearby_place.dart';
 
 class PropertyModel extends Equatable {
   final String id;
@@ -54,6 +55,15 @@ class PropertyModel extends Equatable {
   final bool? allowGuests;
   final bool? allowMarriedOnly;
 
+  /// The "Your day here" places, straight off `data.nearbyPlaces` on
+  /// `GET /api/property-search/{id}`. Empty on every list payload and on most
+  /// listings — only a handful of properties have any — so the section that
+  /// renders these hides itself rather than showing an empty state.
+  ///
+  /// This model drops any key it does not declare, which is why the field has
+  /// to exist here for the details screen to see the data at all.
+  final List<NearbyPlace> nearbyPlaces;
+
   const PropertyModel({
     required this.id,
     this.title,
@@ -107,6 +117,7 @@ class PropertyModel extends Equatable {
     this.allowEvents,
     this.allowGuests,
     this.allowMarriedOnly,
+    this.nearbyPlaces = const <NearbyPlace>[],
   });
 
   factory PropertyModel.fromJson(Map<String, dynamic> json) {
@@ -201,6 +212,7 @@ class PropertyModel extends Equatable {
       allowMarriedOnly: (houseRules?['allowMarriedOnly'] ??
           json['allowMarriedOnly'] ??
           json['marriedOnly']) as bool?,
+      nearbyPlaces: NearbyPlace.listFrom(json['nearbyPlaces']),
     );
   }
 

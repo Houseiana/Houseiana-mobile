@@ -1,4 +1,5 @@
 import 'package:houseiana_mobile_app/core/models/hotel/hotel_summary.dart';
+import 'package:houseiana_mobile_app/core/models/nearby_place.dart';
 
 /// Models for `GET /api/hotels/{id}/details?checkIn=&checkOut=`.
 ///
@@ -58,9 +59,10 @@ class HotelBedConfig {
 /// [HotelDetails.singleCurrencyCode] answer null when they do not, and the UI
 /// then prints the bare number rather than guessing.
 ///
-/// None of these are priced by `POST /api/hotel-quote`, which only ever takes
-/// `ratePlanId` + `rooms`. They are therefore NOT part of any total the app
-/// shows, and every surface that lists them has to say so.
+/// None of these are priced by `POST /api/hotel-quote`: its request carries a
+/// rate plan, a room count and that room's occupancy, and has NO field for a
+/// service id at all. They are therefore not part of any total the app shows,
+/// and every surface that lists them has to say so.
 class HotelExtraService {
   final int id;
   final String name;
@@ -417,6 +419,10 @@ class HotelDetails {
   /// Null when the hotel never filled it in — UNKNOWN, not "no children".
   final HotelChildrenPolicy? childrenPolicy;
 
+  /// The "Your day here" places. Same section as the property screen's, but
+  /// the rows arrive in the hotel dialect — see [NearbyPlace]. Usually empty.
+  final List<NearbyPlace> nearbyPlaces;
+
   const HotelDetails({
     required this.hotelId,
     required this.name,
@@ -439,6 +445,7 @@ class HotelDetails {
     this.policies = const <HotelPolicy>[],
     this.services = const <HotelExtraService>[],
     this.childrenPolicy,
+    this.nearbyPlaces = const <NearbyPlace>[],
   });
 
   /// Every gallery image, cover first, de-duplicated.
@@ -514,6 +521,7 @@ class HotelDetails {
         policies: HotelPolicy.listFrom(json['policies']),
         services: HotelExtraService.listFrom(json['services']),
         childrenPolicy: HotelChildrenPolicy.from(json['childrenPolicy']),
+        nearbyPlaces: NearbyPlace.listFrom(json['nearbyPlaces']),
       );
 }
 

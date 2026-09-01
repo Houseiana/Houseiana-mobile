@@ -376,7 +376,7 @@ void main() {
     });
   });
 
-group('HotelDetails policies, children policy and paid services', () {
+  group('HotelDetails policies, children policy and paid services', () {
     // VERBATIM from a live /api/hotels/{id}/details probe on 2026-08-27, the
     // first response seen with `policies`, `childrenPolicy` and `services`
     // actually filled in. The earlier fixture above has them empty/null, which

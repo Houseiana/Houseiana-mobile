@@ -7,6 +7,7 @@ import 'package:houseiana_mobile_app/core/models/hotel/hotel_details.dart';
 import 'package:houseiana_mobile_app/core/models/hotel/hotel_quote.dart';
 import 'package:houseiana_mobile_app/core/models/hotel/hotel_review.dart';
 import 'package:houseiana_mobile_app/core/models/hotel/hotel_summary.dart';
+import 'package:houseiana_mobile_app/core/models/nearby_place.dart';
 import 'package:houseiana_mobile_app/core/network/api/api_consumer.dart';
 import 'package:houseiana_mobile_app/core/network/api/end_points.dart';
 import 'package:houseiana_mobile_app/core/network/api/status_code.dart';
@@ -289,6 +290,35 @@ class HotelService {
         body: draft.toJson(guestId),
       );
       _data(response);
+    });
+  }
+
+  /// GET /api/hotels/{hotelId}/nearby-places?categoryId={id} — `data` is an
+  /// ARRAY, like [getReviews].
+  ///
+  /// [categoryId] is required in practice: without it the endpoint answers 404
+  /// "Category not found." even though Swagger marks it optional. The category
+  /// ids come from `/api/Lookups/NearbyCategories`, which properties and hotels
+  /// share — see `PropertyService.getNearbyCategories`.
+  ///
+  /// These rows arrive fully SERVER-LOCALIZED, `priceLevel` and `timeOfDay`
+  /// included, so those two are display text rather than enums here.
+  /// [NearbyPlace] parses leniently and keeps the raw string for exactly this
+  /// reason.
+  Future<List<NearbyPlace>> getNearbyPlaces(
+    String hotelId, {
+    required int categoryId,
+    CancelToken? cancelToken,
+  }) {
+    return _guard(() async {
+      final response = await _api.get(
+        EndPoints.hotelNearbyPlaces(hotelId),
+        queryParameters: {'categoryId': categoryId},
+        cancelToken: cancelToken,
+      );
+      final data = _data(response);
+      if (data is! List) return const <NearbyPlace>[];
+      return NearbyPlace.listFrom(data);
     });
   }
 

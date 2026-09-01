@@ -22,6 +22,10 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
   bool _isCancelling = false;
   bool _didInit = false;
 
+  /// True while the review button is asking the backend which stay this
+  /// booking is for — see [_openReview].
+  bool _isResolvingStay = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -132,6 +136,55 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
       ),
     );
     Navigator.pop(context);
+  }
+
+  /// Opens the review form this stay belongs to.
+  ///
+  /// A review is addressed by the STAY, never by the booking: a hotel posts to
+  /// `/api/hotels/{hotelId}/reviews/create` with six category scores, a
+  /// property to `/api/ratings/property-by-guest` with one rating — two
+  /// contracts, so two screens. Neither id is guaranteed to be on the row that
+  /// opened this screen (a real past hotel stay carried no hotel id at all),
+  /// so resolve it — which may ask `/booking-manager/{id}` — before concluding
+  /// there is nothing to review.
+  Future<void> _openReview() async {
+    final booking = _booking;
+    if (booking == null) return;
+    final isHotel = booking.isHotel;
+
+    setState(() => _isResolvingStay = true);
+    final stayId = await sl<UserService>().resolveStayEntityId(
+      bookingId: _bookingId,
+      isHotel: isHotel,
+      localId: isHotel ? booking.resolvedHotelId : booking.propertyId,
+    );
+    if (!mounted) return;
+    setState(() => _isResolvingStay = false);
+
+    if (stayId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr(isHotel
+              ? 'hotels.hotelNotFound'
+              : 'propertyDetails.propertyNotFound')),
+        ),
+      );
+      return;
+    }
+
+    if (isHotel) {
+      Navigator.pushNamed(
+        context,
+        Routes.hotelReviewCreate,
+        arguments: {'hotelId': stayId, 'hotelName': _extractTitle(context)},
+      );
+      return;
+    }
+    Navigator.pushNamed(
+      context,
+      Routes.reviewProperty,
+      arguments: {'bookingId': _bookingId, 'propertyId': stayId},
+    );
   }
 
   Future<void> _shareReceipt() async {
@@ -329,43 +382,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Hotel reviews go to their own endpoint and carry six
-                    // category scores instead of the property form's single
-                    // rating, so they cannot share ReviewPropertyScreen.
-                    if (_booking?.isHotel == true) {
-                      final hotelId = _booking?.hotelId ?? '';
-                      // isHotel can be true off `bookingKind` alone, with no id
-                      // to address the hotel by — posting to
-                      // /api/hotels//reviews/create would 404 after the guest
-                      // had already written the review.
-                      if (hotelId.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(context.tr('hotels.hotelNotFound')),
-                          ),
-                        );
-                        return;
-                      }
-                      Navigator.pushNamed(
-                        context,
-                        Routes.hotelReviewCreate,
-                        arguments: {
-                          'hotelId': hotelId,
-                          'hotelName': _extractTitle(context),
-                        },
-                      );
-                      return;
-                    }
-                    Navigator.pushNamed(
-                      context,
-                      Routes.reviewProperty,
-                      arguments: {
-                        'bookingId': _bookingId,
-                        'propertyId': _booking?.propertyId ?? '',
-                      },
-                    );
-                  },
+                  onPressed: _isResolvingStay ? null : _openReview,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
                     foregroundColor: AppColors.brandCharcoal,
@@ -373,7 +390,16 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
-                  icon: const Icon(Icons.rate_review_outlined),
+                  icon: _isResolvingStay
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.brandCharcoal,
+                          ),
+                        )
+                      : const Icon(Icons.rate_review_outlined),
                   label: Text(
                     context.tr('trips.writeReview'),
                     style: const TextStyle(

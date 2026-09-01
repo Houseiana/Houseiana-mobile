@@ -37,6 +37,10 @@ class _TripsScreenState extends State<TripsScreen>
   final Map<String, List<TripModel>> _tripsByTab = {};
   final Set<String> _loadingTabKeys = {};
 
+  /// `<bookingId>:<action>` while a card action is asking the backend for the
+  /// stay id its screen needs; null when nothing is pending.
+  String? _resolvingKey;
+
   @override
   void initState() {
     super.initState();
@@ -351,6 +355,8 @@ class _TripsScreenState extends State<TripsScreen>
     final status = _localizedStatus(statusRaw);
     final nights = trip.nights;
     final priceText = Money.format(trip.totalPrice, trip.currencyLabel);
+    final bookBusy = _resolvingKey == '${trip.id}:book';
+    final reviewBusy = _resolvingKey == '${trip.id}:review';
 
     void goToDetails() {
       Navigator.pushNamed(context, Routes.tripDetails,
@@ -411,28 +417,45 @@ class _TripsScreenState extends State<TripsScreen>
       );
     }
 
-    void bookAgain() {
-      if (trip.isHotel) {
-        final hotelId = trip.hotelId ?? '';
-        // A silent no-op button reads as a broken app; say why nothing happened.
-        if (hotelId.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.tr('hotels.hotelNotFound'))),
-          );
-          return;
-        }
-        Navigator.pushNamed(
-          context,
-          Routes.hotelDetails,
-          arguments: {'hotelId': hotelId},
-        );
+    // Both "Book Again" and "Write a review" are addressed by the STAY — the
+    // hotel for a hotel stay, the property otherwise — and the trips row does
+    // not always carry that id (a real past hotel stay arrived flagged HOTEL
+    // with none), so fall back to the booking DTO before telling the guest no.
+    // That fallback is a request, hence the busy state on the card.
+    Future<String> resolveStayId(String action) async {
+      setState(() => _resolvingKey = '${trip.id}:$action');
+      final resolved = await _userService.resolveStayEntityId(
+        bookingId: trip.id,
+        isHotel: trip.isHotel,
+        localId: trip.isHotel ? trip.resolvedHotelId : trip.propertyId,
+      );
+      if (mounted) setState(() => _resolvingKey = null);
+      return resolved;
+    }
+
+    // A silent no-op button reads as a broken app; say why nothing happened.
+    void reportMissingStay() {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr(trip.isHotel
+              ? 'hotels.hotelNotFound'
+              : 'propertyDetails.propertyNotFound')),
+        ),
+      );
+    }
+
+    Future<void> bookAgain() async {
+      final stayId = await resolveStayId('book');
+      if (!mounted) return;
+      if (stayId.isEmpty) {
+        reportMissingStay();
         return;
       }
-      if (trip.propertyId.isEmpty) return;
       Navigator.pushNamed(
         context,
-        Routes.propertyDetails,
-        arguments: {'propertyId': trip.propertyId},
+        trip.isHotel ? Routes.hotelDetails : Routes.propertyDetails,
+        arguments:
+            trip.isHotel ? {'hotelId': stayId} : {'propertyId': stayId},
       );
     }
 
@@ -440,36 +463,25 @@ class _TripsScreenState extends State<TripsScreen>
     // rate a finished stay without opening trip details first. Hotel stays post
     // to their own endpoint and use a six-category form, so they cannot share
     // ReviewPropertyScreen (same split as the trip-details button).
-    void writeReview() {
+    Future<void> writeReview() async {
+      final stayId = await resolveStayId('review');
+      if (!mounted) return;
+      if (stayId.isEmpty) {
+        reportMissingStay();
+        return;
+      }
       if (trip.isHotel) {
-        final hotelId = trip.hotelId ?? '';
-        // isHotel can be true off `bookingKind` alone, with no id to address
-        // the hotel by — /api/hotels//reviews/create would 404.
-        if (hotelId.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.tr('hotels.hotelNotFound'))),
-          );
-          return;
-        }
         Navigator.pushNamed(
           context,
           Routes.hotelReviewCreate,
-          arguments: {'hotelId': hotelId, 'hotelName': propertyName},
-        );
-        return;
-      }
-      if (trip.propertyId.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.tr('propertyDetails.propertyNotFound')),
-          ),
+          arguments: {'hotelId': stayId, 'hotelName': propertyName},
         );
         return;
       }
       Navigator.pushNamed(
         context,
         Routes.reviewProperty,
-        arguments: {'bookingId': trip.id, 'propertyId': trip.propertyId},
+        arguments: {'bookingId': trip.id, 'propertyId': stayId},
       );
     }
 
@@ -816,7 +828,7 @@ class _TripsScreenState extends State<TripsScreen>
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: bookAgain,
+                        onPressed: bookBusy ? null : bookAgain,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryColor,
                           foregroundColor: AppColors.brandCharcoal,
@@ -825,8 +837,11 @@ class _TripsScreenState extends State<TripsScreen>
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: Text(context.tr('trips.bookAgain'),
-                            style: const TextStyle(fontSize: 14)),
+                        child: _actionLabel(
+                          context.tr('trips.bookAgain'),
+                          busy: bookBusy,
+                          color: AppColors.brandCharcoal,
+                        ),
                       ),
                     ),
                     // Only a stay that actually happened can be reviewed —
@@ -837,7 +852,7 @@ class _TripsScreenState extends State<TripsScreen>
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(
-                          onPressed: writeReview,
+                          onPressed: reviewBusy ? null : writeReview,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.charcoal,
                             side: BorderSide(color: AppColors.neutral200),
@@ -845,8 +860,11 @@ class _TripsScreenState extends State<TripsScreen>
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: Text(context.tr('trips.writeReview'),
-                              style: const TextStyle(fontSize: 14)),
+                          child: _actionLabel(
+                            context.tr('trips.writeReview'),
+                            busy: reviewBusy,
+                            color: AppColors.charcoal,
+                          ),
                         ),
                       ),
                     ],
@@ -923,6 +941,16 @@ class _TripsScreenState extends State<TripsScreen>
       default:
         return raw;
     }
+  }
+
+  /// A card action's label, or a spinner while it resolves its stay id.
+  Widget _actionLabel(String text, {required bool busy, required Color color}) {
+    if (!busy) return Text(text, style: const TextStyle(fontSize: 14));
+    return SizedBox(
+      width: 18,
+      height: 18,
+      child: CircularProgressIndicator(strokeWidth: 2, color: color),
+    );
   }
 
   Widget _imagePlaceholder({bool isHotel = false}) {

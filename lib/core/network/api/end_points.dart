@@ -29,6 +29,16 @@ class EndPoints {
   // GET /api/property-search/{id}/nightly-prices?page={n}  → ~1 month of prices per page
   static String propertyNightlyPrices(String id) =>
       '/api/property-search/$id/nightly-prices';
+  // GET /api/property-search/{propertyId}/nearby-places?categoryId={id}
+  //   The "Your day here" places. categoryId is REQUIRED in practice: without
+  //   it the endpoint answers 404 "Category not found." (Swagger says optional
+  //   — it lies), and so do categoryId=0 and any id outside 1..7. Unknown
+  //   property → 404 "Property not found."; empty category → 200, data: [].
+  //   Rows are NOT server-localized here: `name`/`nameAR` both come back and
+  //   `priceLevel`/`timeOfDay` stay stable enums — the opposite of the hotel
+  //   endpoint below. See docs/nearby_places_contract.md.
+  static String propertyNearbyPlaces(String id) =>
+      '/api/property-search/$id/nearby-places';
 
   // ── Users ───────────────────────────────────────────────────────────────────
   // GET  /users/{id}                    → get user profile
@@ -153,6 +163,16 @@ class EndPoints {
   // POST /api/hotels/{hotelId}/favorite  body: { userId } → data: bool (toggle)
   static String hotelFavorite(String hotelId) => '/api/hotels/$hotelId/favorite';
 
+  // GET /api/hotels/{hotelId}/nearby-places?categoryId={id} → data is an ARRAY
+  //   categoryId is REQUIRED in practice: omitting it answers 404 "Category not
+  //   found." even though Swagger marks it optional. Unknown hotel → 404
+  //   "Hotel not found."; an empty category → 200 with data: [].
+  //   Rows come back SERVER-LOCALIZED, `priceLevel` and `timeOfDay` included —
+  //   in Arabic they read "رخيص" / "قبل الظهر", so they are display text and
+  //   NOT enums. See NearbyPlace and docs/nearby_places_contract.md.
+  static String hotelNearbyPlaces(String hotelId) =>
+      '/api/hotels/$hotelId/nearby-places';
+
   // ── Chat ────────────────────────────────────────────────────────────────────
   // GET  /api/chat/conversations        → list conversations (query: userId)
   // POST /api/chat/conversations        → create conversation
@@ -206,6 +226,14 @@ class EndPoints {
   // GET /api/Lookups/ReasonBlockProperty → [{ id, name }] used for calendar blocking.
   static const String reasonBlockPropertyLookup =
       '/api/Lookups/ReasonBlockProperty';
+  // GET /api/Lookups/NearbyCategories → [{ id, name }] ids 1..7
+  // (coffee, breakfast, shopping, gifts, family, entertainment, essentials).
+  // Drives the "Your day here" chips on property AND hotel details — both stay
+  // kinds share this one id space, so /api/HotelManagementLookup/NearbyCategories
+  // is the same list and is not called. Localizes via the `lang` QUERY param
+  // only (the header is ignored), like RegionCategory. The returned `name` is a
+  // bare slug, never the chip copy — the UI keys its own labels off the id.
+  static const String nearbyCategoriesLookup = '/api/Lookups/NearbyCategories';
 
   // ── Host Calendar (management) ───────────────────────────────────────────
   // GET  /api/properties/by-host?hostId=&limit=        → host listings (dropdown)

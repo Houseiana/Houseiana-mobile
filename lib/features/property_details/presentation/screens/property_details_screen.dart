@@ -9,6 +9,7 @@ import 'package:houseiana_mobile_app/core/constants/routes/routes.dart';
 import 'package:houseiana_mobile_app/core/injection/injection_container.dart';
 import 'package:houseiana_mobile_app/core/models/property_ratings.dart';
 import 'package:houseiana_mobile_app/core/services/favorites_notifier.dart';
+import 'package:houseiana_mobile_app/core/services/property_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_service.dart';
 import 'package:houseiana_mobile_app/core/services/user_session.dart';
 import 'package:houseiana_mobile_app/core/utils/money.dart';
@@ -26,6 +27,7 @@ import 'package:houseiana_mobile_app/features/property_details/presentation/widg
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/things_to_know_widget.dart';
 import 'package:houseiana_mobile_app/i18n/app_localizations.dart';
 import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
+import 'package:houseiana_mobile_app/shared/widgets/nearby/nearby_places_section.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:houseiana_mobile_app/features/property_details/presentation/widgets/property_details_skeleton.dart';
@@ -581,6 +583,21 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     ),
                     _SectionDivider(),
                     _buildLocationSection(property, location),
+                    // Right after the map, because it answers the question the
+                    // map raises: what is actually around here? Hidden
+                    // entirely when the listing has no nearby places, which is
+                    // most of them.
+                    if (state.property.nearbyPlaces.isNotEmpty) ...[
+                      _SectionDivider(),
+                      NearbyPlacesSection(
+                        places: state.property.nearbyPlaces,
+                        loadCategory: (categoryId) =>
+                            sl<PropertyService>().getPropertyNearbyPlaces(
+                          state.property.id,
+                          categoryId: categoryId,
+                        ),
+                      ),
+                    ],
                     if (ratings != null && !ratings.isEmpty) ...[
                       _SectionDivider(),
                       PropertyReviewsSection(

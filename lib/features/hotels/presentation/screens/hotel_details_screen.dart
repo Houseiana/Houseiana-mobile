@@ -26,6 +26,7 @@ import 'package:houseiana_mobile_app/i18n/locale_aware_state.dart';
 import 'package:houseiana_mobile_app/shared/widgets/cards/compact_hotel_card.dart';
 import 'package:houseiana_mobile_app/shared/widgets/common/sign_in_prompt_sheet.dart';
 import 'package:houseiana_mobile_app/shared/widgets/empty_state/empty_state_widget.dart';
+import 'package:houseiana_mobile_app/shared/widgets/nearby/nearby_places_section.dart';
 import 'package:houseiana_mobile_app/shared/widgets/skeletons/page_skeletons.dart';
 import 'package:intl/intl.dart' show DateFormat;
 
@@ -206,6 +207,19 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen>
                 ],
                 _SectionDivider(),
                 _buildLocationSection(hotel),
+                // Same slot as the property page: straight after the map,
+                // hidden when the hotel has no nearby places.
+                if (hotel.nearbyPlaces.isNotEmpty) ...[
+                  _SectionDivider(),
+                  NearbyPlacesSection(
+                    places: hotel.nearbyPlaces,
+                    loadCategory: (categoryId) =>
+                        sl<HotelService>().getNearbyPlaces(
+                      hotel.hotelId,
+                      categoryId: categoryId,
+                    ),
+                  ),
+                ],
                 _SectionDivider(),
                 _buildReviewsSection(state, hotel),
                 const SizedBox(height: 100),
@@ -1256,10 +1270,11 @@ class _HotelDetailsScreenState extends State<HotelDetailsScreen>
   /// Paid add-ons the hotel itself offers ("Airport Transfer").
   ///
   /// Its own section rather than more amenity rows on purpose: an amenity is
-  /// part of what the room already costs and these are not. `POST
-  /// /api/hotel-quote` prices only `ratePlanId` + `rooms`, so nothing here
-  /// reaches the total on the bottom bar — the caption says that out loud
-  /// instead of letting the guest discover it at the desk.
+  /// part of what the room already costs and these are not. The `POST
+  /// /api/hotel-quote` request has no field for a service id — it prices the
+  /// rate plan, the rooms and their occupancy — so nothing here reaches the
+  /// total on the bottom bar, and the caption says so out loud instead of
+  /// letting the guest discover it at the desk.
   Widget _buildServicesSection(HotelDetails hotel) {
     // A service arrives with no currency of its own. Only the code every rate
     // plan in the hotel agrees on may be printed beside it; a mixed-currency

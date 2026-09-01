@@ -2239,5 +2239,52 @@
     "noDataTitle": "No live recommendation data yet",
     "noDataMessage": "Recommendations will appear here when the property catalog is available from the backend.",
     "guestFavoriteRibbon": "Guest Favorite"
+  },
+  "nearby": {
+    "sectionTitle": "Your day here",
+    "suggestionTitle": "Houseiana's suggestion for your day",
+    "empty": "Nothing listed here yet",
+    "openInMaps": "Open in Maps",
+    "categoryFallback": "Nearby",
+    "captionFallback": "Nearby",
+    "walkOne": "{n} min walk",
+    "walkTwo": "{n} min walk",
+    "walkFew": "{n} min walk",
+    "walkMany": "{n} min walk",
+    "driveOne": "{n} min drive",
+    "driveTwo": "{n} min drive",
+    "driveFew": "{n} min drive",
+    "driveMany": "{n} min drive",
+    "distanceMeters": "{n} m away",
+    "distanceKm": "{n} km away",
+    "category": {
+      "1": "Start your day slow ☕",
+      "2": "Breakfast nearby 🥐",
+      "3": "Shop with ease 🛍️",
+      "4": "Little treats and gifts 🎁",
+      "5": "For kids and family 🧸",
+      "6": "Moments and memories 🎮",
+      "7": "Everyday essentials 🧴"
+    },
+    "caption": {
+      "1": "Start with coffee",
+      "2": "A light breakfast",
+      "3": "Go shopping",
+      "4": "Pick up a gift",
+      "5": "Out with the family",
+      "6": "Something to do",
+      "7": "Grab the essentials"
+    },
+    "priceLevel": {
+      "cheap": "Budget-friendly",
+      "moderate": "Moderately priced",
+      "expensive": "Pricey"
+    },
+    "timeOfDay": {
+      "morning": "Morning",
+      "lateMorning": "Late morning",
+      "afternoon": "Afternoon",
+      "evening": "Evening"
+    }
   }
 }

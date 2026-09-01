@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:houseiana_mobile_app/core/models/booking_model.dart';
+import 'package:houseiana_mobile_app/core/utils/stay_ids.dart';
 
 enum TripStatus {
   upcoming('UPCOMING'),
@@ -131,6 +132,8 @@ class TripModel extends Equatable {
     DateTime? parseDate(dynamic v) =>
         v == null ? null : DateTime.tryParse(v.toString());
 
+    final hotelIdValue = extractHotelId(json);
+
     return TripModel(
       id: json['_id'] ?? json['id'] ?? json['bookingId'] ?? '',
       propertyId: json['property'] is Map
@@ -162,9 +165,10 @@ class TripModel extends Equatable {
           json['averageRating'] != null ? _toDouble(json['averageRating']) : null,
       cancelledAt: parseDate(json['cancelledAt']),
       paymentDueDate: parseDate(json['paymentDueDate']),
-      hotelId: (json['hotelId'] ??
-              (json['hotel'] is Map ? json['hotel']['id'] : null))
-          ?.toString(),
+      // Read through [extractHotelId] rather than one or two literal keys: a
+      // real hotel row arrived with the "Hotel" kind, a title and a cover
+      // photo but no `hotelId`/`hotel.id` at all.
+      hotelId: hotelIdValue.isEmpty ? null : hotelIdValue,
       bookingKind:
           (json['bookingType'] ?? json['type'] ?? json['kind'])?.toString(),
     );
@@ -192,7 +196,10 @@ class TripModel extends Equatable {
         // Carried across the route boundary on purpose: the trip-details screen
         // rebuilds a BookingModel from this map, and dropping the flag there
         // would send a hotel stay to the property review form.
-        'hotelId': hotelId,
+        // The RESOLVED id: the details screen rebuilds a BookingModel straight
+        // from this map, and handing it the row's empty `hotelId` would put it
+        // back at the same dead end this getter exists to clear.
+        'hotelId': resolvedHotelId.isEmpty ? hotelId : resolvedHotelId,
         'bookingKind': bookingKind,
       };
 
@@ -204,6 +211,22 @@ class TripModel extends Equatable {
   bool get isHotel =>
       (hotelId != null && hotelId!.trim().isNotEmpty) ||
       (bookingKind ?? '').toUpperCase() == 'HOTEL';
+
+  /// The id the hotel endpoints (details, reviews) address this stay by.
+  ///
+  /// [hotelId] is what the row actually declared. When a row says HOTEL but
+  /// declares no hotel id, the property column is the only candidate left: the
+  /// same row reuses `propertyTitle`/`propertyCoverPhoto` for the hotel's name
+  /// and photo, so it is one unified DTO and `propertyId` carries the stay
+  /// entity. Empty for a property stay, which has no hotel id by definition,
+  /// and empty when even that column is missing — the caller then asks
+  /// `GET /booking-manager/{id}` before giving up.
+  String get resolvedHotelId {
+    final declared = (hotelId ?? '').trim();
+    if (declared.isNotEmpty) return declared;
+    if (!isHotel) return '';
+    return propertyId.trim();
+  }
 
   bool get isUpcoming => status == TripStatus.upcoming;
   bool get isPast => status == TripStatus.past;

@@ -307,8 +307,8 @@ class RoomTypeCard extends StatelessWidget {
 
   /// Paid add-ons offered on this room type ("Extra Bed").
   ///
-  /// They are NOT in any total the app prints — `POST /api/hotel-quote` only
-  /// ever prices `ratePlanId` + `rooms` — so the caption says so outright
+  /// They are NOT in any total the app prints — the `POST /api/hotel-quote`
+  /// request has no field for a service id — so the caption says so outright
   /// rather than letting a guest read them as included and be surprised at the
   /// desk.
   ///

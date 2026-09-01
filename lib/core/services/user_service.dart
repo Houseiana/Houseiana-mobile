@@ -166,6 +166,54 @@ class UserService {
     return item != null ? BookingModel.fromJson(item) : null;
   }
 
+  /// The id a REVIEW addresses a stay by: the HOTEL id for a hotel stay, the
+  /// PROPERTY id otherwise — `POST /api/hotels/{hotelId}/reviews/create` and
+  /// `POST /api/ratings/property-by-guest` are keyed by the stay, never by the
+  /// booking, so without it the review cannot be posted at all.
+  ///
+  /// `GET /users/{userId}/user-trips` does not always carry it: a real past
+  /// hotel stay came back flagged HOTEL, with a title and a cover photo, and no
+  /// hotel id anywhere in the row — which is what left the review button on
+  /// "This hotel is no longer available". When the row comes up short,
+  /// `GET /booking-manager/{bookingId}` is a different DTO over the same
+  /// booking and is worth one attempt before giving up.
+  ///
+  /// Returns an empty string when neither source knows it, and never throws —
+  /// the caller decides what to tell the guest.
+  Future<String> resolveStayEntityId({
+    required String bookingId,
+    required bool isHotel,
+    String localId = '',
+  }) async {
+    final local = localId.trim();
+    // The reviews path declares its hotel id as a uuid
+    // (`/api/hotels/{hotelId}/reviews/create`), so a hotel candidate that is
+    // not uuid-shaped — a booking code like `HB-D66CA676`, a row index — is
+    // worth checking against the booking DTO before it is used.
+    final localIsTrustworthy =
+        local.isNotEmpty && (!isHotel || _looksLikeUuid(local));
+    if (localIsTrustworthy) return local;
+    if (bookingId.isEmpty) return local;
+    try {
+      final booking = await getBookingDetails(bookingId);
+      final resolved = booking == null
+          ? ''
+          : (isHotel ? booking.resolvedHotelId : booking.propertyId.trim());
+      // Never come out of here worse off than we went in.
+      return resolved.isNotEmpty ? resolved : local;
+    } catch (_) {
+      // Hotel bookings may not be served by /booking-manager at all. A failure
+      // here is "no better answer", not an error worth surfacing.
+      return local;
+    }
+  }
+
+  static final RegExp _uuidPattern = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  );
+
+  static bool _looksLikeUuid(String value) => _uuidPattern.hasMatch(value);
+
   /// POST /booking-manager
   Future<BookingModel?> createBooking(Map<String, dynamic> body) async {
     final response = await _api.post(EndPoints.createBooking, body: body);
@@ -603,14 +651,24 @@ class UserService {
           ];
     }
     if (raw is List) {
-      final trips = raw
-          .whereType<Map<String, dynamic>>()
-          .map((e) => TripModel.fromJson(e))
-          .toList();
+      final rows = raw.whereType<Map<String, dynamic>>().toList();
+      final trips = rows.map(TripModel.fromJson).toList();
       if (kDebugMode) {
         debugPrint('[Trips] keys='
             '${response is Map ? response.keys.toList() : response.runtimeType}'
             ' rows=${trips.length} hotels=${trips.where((t) => t.isHotel).length}');
+        // A row with no stay id can be neither reviewed nor re-booked, and the
+        // key it hides behind is the one part of this contract no probe has
+        // pinned down. Print the whole row so the next run names it.
+        for (var i = 0; i < trips.length; i++) {
+          final trip = trips[i];
+          final stayId =
+              trip.isHotel ? trip.resolvedHotelId : trip.propertyId.trim();
+          if (stayId.isEmpty) {
+            debugPrint('[Trips] ${trip.isHotel ? 'hotel' : 'property'} row '
+                '${trip.id} carries no stay id — row=${rows[i]}');
+          }
+        }
       }
       return trips;
     }
